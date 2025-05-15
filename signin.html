@@ -8,7 +8,7 @@
 </head>
 <body class="bg-light">
   <div class="container d-flex justify-content-center align-items-center vh-100">
-    <div class="card shadow p-4" style="width: 100%; max-width: 400px;">
+    <div class="card shadow p-4" style="max-width: 400px; width: 100%;">
       <h3 class="text-center mb-3">Sign In to IC CMS</h3>
       <form onsubmit="signIn(event)">
         <div class="mb-3">
@@ -42,11 +42,22 @@
       const password = document.getElementById('password').value;
 
       try {
-        await Amplify.Auth.signIn(username, password);
-        window.location.href = "index.html";
+        const user = await Amplify.Auth.signIn(username, password);
+
+        if (user.challengeName === 'MFA_SETUP') {
+          // Needs to set up TOTP for the first time
+          window.location.href = "verify-mfa.html";
+        } else if (user.challengeName === 'SOFTWARE_TOKEN_MFA') {
+          const code = prompt("Enter your 6-digit MFA code from Authenticator App:");
+          const verified = await Amplify.Auth.confirmSignIn(user, code, 'SOFTWARE_TOKEN_MFA');
+          window.location.href = "index.html";
+        } else {
+          // No challenge, login successful
+          window.location.href = "index.html";
+        }
       } catch (err) {
-        document.getElementById("error-message").textContent = err.message || "Login failed.";
         console.error(err);
+        document.getElementById("error-message").textContent = err.message || "Login failed.";
       }
     }
   </script>
