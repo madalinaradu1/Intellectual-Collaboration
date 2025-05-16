@@ -68,12 +68,10 @@ function handleSignin(event) {
   var email = $('#username').val();
   var password = $('#password').val();
 
-  var authData = {
+  var authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails({
     Username: email,
     Password: password
-  };
-
-  var authDetails = new AmazonCognitoIdentity.AuthenticationDetails(authData);
+  });
 
   var userData = {
     Username: email,
@@ -82,20 +80,29 @@ function handleSignin(event) {
 
   var cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
 
-  cognitoUser.authenticateUser(authDetails, {
-    onSuccess: function(result) {
-      window.location.href = 'index.html';
+  cognitoUser.authenticateUser(authenticationDetails, {
+    onSuccess: function (result) {
+      const idToken = result.getIdToken().getJwtToken();
+      console.log("✅ Logged in. ID Token:", idToken);
+      window.location.href = "index.html";
     },
-    onFailure: function(err) {
-      showMessage('error-message', err.message || 'Login failed.');
+
+    onFailure: function (err) {
+      console.error("❌ Sign-in error:", err);
+      $('#error-message').text(err.message || "Login failed.");
     },
-    mfaRequired: function(codeDeliveryDetails) {
-      var code = prompt('Enter your 6-digit MFA code:');
+
+    mfaRequired: function (codeDeliveryDetails) {
+      const code = prompt("Enter MFA code from your Authenticator app:");
       cognitoUser.sendMFACode(code, this);
+    },
+
+    newPasswordRequired: function(userAttributes, requiredAttributes) {
+      console.log("New password required.");
+      $('#error-message').text("Your password must be reset. This flow is not yet supported.");
     }
   });
 }
-
 // Show messages
 function showMessage(id, msg) {
   $('#' + id).text(msg);
