@@ -63,41 +63,20 @@
     </section>
   </div>
 
-  <!-- Amplify + Config -->
+<!--   <!-- Amplify + Config -->
   <script src="https://unpkg.com/aws-amplify@5.0.4/dist/aws-amplify.umd.min.js"></script>
+  <script src="config.js"></script>
+  <script src="cognito-auth.js"></script> -->
+
+    
+  <script src="jquery-3.1.0.js"></script>
+  <script src="bootstrap.min.js"></script>
+  <script src="aws-cognito-sdk.min.js"></script>
+  <script src="amazon-cognito-identity.min.js"></script>
   <script src="config.js"></script>
   <script src="cognito-auth.js"></script>
 
-  <!-- Load User Info -->
-  <script>
-    Amplify.configure({
-      Auth: {
-        region: _config.cognito.region,
-        userPoolId: _config.cognito.userPoolId,
-        userPoolWebClientId: _config.cognito.userPoolClientId
-      }
-    });
-
-    Amplify.Auth.currentAuthenticatedUser()
-      .then(user => {
-        const username = user.getUsername();
-        document.getElementById("user-greeting").classList.remove("d-none");
-        document.getElementById("user-greeting").textContent = `Welcome, ${username}! You are now logged in.`;
-
-        document.getElementById("announcements").innerHTML = `
-          <ul>
-            <li>🚀 IC CMS just launched — explore the new features!</li>
-            <li>🔐 MFA is now optional — set it up in your profile.</li>
-          </ul>
-        `;
-      })
-      .catch(err => {
-        console.warn("Not logged in:", err);
-        window.location.href = "signin.html";
-      });
-  </script>
-    
-  <script>
+    <script>
     async function loadPosts() {
     try {
       const token = await Amplify.Auth.currentSession().then(s => s.getIdToken().getJwtToken());
@@ -128,5 +107,36 @@
 
   loadPosts();
   </script>
+
+  <!-- Load User Info -->
+  <script>
+    Amplify.configure({
+      Auth: {
+        region: _config.cognito.region,
+        userPoolId: _config.cognito.userPoolId,
+        userPoolWebClientId: _config.cognito.userPoolClientId
+      }
+    });
+
+    Amplify.Auth.currentAuthenticatedUser()
+      .then(user => {
+        const username = user.getUsername();
+        document.getElementById("user-greeting").classList.remove("d-none");
+        document.getElementById("user-greeting").textContent = `Welcome, ${username}! You are now logged in.`;
+
+        document.getElementById("announcements").innerHTML = `
+          <ul>
+            <li>🚀 IC CMS just launched — explore the new features!</li>
+            <li>🔐 MFA is now optional — set it up in your profile.</li>
+          </ul>
+        `;
+      })
+      .catch(err => {
+        console.warn("Not logged in:", err);
+        window.location.href = "signin.html";
+      });
+  </script>
+    
+
 </body>
 </html>
