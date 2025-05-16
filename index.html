@@ -2,47 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>IC CMS - Home</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IC CMS - Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
 </head>
-<body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="#">IC CMS</a>
-      <div class="d-flex">
-        <span id="user-info" class="text-white me-3"></span>
-        <button class="btn btn-outline-light" onclick="signOut()">Logout</button>
-      </div>
+<body class="bg-light">
+  <div class="container py-5">
+    <h1 class="text-center mb-3">Welcome to the IC Content Management System</h1>
+    <p class="text-center text-muted">A collaborative space for faculty, students, and staff to connect, manage content, and engage.</p>
+
+    <hr class="my-4" />
+
+    <h4 class="text-primary"><i class="bi bi-megaphone"></i> Announcements</h4>
+    <div id="announcements" class="bg-white p-3 border rounded shadow-sm">
+      <p>Loading announcements...</p>
     </div>
-  </nav>
+  </div>
 
-  <main class="container mt-4">
-    <div class="text-center">
-      <h1 class="mb-3">Welcome to the IC Content Management System</h1>
-      <p class="lead">A collaborative space for faculty, students, and staff to connect, manage content, and engage.</p>
-    </div>
+  <!-- ✅ Correct Amplify & Config Setup -->
+  <script src="https://unpkg.com/aws-amplify@5.0.4/dist/aws-amplify.umd.min.js"></script>
+  <script src="config.js"></script>
+  <script src="cognito-auth.js"></script>
 
-    <section class="mt-5">
-      <h3>📢 Announcements</h3>
-      <div id="announcements" class="p-3 border rounded bg-light">Loading announcements...</div>
-    </section>
-
-    <section class="mt-5">
-      <h3>👥 Your Groups</h3>
-      <div id="groups" class="p-3 border rounded bg-light">Loading group information...</div>
-    </section>
-
-    <section class="mt-5">
-      <h3>📝 Recent Posts</h3>
-      <div id="posts" class="p-3 border rounded bg-light">Loading posts...</div>
-    </section>
-  </main>
-
-  <script src="https://cdn.jsdelivr.net/npm/aws-amplify@5.0.4/dist/aws-amplify.umd.min.js"></script>
-  <script src="js/config.js"></script>
   <script>
-    // Configure Amplify with Cognito settings
+    // Optional: validate user session
     Amplify.configure({
       Auth: {
         region: _config.cognito.region,
@@ -51,31 +34,15 @@
       }
     });
 
-    async function getCurrentUser() {
-      try {
-        const user = await Amplify.Auth.currentAuthenticatedUser();
-        document.getElementById("user-info").textContent = `Logged in as: ${user.username}`;
-        loadUserContent();
-      } catch (err) {
+    Amplify.Auth.currentAuthenticatedUser()
+      .then(user => {
+        console.log("Logged in as:", user.getUsername());
+        document.getElementById("announcements").innerHTML = `<p>Welcome, <strong>${user.getUsername()}</strong>! 🎉</p>`;
+      })
+      .catch(err => {
+        console.warn("Not logged in:", err);
         window.location.href = "signin.html";
-      }
-    }
-
-    function signOut() {
-      Amplify.Auth.signOut()
-        .then(() => {
-          window.location.href = "signin.html";
-        })
-        .catch(err => console.error('Sign out error:', err));
-    }
-
-    function loadUserContent() {
-      document.getElementById("announcements").innerHTML = "📌 New course materials available for Spring!";
-      document.getElementById("groups").innerHTML = "<ul><li>PLN Faculty</li><li>CIRT Research Team</li></ul>";
-      document.getElementById("posts").innerHTML = "<ul><li>📄 'Draft Policy on AI in Classrooms' uploaded by Cat Lena</li></ul>";
-    }
-
-    getCurrentUser();
+      });
   </script>
 </body>
 </html>
