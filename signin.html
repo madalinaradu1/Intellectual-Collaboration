@@ -10,62 +10,27 @@
   <div class="container d-flex justify-content-center align-items-center vh-100">
     <div class="card shadow p-4" style="max-width: 400px; width: 100%;">
       <h3 class="text-center mb-3">Sign In to IC CMS</h3>
-      <form onsubmit="signIn(event)">
+
+      <form id="signinForm">
         <div class="mb-3">
-          <label for="username" class="form-label">Username or Email</label>
-          <input type="text" class="form-control" id="username" required />
+          <label for="username" class="form-label">Email</label>
+          <input type="email" class="form-control" id="username" required />
         </div>
         <div class="mb-3">
           <label for="password" class="form-label">Password</label>
           <input type="password" class="form-control" id="password" required />
         </div>
         <button type="submit" class="btn btn-primary w-100">Sign In</button>
-        <div id="error-message" class="text-danger mt-2 text-center"></div>
+        <div id="error-message" class="text-danger mt-3 text-center"></div>
       </form>
+
+      <div class="text-center mt-3">
+        <small>Don't have an account? <a href="signup.html">Register here</a></small>
+      </div>
     </div>
   </div>
-<!--         <script src="jquery-3.1.0.js"></script>
-        <script src="bootstrap.min.js"></script>
-        <script src="aws-cognito-sdk.min.js"></script>
-        <script src="amazon-cognito-identity.min.js"></script> -->
-        <script src="config.js"></script>
-        <script src="cognito-auth.js"></script>
-<!-- <script src="https://cdn.jsdelivr.net/npm/aws-amplify@5.0.4/dist/aws-amplify.umd.min.js"></script>
-  -->
-  <script>
-    Amplify.configure({
-      Auth: {
-        region: _config.cognito.region,
-        userPoolId: _config.cognito.userPoolId,
-        userPoolWebClientId: _config.cognito.userPoolClientId,
-      }
-    });
 
-    async function signIn(event) {
-      event.preventDefault();
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-
-      try {
-        const user = await Amplify.Auth.signIn(username, password);
-
-        if (user.challengeName === 'MFA_SETUP') {
-          // Needs to set up TOTP for the first time
-          window.location.href = "verify-mfa.html";
-        } else if (user.challengeName === 'SOFTWARE_TOKEN_MFA') {
-          const code = prompt("Enter your 6-digit MFA code from Authenticator App:");
-          const verified = await Amplify.Auth.confirmSignIn(user, code, 'SOFTWARE_TOKEN_MFA');
-          window.location.href = "index.html";
-        } else {
-          // No challenge, login successful
-          window.location.href = "index.html";
-        }
-      } catch (err) {
-        console.error(err);
-        document.getElementById("error-message").textContent = err.message || "Login failed.";
-      }
-    }
-  </script>
+  <!-- Amplify + Config + Logic -->
   <script src="https://cdn.jsdelivr.net/npm/aws-amplify@5.0.4/dist/aws-amplify.umd.min.js"></script>
   <script src="config.js"></script>
   <script src="cognito-auth.js"></script>
