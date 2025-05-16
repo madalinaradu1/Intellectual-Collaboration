@@ -96,5 +96,37 @@
         window.location.href = "signin.html";
       });
   </script>
+    
+  <script>
+    async function loadPosts() {
+    try {
+      const token = await Amplify.Auth.currentSession().then(s => s.getIdToken().getJwtToken());
+
+      const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
+        headers: {
+          Authorization: token
+        }
+      });
+
+      const posts = await response.json();
+
+      const html = posts.map(p => `
+        <div class="border-bottom mb-3 pb-2">
+          <h5>${p.Title}</h5>
+          <p class="text-muted small">By ${p.Author} • ${p.Timestamp}</p>
+          <p>${p.Message}</p>
+        </div>
+      `).join("");
+
+      document.getElementById("announcements").innerHTML = html || "<p>No posts found.</p>";
+
+    } catch (err) {
+      console.error("Error loading posts:", err);
+      document.getElementById("announcements").textContent = "❌ Could not load posts.";
+    }
+  }
+
+  loadPosts();
+  </script>
 </body>
 </html>
