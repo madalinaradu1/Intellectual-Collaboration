@@ -1,116 +1,93 @@
-// cognito-auth.js (using Cognito Identity SDK)
+// cognito-auth.js
 
-var poolData = {
-  UserPoolId: _config.cognito.userPoolId,
-  ClientId: _config.cognito.userPoolClientId
-};
+// Configure Amplify
+Amplify.configure({
+  Auth: {
+    region: _config.cognito.region,
+    userPoolId: _config.cognito.userPoolId,
+    userPoolWebClientId: _config.cognito.userPoolClientId
+  }
+});
 
-var userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+// Sign In Handler
+async function handleSignin(event) {
+  event.preventDefault();
+  const email = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  try {
+    const user = await Amplify.Auth.signIn(email, password);
+
+    if (user.challengeName === 'MFA_SETUP') {
+      window.location.href = 'verify-mfa.html';
+    } else if (user.challengeName === 'SOFTWARE_TOKEN_MFA') {
+      const code = prompt("Enter your 6-digit MFA code from your Authenticator app:");
+      await Amplify.Auth.confirmSignIn(user, code, 'SOFTWARE_TOKEN_MFA');
+      window.location.href = 'index.html';
+    } else {
+      window.location.href = 'index.html';
+    }
+  } catch (err) {
+    console.error(err);
+    showMessage('error-message', err.message || 'Login failed.');
+  }
+}
 
 // Sign Up Handler
-function handleRegister(event) {
+async function handleRegister(event) {
   event.preventDefault();
+  const email = document.getElementById("emailInputRegister").value;
+  const password = document.getElementById("passwordInputRegister").value;
+  const confirm = document.getElementById("password2InputRegister").value;
 
-  var email = $('#emailInputRegister').val();
-  var password = $('#passwordInputRegister').val();
-  var password2 = $('#password2InputRegister').val();
-
-  if (password !== password2) {
-    showMessage('signup-status', 'Passwords do not match');
-    return;
+  if (password !== confirm) {
+    return showMessage('signup-status', '❌ Passwords do not match');
   }
 
-  var dataEmail = {
-    Name: 'email',
-    Value: email
-  };
+  try {
+    await Amplify.Auth.signUp({
+      username: email,
+      password,
+      attributes: { email }
+    });
 
-  var attributeEmail = new AmazonCognitoIdentity.CognitoUserAttribute(dataEmail);
-
-  userPool.signUp(email, password, [attributeEmail], null, function(err, result) {
-    if (err) {
-      showMessage('signup-status', err.message || 'Registration failed');
-    } else {
-      showMessage('signup-status', '✅ Registered! Check your email for a verification code.');
-      setTimeout(() => window.location.href = 'verify.html', 2000);
-    }
-  });
+    showMessage('signup-status', '✅ Registration successful. Check your email for the verification code.');
+    setTimeout(() => window.location.href = 'verify.html', 2000);
+  } catch (err) {
+    console.error(err);
+    showMessage('signup-status', err.message || 'Registration failed.');
+  }
 }
 
-// Confirm Email Verification Code
-function handleVerify(event) {
+// Confirm Email Verification
+async function handleVerify(event) {
   event.preventDefault();
+  const email = document.getElementById("emailInputVerify").value;
+  const code = document.getElementById("codeInputVerify").value;
 
-  var email = $('#emailInputVerify').val();
-  var code = $('#codeInputVerify').val();
-
-  var userData = {
-    Username: email,
-    Pool: userPool
-  };
-
-  var cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
-
-  cognitoUser.confirmRegistration(code, true, function(err, result) {
-    if (err) {
-      showMessage('verify-status', err.message || 'Verification failed');
-    } else {
-      showMessage('verify-status', '✅ Verification successful. Redirecting...');
-      setTimeout(() => window.location.href = 'signin.html', 2000);
-    }
-  });
+  try {
+    await Amplify.Auth.confirmSignUp(email, code);
+    showMessage('verify-status', '✅ Verification successful. Redirecting...');
+    setTimeout(() => window.location.href = 'signin.html', 2000);
+  } catch (err) {
+    console.error(err);
+    showMessage('verify-status', err.message || 'Verification failed.');
+  }
 }
 
-// Sign In + MFA
-function handleSignin(event) {
-  event.preventDefault();
-
-  var email = $('#username').val();
-  var password = $('#password').val();
-
-  var authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails({
-    Username: email,
-    Password: password
-  });
-
-  var userData = {
-    Username: email,
-    Pool: userPool
-  };
-
-  var cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
-
-  cognitoUser.authenticateUser(authenticationDetails, {
-    onSuccess: function (result) {
-      const idToken = result.getIdToken().getJwtToken();
-      console.log("✅ Logged in. ID Token:", idToken);
-      window.location.href = "index.html";
-    },
-
-    onFailure: function (err) {
-      console.error("❌ Sign-in error:", err);
-      $('#error-message').text(err.message || "Login failed.");
-    },
-
-    mfaRequired: function (codeDeliveryDetails) {
-      const code = prompt("Enter MFA code from your Authenticator app:");
-      cognitoUser.sendMFACode(code, this);
-    },
-
-    newPasswordRequired: function(userAttributes, requiredAttributes) {
-      console.log("New password required.");
-      $('#error-message').text("Your password must be reset. This flow is not yet supported.");
-    }
-  });
-}
-// Show messages
-function showMessage(id, msg) {
-  $('#' + id).text(msg);
+// Utility to Show Messages
+function showMessage(id, message) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = message;
 }
 
-// Bind forms
-$(document).ready(function() {
-  $('#registrationForm').on('submit', handleRegister);
-  $('#verifyForm').on('submit', handleVerify);
-  $('#signinForm').on('submit', handleSignin);
+// DOM Event Listeners
+window.addEventListener("DOMContentLoaded", () => {
+  const signinForm = document.getElementById("signinForm");
+  const registerForm = document.getElementById("registrationForm");
+  const verifyForm = document.getElementById("verifyForm");
+
+  if (signinForm) signinForm.addEventListener("submit", handleSignin);
+  if (registerForm) registerForm.addEventListener("submit", handleRegister);
+  if (verifyForm) verifyForm.addEventListener("submit", handleVerify);
 });
