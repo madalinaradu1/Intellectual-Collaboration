@@ -58,25 +58,25 @@
     window.Amplify = aws_amplify; // REQUIRED for CDN use in v3+
   </script>
   <script src="config.js"></script>
-  <script src="cognito-auth.js"></script>
-  
-  <script>
-    Amplify.configure({
-      Auth: {
-        region: _config.cognito.region,
-        userPoolId: _config.cognito.userPoolId,
-        userPoolWebClientId: _config.cognito.userPoolClientId
-      },
-      API: {
-        endpoints: [
-          {
-            name: "ICCMSApi",
-            endpoint: _config.api.invokeUrl
-          }
-        ]
-      }
-    });
-  </script>
+<script>
+  window.Amplify = aws_amplify;
+  Amplify.configure({
+    Auth: {
+      region: _config.cognito.region,
+      userPoolId: _config.cognito.userPoolId,
+      userPoolWebClientId: _config.cognito.userPoolClientId
+    },
+    API: {
+      endpoints: [
+        {
+          name: "ICCMSApi",
+          endpoint: _config.api.invokeUrl
+        }
+      ]
+    }
+  });
+</script>
+<script src="cognito-auth.js"></script>
 
   <script>
     async function loadPosts() {
