@@ -52,37 +52,35 @@
     </section>
   </div>
 
-  <!-- Amplify + config -->
- <script src="https://cdn.jsdelivr.net/npm/aws-amplify/dist/aws-amplify.min.js"></script>
-<script>
-  // Make sure aws-exports.js is properly loaded
-  Amplify.configure(awsExports);
-</script>
+  <!-- AWS SDK and Config files -->
+  <script src="https://cdn.jsdelivr.net/npm/aws-amplify@5.0.7/dist/aws-amplify.min.js"></script>
   <script src="config.js"></script>
-<script>
-  window.Amplify = aws_amplify;
-  Amplify.configure({
-    Auth: {
-      region: _config.cognito.region,
-      userPoolId: _config.cognito.userPoolId,
-      userPoolWebClientId: _config.cognito.userPoolClientId
-    },
-    API: {
-      endpoints: [
-        {
-          name: "ICCMSApi",
-          endpoint: _config.api.invokeUrl
-        }
-      ]
-    }
-  });
-</script>
-<script src="cognito-auth.js"></script>
+  
+  <script>
+    // Configure Amplify with our config file
+    AWS.Amplify.configure({
+      Auth: {
+        region: _config.cognito.region,
+        userPoolId: _config.cognito.userPoolId,
+        userPoolWebClientId: _config.cognito.userPoolClientId
+      },
+      API: {
+        endpoints: [
+          {
+            name: "ICCMSApi",
+            endpoint: _config.api.invokeUrl
+          }
+        ]
+      }
+    });
+  </script>
+  
+  <script src="cognito-auth.js"></script>
 
   <script>
     async function loadPosts() {
       try {
-        const session = await Amplify.Auth.currentSession();
+        const session = await AWS.Amplify.Auth.currentSession();
         const token = session.getIdToken().getJwtToken();
 
         const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list?groupId=general`, {
@@ -117,7 +115,7 @@
   </script>
 
   <script>
-    Amplify.Auth.currentAuthenticatedUser()
+    AWS.Amplify.Auth.currentAuthenticatedUser()
       .then(user => {
         const username = user.getUsername();
         document.getElementById("user-greeting").classList.remove("d-none");
