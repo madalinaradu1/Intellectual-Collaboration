@@ -105,12 +105,13 @@ async function loadPosts() {
     const token = session.getIdToken().getJwtToken();
 
     // Call API Gateway endpoint
-    const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list?groupId=general`, {
-      method: "GET",
-      headers: {
-        Authorization: token
-      }
-    });
+   const groupId = "general"; // Later, this could be pulled from the user session
+  const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list?groupId=${groupId}`, {
+    method: "GET",
+    headers: {
+      Authorization: token
+  }
+});
 
     const posts = await response.json();
 
