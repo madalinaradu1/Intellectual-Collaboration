@@ -1,4 +1,4 @@
-// cognito-auth.js
+import { Amplify } from 'aws-amplify';
 
 // Configure Amplify
 Amplify.configure({
