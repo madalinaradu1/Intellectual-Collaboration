@@ -53,10 +53,11 @@
   </div>
 
   <!-- Amplify + config -->
-  <script src="https://cdn.jsdelivr.net/npm/aws-amplify@3.0.23/dist/aws-amplify.min.js"></script>
-  <script>
-    window.Amplify = aws_amplify; // REQUIRED for CDN use in v3+
-  </script>
+ <script src="https://cdn.jsdelivr.net/npm/aws-amplify/dist/aws-amplify.min.js"></script>
+<script>
+  // Make sure aws-exports.js is properly loaded
+  Amplify.configure(awsExports);
+</script>
   <script src="config.js"></script>
 <script>
   window.Amplify = aws_amplify;
