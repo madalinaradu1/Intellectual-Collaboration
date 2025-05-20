@@ -12,26 +12,34 @@ Amplify.configure({
 // Sign In Handler
 async function handleSignin(event) {
   event.preventDefault();
+  console.log("🔑 handleSignin() called");
+
   const email = document.getElementById("username").value;
   const password = document.getElementById("password").value;
 
   try {
+    console.log("🔍 Attempting sign in for:", email);
     const user = await Amplify.Auth.signIn(email, password);
+    console.log("✅ Sign-in successful:", user);
 
     if (user.challengeName === 'MFA_SETUP') {
+      console.log("⚠️ MFA Setup required");
       window.location.href = 'verify-mfa.html';
     } else if (user.challengeName === 'SOFTWARE_TOKEN_MFA') {
-      const code = prompt("Enter your 6-digit MFA code from your Authenticator app:");
+      console.log("🔐 MFA challenge: SOFTWARE_TOKEN_MFA");
+      const code = prompt("Enter your 6-digit MFA code:");
       await Amplify.Auth.confirmSignIn(user, code, 'SOFTWARE_TOKEN_MFA');
       window.location.href = 'index.html';
     } else {
+      console.log("🎉 Redirecting to index.html");
       window.location.href = 'index.html';
     }
   } catch (err) {
-    console.error(err);
+    console.error("❌ Sign-in error:", err);
     showMessage('error-message', err.message || 'Login failed.');
   }
 }
+
 
 // Sign Up Handler
 async function handleRegister(event) {
