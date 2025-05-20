@@ -30,17 +30,12 @@
     </div>
   </div>
 
-  <!-- Amplify + Config + Logic -->
-<!--   <script src="https://cdn.jsdelivr.net/npm/aws-amplify@5.0.4/dist/aws-amplify.umd.min.js"></script>
+  <!-- Load AWS Amplify and Cognito logic -->
+  <script src="https://unpkg.com/aws-amplify@4.3.24/dist/aws-amplify.umd.min.js"></script>
   <script src="config.js"></script>
-  <script src="cognito-auth.js"></script> -->
-
-  <script src="jquery-3.1.0.js"></script>
-  <script src="bootstrap.min.js"></script>
-  <script src="aws-cognito-sdk.min.js"></script>
-  <script src="amazon-cognito-identity.min.js"></script>
-  <script src="config.js"></script>
+  <script>
+    window.Amplify = aws_amplify; // Expose Amplify to global scope
+  </script>
   <script src="cognito-auth.js"></script>
-
 </body>
 </html>
