@@ -47,7 +47,7 @@
     async function loadQRCode() {
       try {
         // Get current authenticated user
-        user = await AWS.Amplify.Auth.currentAuthenticatedUser();
+        user = await Amplify.Auth.currentAuthenticatedUser();
         
         if (!user) {
           window.location.href = 'signin.html';
@@ -55,7 +55,7 @@
         }
         
         // Setup TOTP
-        const totpSetup = await AWS.Amplify.Auth.setupTOTP(user);
+        const totpSetup = await Amplify.Auth.setupTOTP(user);
         const secretCode = totpSetup;
         const username = user.username;
         const otpUri = `otpauth://totp/ICCMS:${username}?secret=${secretCode}&issuer=ICCMS`;
@@ -85,10 +85,10 @@
 
       try {
         // Verify TOTP token
-        await AWS.Amplify.Auth.verifyTotpToken(user, code);
+        await Amplify.Auth.verifyTotpToken(user, code);
         
         // Set preferred MFA method
-        await AWS.Amplify.Auth.setPreferredMFA(user, 'TOTP');
+        await Amplify.Auth.setPreferredMFA(user, 'TOTP');
         
         $('#mfa-status').text("✅ MFA setup complete! Redirecting...");
         setTimeout(() => window.location.href = "index.html", 1500);
