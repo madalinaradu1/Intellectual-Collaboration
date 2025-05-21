@@ -22,7 +22,7 @@
         <label for="totp-code" class="form-label">Enter 6-digit code from app:</label>
         <input type="text" id="totp-code" class="form-control" placeholder="123456" required />
       </div>
-      <button class="btn btn-primary w-100" onclick="verifyMFA()">Verify</button>
+      <button class="btn btn-primary w-100" id="verify-button">Verify</button>
       <div id="mfa-status" class="text-center mt-3"></div>
     </div>
   </div>
@@ -39,9 +39,6 @@
   <script src="amplify-config.js"></script>
 
   <script>
-    // Initialize Amplify
-    Amplify.configure(window.awsConfig);
-    
     let user;
 
     async function loadQRCode() {
@@ -98,7 +95,28 @@
       }
     }
 
-    $(document).ready(loadQRCode);
+    // Check if Amplify is loaded
+    function checkAmplifyLoaded() {
+      if (typeof Amplify !== 'undefined') {
+        // Amplify is loaded, initialize it
+        console.log("Amplify loaded successfully");
+        Amplify.configure(window.awsConfig);
+        
+        // Load QR code and bind button event
+        loadQRCode();
+        document.getElementById('verify-button').addEventListener('click', verifyMFA);
+      } else {
+        // Amplify not loaded yet, try again in 100ms
+        console.log("Waiting for Amplify to load...");
+        setTimeout(checkAmplifyLoaded, 100);
+      }
+    }
+
+    // Start checking if Amplify is loaded when the DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log("DOM loaded, checking for Amplify...");
+      checkAmplifyLoaded();
+    });
   </script>
 </body>
 </html>

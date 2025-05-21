@@ -20,7 +20,7 @@
 
     <section class="mt-5">
       <h4>Create New Group</h4>
-      <form onsubmit="createGroup(event)" class="row g-3">
+      <form id="createGroupForm" class="row g-3">
         <div class="col-md-6">
           <input type="text" id="group-name" class="form-control" placeholder="Group Name" required />
         </div>
@@ -44,7 +44,7 @@
   <script src="jquery-3.1.0.js"></script>
   
   <!-- AWS Amplify -->
-  <script src="https://cdn.jsdelivr.net/npm/aws-amplify@5.0.4/dist/aws-amplify.min.js"></script>
+  <script src="https://unpkg.com/aws-amplify@5.0.4/dist/aws-amplify.min.js"></script>
   
   <!-- Configuration -->
   <script src="config.js"></script>
@@ -88,12 +88,37 @@
       }
     }
 
-    // Initialize Amplify
-    Amplify.configure(window.awsConfig);
-    
-    // Load data
-    getUser();
-    loadGroups();
+    // Initialize app
+    function initApp() {
+      // Bind form handler
+      document.getElementById('createGroupForm').addEventListener('submit', createGroup);
+      
+      // Load data
+      getUser();
+      loadGroups();
+    }
+
+    // Check if Amplify is loaded
+    function checkAmplifyLoaded() {
+      if (typeof Amplify !== 'undefined') {
+        // Amplify is loaded, initialize it
+        console.log("Amplify loaded successfully");
+        Amplify.configure(window.awsConfig);
+        
+        // Initialize the app
+        initApp();
+      } else {
+        // Amplify not loaded yet, try again in 100ms
+        console.log("Waiting for Amplify to load...");
+        setTimeout(checkAmplifyLoaded, 100);
+      }
+    }
+
+    // Start checking if Amplify is loaded when the DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log("DOM loaded, checking for Amplify...");
+      checkAmplifyLoaded();
+    });
   </script>
 </body>
 </html>
