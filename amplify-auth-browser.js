@@ -14,7 +14,7 @@ async function handleRegister(event) {
   }
 
   try {
-    const signUpResponse = await AWS.Amplify.Auth.signUp({
+    const signUpResponse = await Amplify.Auth.signUp({
       username: email,
       password,
       attributes: {
@@ -37,7 +37,7 @@ async function handleVerify(event) {
   const code = $('#codeInputVerify').val();
 
   try {
-    await AWS.Amplify.Auth.confirmSignUp(email, code);
+    await Amplify.Auth.confirmSignUp(email, code);
     showMessage('verify-status', '✅ Verification successful. Redirecting...');
     setTimeout(() => window.location.href = 'signin.html', 2000);
   } catch (error) {
@@ -53,12 +53,12 @@ async function handleSignin(event) {
   const password = $('#password').val();
 
   try {
-    const user = await AWS.Amplify.Auth.signIn(email, password);
+    const user = await Amplify.Auth.signIn(email, password);
     
     // Handle MFA if required
     if (user.challengeName === 'SMS_MFA' || user.challengeName === 'SOFTWARE_TOKEN_MFA') {
       const code = prompt("Enter MFA code from your Authenticator app:");
-      await AWS.Amplify.Auth.confirmSignIn(user, code, user.challengeName);
+      await Amplify.Auth.confirmSignIn(user, code, user.challengeName);
     }
     
     // Handle new password required
@@ -83,7 +83,7 @@ function showMessage(id, msg) {
 // Initialize Amplify
 function initAmplify() {
   // Configure Amplify
-  AWS.Amplify.configure(window.awsConfig);
+  Amplify.configure(window.awsConfig);
 }
 
 // Document ready
