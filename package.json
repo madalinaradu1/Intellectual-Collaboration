@@ -4,7 +4,7 @@
   "description": "Intellectual Collaboration Application",
   "main": "index.js",
   "dependencies": {
-    "aws-amplify": "^5.3.11"
+    "aws-amplify": "^5.3.27"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
