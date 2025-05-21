@@ -45,6 +45,48 @@
   <!-- Configuration -->
   <script src="config.js"></script>
   <script src="amplify-config.js"></script>
-  <script src="amplify-auth-browser.js"></script>
+  
+  <script>
+    // Initialize Amplify
+    document.addEventListener('DOMContentLoaded', function() {
+      // Make sure Amplify is loaded
+      if (typeof Amplify !== 'undefined') {
+        // Configure Amplify
+        Amplify.configure(window.awsConfig);
+        
+        // Bind form handler
+        document.getElementById('registrationForm').addEventListener('submit', async function(event) {
+          event.preventDefault();
+          
+          const email = document.getElementById('emailInputRegister').value;
+          const password = document.getElementById('passwordInputRegister').value;
+          const password2 = document.getElementById('password2InputRegister').value;
+          
+          if (password !== password2) {
+            document.getElementById('signup-status').textContent = 'Passwords do not match';
+            return;
+          }
+          
+          try {
+            const signUpResponse = await Amplify.Auth.signUp({
+              username: email,
+              password,
+              attributes: {
+                email
+              }
+            });
+            
+            document.getElementById('signup-status').textContent = '✅ Registered! Check your email for a verification code.';
+            setTimeout(() => window.location.href = 'verify.html', 2000);
+          } catch (error) {
+            document.getElementById('signup-status').textContent = error.message || 'Registration failed';
+          }
+        });
+      } else {
+        console.error("Amplify is not loaded");
+        document.getElementById('signup-status').textContent = "Registration system is not available. Please try again later.";
+      }
+    });
+  </script>
 </body>
 </html>

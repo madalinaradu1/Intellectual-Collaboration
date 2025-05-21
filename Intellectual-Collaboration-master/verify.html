@@ -37,6 +37,35 @@
   <!-- Configuration -->
   <script src="config.js"></script>
   <script src="amplify-config.js"></script>
-  <script src="amplify-auth-browser.js"></script>
+  
+  <script>
+    // Initialize Amplify
+    document.addEventListener('DOMContentLoaded', function() {
+      // Make sure Amplify is loaded
+      if (typeof Amplify !== 'undefined') {
+        // Configure Amplify
+        Amplify.configure(window.awsConfig);
+        
+        // Bind form handler
+        document.getElementById('verifyForm').addEventListener('submit', async function(event) {
+          event.preventDefault();
+          
+          const email = document.getElementById('emailInputVerify').value;
+          const code = document.getElementById('codeInputVerify').value;
+          
+          try {
+            await Amplify.Auth.confirmSignUp(email, code);
+            document.getElementById('verify-status').textContent = '✅ Verification successful. Redirecting...';
+            setTimeout(() => window.location.href = 'signin.html', 2000);
+          } catch (error) {
+            document.getElementById('verify-status').textContent = error.message || 'Verification failed';
+          }
+        });
+      } else {
+        console.error("Amplify is not loaded");
+        document.getElementById('verify-status').textContent = "Verification system is not available. Please try again later.";
+      }
+    });
+  </script>
 </body>
 </html>
