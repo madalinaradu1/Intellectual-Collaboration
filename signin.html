@@ -40,7 +40,49 @@
   <!-- Configuration -->
   <script src="config.js"></script>
   <script src="amplify-config.js"></script>
-  <script src="amplify-auth-browser.js"></script>
-
+  
+  <script>
+    // Initialize Amplify
+    document.addEventListener('DOMContentLoaded', function() {
+      // Make sure Amplify is loaded
+      if (typeof Amplify !== 'undefined') {
+        // Configure Amplify
+        Amplify.configure(window.awsConfig);
+        
+        // Bind form handler
+        document.getElementById('signinForm').addEventListener('submit', async function(event) {
+          event.preventDefault();
+          
+          const email = document.getElementById('username').value;
+          const password = document.getElementById('password').value;
+          
+          try {
+            const user = await Amplify.Auth.signIn(email, password);
+            
+            // Handle MFA if required
+            if (user.challengeName === 'SMS_MFA' || user.challengeName === 'SOFTWARE_TOKEN_MFA') {
+              const code = prompt("Enter MFA code from your Authenticator app:");
+              await Amplify.Auth.confirmSignIn(user, code, user.challengeName);
+            }
+            
+            // Handle new password required
+            if (user.challengeName === 'NEW_PASSWORD_REQUIRED') {
+              document.getElementById('error-message').textContent = "Your password must be reset. This flow is not yet supported.";
+              return;
+            }
+            
+            console.log("✅ Logged in successfully");
+            window.location.href = "index.html";
+          } catch (error) {
+            console.error("❌ Sign-in error:", error);
+            document.getElementById('error-message').textContent = error.message || "Login failed.";
+          }
+        });
+      } else {
+        console.error("Amplify is not loaded");
+        document.getElementById('error-message').textContent = "Authentication system is not available. Please try again later.";
+      }
+    });
+  </script>
 </body>
 </html>
