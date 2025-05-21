@@ -77,7 +77,7 @@
   <script>
     async function loadPosts() {
       try {
-        const token = await AWS.Amplify.Auth.currentSession().then(s => s.getIdToken().getJwtToken());
+        const token = await Amplify.Auth.currentSession().then(s => s.getIdToken().getJwtToken());
 
         const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
           headers: {
@@ -104,10 +104,10 @@
     }
 
     // Initialize Amplify
-    AWS.Amplify.configure(window.awsConfig);
+    Amplify.configure(window.awsConfig);
 
     // Check authentication and load user info
-    AWS.Amplify.Auth.currentAuthenticatedUser()
+    Amplify.Auth.currentAuthenticatedUser()
       .then(user => {
         const username = user.getUsername();
         document.getElementById("user-greeting").classList.remove("d-none");
