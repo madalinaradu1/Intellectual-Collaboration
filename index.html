@@ -79,31 +79,56 @@
       try {
         const session = await Amplify.Auth.currentSession();
         
-        // Try using the access token instead of ID token
+        // Get both tokens
         const idToken = session.getIdToken().getJwtToken();
         const accessToken = session.getAccessToken().getJwtToken();
         
         console.log("ID Token:", idToken.substring(0, 20) + "...");
         console.log("Access Token:", accessToken.substring(0, 20) + "...");
         
-        // Try with access token instead
-        const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
-          method: 'GET',
-          headers: {
-            'Authorization': accessToken,  // Use access token instead of ID token
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
-          mode: 'cors'
-        });
+        // Try different combinations
+        const tokenOptions = [
+          { name: "ID Token", value: idToken },
+          { name: "Access Token", value: accessToken },
+          { name: "Bearer ID Token", value: `Bearer ${idToken}` },
+          { name: "Bearer Access Token", value: `Bearer ${accessToken}` }
+        ];
         
-        console.log("Response status:", response.status);
+        let response;
+        let successOption;
         
-        if (!response.ok) {
-          const errorText = await response.text().catch(() => "No error text");
-          console.error("Error response:", errorText);
-          throw new Error(`HTTP error! status: ${response.status}`);
+        // Try each token option until one works
+        for (const option of tokenOptions) {
+          try {
+            console.log(`Trying with ${option.name}...`);
+            response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
+              method: 'GET',
+              headers: {
+                'Authorization': option.value,
+                'Content-Type': 'application/json'
+              },
+              credentials: 'include',
+              mode: 'cors'
+            });
+            
+            console.log(`${option.name} response status:`, response.status);
+            
+            if (response.ok) {
+              successOption = option.name;
+              console.log(`Success with ${option.name}!`);
+              break;
+            }
+          } catch (e) {
+            console.log(`Failed with ${option.name}: ${e.message}`);
+          }
         }
+        
+        if (!response || !response.ok) {
+          throw new Error(`All token options failed. Last status: ${response?.status}`);
+        }
+        
+        console.log(`Posts retrieved with ${successOption}`);
+        
 
         const posts = await response.json();
 
