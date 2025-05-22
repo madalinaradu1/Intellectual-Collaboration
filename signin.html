@@ -35,11 +35,17 @@
   <script src="bootstrap.min.js"></script>
   
   <!-- AWS Amplify -->
-  <!-- <script src="aws-amplify.min.js"></script> -->
-   <script>"https://cdn.jsdelivr.net/npm/aws-amplify@latest/dist/aws-amplify.min.js"</script>
+  <script src="https://unpkg.com/aws-amplify@4.3.43/dist/aws-amplify.min.js"></script>
   
   <!-- Configuration -->
   <script src="config.js"></script>
+  <script>
+    // Make sure _config is available
+    if (typeof _config === 'undefined') {
+      console.error("_config is not defined");
+      document.getElementById('error-message').textContent = "Configuration error. Please try again later.";
+    }
+  </script>
   <script src="amplify-config.js"></script>
   
   <script>
@@ -75,7 +81,7 @@
 
     // Check if Amplify is loaded
     function checkAmplifyLoaded() {
-      if (typeof Amplify !== 'undefined') {
+      if (typeof Amplify !== 'undefined' && window.awsConfig) {
         // Amplify is loaded, initialize it
         console.log("Amplify loaded successfully");
         Amplify.configure(window.awsConfig);
