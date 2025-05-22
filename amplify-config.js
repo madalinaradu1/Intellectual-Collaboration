@@ -14,14 +14,9 @@ if (typeof _config !== 'undefined') {
     API: {
       endpoints: [
         {
-          name: "icApi",
+          name: "ICCMSRestApi",
           endpoint: _config.api.invokeUrl,
-          region: _config.cognito.region,
-          custom_header: async () => {
-            return { 
-              Authorization: (await Amplify.Auth.currentSession()).getIdToken().getJwtToken()
-            }
-          }
+          region: _config.cognito.region
         }
       ]
     }
