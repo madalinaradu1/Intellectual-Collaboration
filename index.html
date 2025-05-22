@@ -16,6 +16,9 @@
       margin-bottom: 2rem;
     }
   </style>
+  
+  <!-- AWS Amplify (load in head with defer) -->
+  <script defer src="https://unpkg.com/aws-amplify@4.3.43/dist/aws-amplify.min.js"></script>
 </head>
 <body class="bg-light">
   <!-- Purple Banner -->
@@ -67,10 +70,6 @@
   <script src="jquery-3.1.0.js"></script>
   <script src="bootstrap.min.js"></script>
   
-  <!-- AWS Amplify -->
-  <!-- Alternative CDN -->
-<script src="https://cdn.jsdelivr.net/npm/aws-amplify@latest/dist/aws-amplify.min.js"></script>
-  
   <!-- Configuration -->
   <script src="config.js"></script>
   <script src="amplify-config.js"></script>
@@ -104,52 +103,48 @@
       }
     }
 
-    // Initialize app after Amplify is loaded
-    function initApp() {
-      // Check authentication and load user info
-      Amplify.Auth.currentAuthenticatedUser()
-        .then(user => {
-          const username = user.getUsername();
-          document.getElementById("user-greeting").classList.remove("d-none");
-          document.getElementById("user-greeting").textContent = `Welcome, ${username}! You are now logged in.`;
-
-          document.getElementById("announcements").innerHTML = `
-            <ul>
-              <li>🚀 IC CMS just launched — explore the new features!</li>
-              <li>🔐 MFA is now optional — set it up in your profile.</li>
-            </ul>
-          `;
-          
-          // Load posts after authentication
-          loadPosts();
-        })
-        .catch(err => {
-          console.warn("Not logged in:", err);
-          window.location.href = "signin.html";
-        });
-    }
-
-    // Check if Amplify is loaded
-    function checkAmplifyLoaded() {
-      if (typeof Amplify !== 'undefined') {
-        // Amplify is loaded, initialize it
-        console.log("Amplify loaded successfully");
+    // Wait for Amplify to load
+    window.onload = function() {
+      if (typeof window.aws_amplify !== 'undefined') {
+        // Use aws_amplify namespace
+        window.Amplify = window.aws_amplify.Amplify;
+        console.log("Amplify loaded via aws_amplify namespace");
+      }
+      
+      try {
+        if (typeof Amplify === 'undefined') {
+          throw new Error("AWS Amplify is not loaded");
+        }
+        
+        // Configure Amplify
         Amplify.configure(window.awsConfig);
         
-        // Initialize the app
-        initApp();
-      } else {
-        // Amplify not loaded yet, try again in 100ms
-        console.log("Waiting for Amplify to load...");
-        setTimeout(checkAmplifyLoaded, 100);
-      }
-    }
+        // Check authentication and load user info
+        Amplify.Auth.currentAuthenticatedUser()
+          .then(user => {
+            const username = user.getUsername();
+            document.getElementById("user-greeting").classList.remove("d-none");
+            document.getElementById("user-greeting").textContent = `Welcome, ${username}! You are now logged in.`;
 
-    // Start checking if Amplify is loaded when the DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log("DOM loaded, checking for Amplify...");
-      checkAmplifyLoaded();
-    });
+            document.getElementById("announcements").innerHTML = `
+              <ul>
+                <li>🚀 IC CMS just launched — explore the new features!</li>
+                <li>🔐 MFA is now optional — set it up in your profile.</li>
+              </ul>
+            `;
+            
+            // Load posts after authentication
+            loadPosts();
+          })
+          .catch(err => {
+            console.warn("Not logged in:", err);
+            window.location.href = "signin.html";
+          });
+      } catch (error) {
+        console.error("Error initializing Amplify:", error);
+        document.getElementById("announcements").textContent = "❌ Authentication system error. Please try again later.";
+      }
+    };
   </script>
 </body>
 </html>
