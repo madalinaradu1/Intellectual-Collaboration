@@ -79,55 +79,29 @@
       try {
         const session = await Amplify.Auth.currentSession();
         
-        // Get both tokens
+        // Get ID token and print it fully for inspection
         const idToken = session.getIdToken().getJwtToken();
-        const accessToken = session.getAccessToken().getJwtToken();
+        console.log("Full ID Token:", idToken);
         
-        console.log("ID Token:", idToken.substring(0, 20) + "...");
-        console.log("Access Token:", accessToken.substring(0, 20) + "...");
-        
-        // Try different combinations
-        const tokenOptions = [
-          { name: "ID Token", value: idToken },
-          { name: "Access Token", value: accessToken },
-          { name: "Bearer ID Token", value: `Bearer ${idToken}` },
-          { name: "Bearer Access Token", value: `Bearer ${accessToken}` }
-        ];
-        
-        let response;
-        let successOption;
-        
-        // Try each token option until one works
-        for (const option of tokenOptions) {
-          try {
-            console.log(`Trying with ${option.name}...`);
-            response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
-              method: 'GET',
-              headers: {
-                'Authorization': option.value,
-                'Content-Type': 'application/json'
-              },
-              credentials: 'include',
-              mode: 'cors'
-            });
-            
-            console.log(`${option.name} response status:`, response.status);
-            
-            if (response.ok) {
-              successOption = option.name;
-              console.log(`Success with ${option.name}!`);
-              break;
-            }
-          } catch (e) {
-            console.log(`Failed with ${option.name}: ${e.message}`);
+        // Try a simple request without credentials to see if CORS is working
+        const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken
           }
+          // Removed credentials and mode to simplify
+        });
+        
+        console.log("Response status:", response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => "No error text");
+          console.error("Error response:", errorText);
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        if (!response || !response.ok) {
-          throw new Error(`All token options failed. Last status: ${response?.status}`);
-        }
-        
-        console.log(`Posts retrieved with ${successOption}`);
+        const posts = await response.json();
+        console.log("Posts:", posts);
         
 
         const posts = await response.json();
