@@ -79,18 +79,15 @@ async function loadPosts() {
   try {
     const session = await Amplify.Auth.currentSession();
     
-    // Get both tokens and print them fully
+    // Get ID token only since we know it works in the test
     const idToken = session.getIdToken().getJwtToken();
-    const accessToken = session.getAccessToken().getJwtToken();
+    console.log("Using ID Token that worked in test");
     
-    console.log("Full ID Token:", idToken);
-    console.log("Full Access Token:", accessToken);
-    
-    // Make request with authorization
+    // Make request with authorization - exactly as in the test
     const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
       method: 'GET',
       headers: {
-        'Authorization': idToken,  // Use raw token without Bearer prefix
+        'Authorization': idToken,
         'Content-Type': 'application/json'
       }
     });
