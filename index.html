@@ -77,17 +77,12 @@
   <script>
     async function loadPosts() {
       try {
-        const session = await Amplify.Auth.currentSession();
-        const idToken = session.getIdToken().getJwtToken();
-        console.log("Full ID Token:", idToken);
-        
+        // Make a simple request without authorization
         const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${idToken}`,  // Add Bearer prefix
             'Content-Type': 'application/json'
-          },
-          mode: 'cors'  // Add back CORS mode
+          }
         });
         
         console.log("Response status:", response.status);
