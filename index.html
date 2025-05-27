@@ -79,44 +79,21 @@ async function loadPosts() {
   try {
     const session = await Amplify.Auth.currentSession();
     
-    // Try access token first
-    let token = session.getAccessToken().getJwtToken();
-    console.log("Trying Access Token:", token.substring(0, 20) + "...");
+    // Get both tokens and print them fully
+    const idToken = session.getIdToken().getJwtToken();
+    const accessToken = session.getAccessToken().getJwtToken();
     
-    let response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
+    console.log("Full ID Token:", idToken);
+    console.log("Full Access Token:", accessToken);
+    
+    // Make request with authorization
+    const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
       method: 'GET',
       headers: {
-        'Authorization': token,
+        'Authorization': idToken,  // Use raw token without Bearer prefix
         'Content-Type': 'application/json'
       }
     });
-    
-    // If access token fails, try ID token
-    if (response.status === 401) {
-      console.log("Access token failed, trying ID token...");
-      token = session.getIdToken().getJwtToken();
-      console.log("Trying ID Token:", token.substring(0, 20) + "...");
-      
-      response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
-        method: 'GET',
-        headers: {
-          'Authorization': token,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      // If ID token fails, try with Bearer prefix
-      if (response.status === 401) {
-        console.log("ID token failed, trying with Bearer prefix...");
-        response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-      }
-    }
     
     console.log("Response status:", response.status);
     console.log("Response headers:", [...response.headers.entries()]);
