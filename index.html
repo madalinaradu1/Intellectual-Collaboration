@@ -78,8 +78,13 @@
     async function loadPosts() {
       try {
         const session = await Amplify.Auth.currentSession();
-        // Use access token instead of ID token
+        
+        // Get both tokens and print them fully
+        const idToken = session.getIdToken().getJwtToken();
         const accessToken = session.getAccessToken().getJwtToken();
+        
+        console.log("Full ID Token:", idToken);
+        console.log("Full Access Token:", accessToken);
         
         // Make request with authorization
         const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
