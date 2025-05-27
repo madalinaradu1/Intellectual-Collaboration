@@ -75,53 +75,76 @@
   <script src="amplify-config.js"></script>
 
   <script>
-    async function loadPosts() {
-      try {
-        const session = await Amplify.Auth.currentSession();
-        
-        // Get both tokens and print them fully
-        const idToken = session.getIdToken().getJwtToken();
-        const accessToken = session.getAccessToken().getJwtToken();
-        
-        console.log("Full ID Token:", idToken);
-        console.log("Full Access Token:", accessToken);
-        
-        // Make request with authorization
-       const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
+async function loadPosts() {
+  try {
+    const session = await Amplify.Auth.currentSession();
+    
+    // Try access token first
+    let token = session.getAccessToken().getJwtToken();
+    console.log("Trying Access Token:", token.substring(0, 20) + "...");
+    
+    let response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
+      method: 'GET',
+      headers: {
+        'Authorization': token,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    // If access token fails, try ID token
+    if (response.status === 401) {
+      console.log("Access token failed, trying ID token...");
+      token = session.getIdToken().getJwtToken();
+      console.log("Trying ID Token:", token.substring(0, 20) + "...");
+      
+      response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
         method: 'GET',
         headers: {
-          'Authorization': idToken,  // Use raw token without Bearer prefix
+          'Authorization': token,
           'Content-Type': 'application/json'
-  }
-  });
-        
-        console.log("Response status:", response.status);
-        console.log("Response headers:", [...response.headers.entries()]);
-        
-        if (!response.ok) {
-          const errorText = await response.text().catch(() => "No error text");
-          console.error("Error response:", errorText);
-          throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
-        const posts = await response.json();
-        console.log("Posts:", posts);
-
-        const html = posts.map(p => `
-          <div class="border-bottom mb-3 pb-2">
-            <h5>${p.Title}</h5>
-            <p class="text-muted small">By ${p.Author} • ${p.Timestamp}</p>
-            <p>${p.Message}</p>
-          </div>
-        `).join("");
-
-        document.getElementById("announcements").innerHTML = html || "<p>No posts found.</p>";
-
-      } catch (err) {
-        console.error("Error loading posts:", err);
-        document.getElementById("announcements").textContent = "❌ Could not load posts.";
+      });
+      
+      // If ID token fails, try with Bearer prefix
+      if (response.status === 401) {
+        console.log("ID token failed, trying with Bearer prefix...");
+        response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
       }
     }
+    
+    console.log("Response status:", response.status);
+    console.log("Response headers:", [...response.headers.entries()]);
+    
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "No error text");
+      console.error("Error response:", errorText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const posts = await response.json();
+    console.log("Posts:", posts);
+
+    const html = posts.map(p => `
+      <div class="border-bottom mb-3 pb-2">
+        <h5>${p.Title}</h5>
+        <p class="text-muted small">By ${p.Author} • ${p.Timestamp}</p>
+        <p>${p.Message}</p>
+      </div>
+    `).join("");
+
+    document.getElementById("announcements").innerHTML = html || "<p>No posts found.</p>";
+
+  } catch (err) {
+    console.error("Error loading posts:", err);
+    document.getElementById("announcements").textContent = "❌ Could not load posts.";
+  }
+}
 
     // Wait for Amplify to load
     window.onload = function() {
