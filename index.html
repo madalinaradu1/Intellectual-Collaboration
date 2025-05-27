@@ -77,10 +77,14 @@
   <script>
     async function loadPosts() {
       try {
-        // Make a simple request without authorization
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        // Make request with authorization
         const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
           method: 'GET',
           headers: {
+            'Authorization': idToken,  // Send token without Bearer prefix
             'Content-Type': 'application/json'
           }
         });
