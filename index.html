@@ -87,13 +87,13 @@
         console.log("Full Access Token:", accessToken);
         
         // Make request with authorization
-        const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${idToken}`,  
-            'Content-Type': 'application/json'
-          }
-        });
+       const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
+        method: 'GET',
+        headers: {
+          'Authorization': idToken,  // Use raw token without Bearer prefix
+          'Content-Type': 'application/json'
+  }
+  });
         
         console.log("Response status:", response.status);
         console.log("Response headers:", [...response.headers.entries()]);
@@ -146,16 +146,11 @@
             document.getElementById("user-greeting").classList.remove("d-none");
             document.getElementById("user-greeting").textContent = `Welcome, ${username}! You are now logged in.`;
 
-            document.getElementById("announcements").innerHTML = `
-              <ul>
-                <li>🚀 IC CMS just launched — explore the new features!</li>
-                <li>🔐 MFA is now optional — set it up in your profile.</li>
-              </ul>
-            `;
-            
-            // Load posts after authentication
-            loadPosts();
-          })
+       // Don't show temporary announcements, just load posts
+          setTimeout(() => {
+          loadPosts();
+         }, 500);
+         })
           .catch(err => {
             console.warn("Not logged in:", err);
             window.location.href = "signin.html";
