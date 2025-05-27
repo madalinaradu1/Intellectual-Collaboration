@@ -90,7 +90,7 @@
         const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
           method: 'GET',
           headers: {
-            'Authorization': idToken,  
+            'Authorization': `Bearer ${idToken}`,  
             'Content-Type': 'application/json'
           }
         });
