@@ -85,7 +85,7 @@
         const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
           method: 'GET',
           headers: {
-            'Authorization': accessToken,  // Use access token instead of ID token
+            'Authorization': `Bearer ${accessToken}`,  // Add Bearer prefix to access token
             'Content-Type': 'application/json'
           }
         });
