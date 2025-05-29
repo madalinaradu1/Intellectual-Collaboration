@@ -83,13 +83,15 @@ async function loadPosts() {
     const idToken = session.getIdToken().getJwtToken();
     console.log("Using ID Token that worked in test");
     
-    // Make request with authorization - exactly as in the test
+    // Make request with authorization - with proper CORS headers
     const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
       method: 'GET',
       headers: {
         'Authorization': idToken,
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      mode: 'cors'
     });
     
     console.log("Response status:", response.status);
