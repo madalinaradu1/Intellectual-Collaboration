@@ -82,6 +82,11 @@
                 <label for="postMessage" class="form-label">Message</label>
                 <textarea class="form-control" id="postMessage" rows="4" required></textarea>
               </div>
+              <div class="mb-3">
+                <label for="postAttachment" class="form-label">Attachment (optional)</label>
+                <input type="file" class="form-control" id="postAttachment">
+                <div class="form-text">Max file size: 5MB</div>
+              </div>
             </form>
             <div id="postStatus" class="alert d-none"></div>
           </div>
@@ -143,13 +148,25 @@ async function loadPosts() {
     const posts = await response.json();
     console.log("Posts:", posts);
 
-    const html = posts.map(p => `
+    const html = posts.map(p => {
+      // Check if post has an attachment
+      const attachmentHtml = p.Attachment ? `
+        <div class="mt-2">
+          <a href="${p.Attachment.FileUrl}" target="_blank" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-paperclip"></i> ${p.Attachment.FileName}
+          </a>
+        </div>
+      ` : '';
+      
+      return `
       <div class="border-bottom mb-3 pb-2">
         <h5>${p.Title}</h5>
         <p class="text-muted small">By ${p.Author} • ${p.Timestamp}</p>
         <p>${p.Message}</p>
+        ${attachmentHtml}
       </div>
-    `).join("");
+      `;
+    }).join("");
 
     document.getElementById("announcements").innerHTML = html || "<p>No posts found.</p>";
 
@@ -159,6 +176,57 @@ async function loadPosts() {
   }
 }
 
+    // Function to get a presigned URL for S3 upload
+    async function getPresignedUrl(fileName, fileType) {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/cms/posts/getUploadUrl`, {
+          method: 'POST',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            fileName: fileName,
+            fileType: fileType
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to get upload URL');
+        }
+        
+        return await response.json();
+      } catch (err) {
+        console.error("Error getting presigned URL:", err);
+        throw err;
+      }
+    }
+    
+    // Function to upload file to S3 using presigned URL
+    async function uploadFileToS3(presignedUrl, file) {
+      try {
+        const response = await fetch(presignedUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to upload file to S3');
+        }
+        
+        return true;
+      } catch (err) {
+        console.error("Error uploading to S3:", err);
+        throw err;
+      }
+    }
+    
     // Function to create a new post
     async function createPost() {
       try {
@@ -166,6 +234,7 @@ async function loadPosts() {
         const title = document.getElementById('postTitle').value.trim();
         const message = document.getElementById('postMessage').value.trim();
         const groupId = document.getElementById('postGroup').value;
+        const fileInput = document.getElementById('postAttachment');
         const statusEl = document.getElementById('postStatus');
         
         // Validate
@@ -190,6 +259,45 @@ async function loadPosts() {
           groupId: groupId,
           Timestamp: new Date().toISOString()
         };
+        
+        // Handle file attachment if present
+        if (fileInput.files.length > 0) {
+          const file = fileInput.files[0];
+          
+          // Check file size (5MB limit)
+          if (file.size > 5 * 1024 * 1024) {
+            statusEl.textContent = "File size exceeds 5MB limit";
+            statusEl.classList.add('alert-danger');
+            statusEl.classList.remove('d-none', 'alert-success');
+            return;
+          }
+          
+          statusEl.textContent = "Uploading attachment...";
+          statusEl.classList.add('alert-info');
+          statusEl.classList.remove('d-none', 'alert-danger', 'alert-success');
+          
+          try {
+            // Get presigned URL
+            const uploadData = await getPresignedUrl(file.name, file.type);
+            
+            // Upload file to S3
+            await uploadFileToS3(uploadData.uploadUrl, file);
+            
+            // Add attachment info to post data
+            postData.Attachment = {
+              FileName: file.name,
+              FileType: file.type,
+              FileKey: uploadData.fileKey,
+              FileUrl: uploadData.fileUrl
+            };
+          } catch (err) {
+            console.error("Error handling attachment:", err);
+            statusEl.textContent = "Failed to upload attachment: " + err.message;
+            statusEl.classList.add('alert-danger');
+            statusEl.classList.remove('d-none', 'alert-info', 'alert-success');
+            return;
+          }
+        }
         
         // Log what we're sending
         console.log("Sending post data:", JSON.stringify(postData));
