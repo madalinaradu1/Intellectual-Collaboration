@@ -56,7 +56,7 @@
     </section>
     
     <!-- Create Post Modal -->
-    <div class="modal fade" id="createPostModal" tabindex="-1" aria-labelledby="createPostModalLabel" aria-hidden="true">
+    <div class="modal fade" id="createPostModal" tabindex="-1" aria-labelledby="createPostModalLabel">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
@@ -326,6 +326,7 @@ async function loadPosts() {
         // Clear form
         document.getElementById('postTitle').value = '';
         document.getElementById('postMessage').value = '';
+        document.getElementById('postAttachment').value = '';
         
         // Reload posts after a short delay
         setTimeout(() => {
@@ -333,6 +334,12 @@ async function loadPosts() {
           // Close modal after success
           const modal = bootstrap.Modal.getInstance(document.getElementById('createPostModal'));
           modal.hide();
+          
+          // Remove modal backdrop and restore body scrolling
+          document.querySelector('.modal-backdrop')?.remove();
+          document.body.classList.remove('modal-open');
+          document.body.style.overflow = '';
+          document.body.style.paddingRight = '';
         }, 1500);
         
       } catch (err) {
@@ -387,6 +394,8 @@ async function loadPosts() {
             document.getElementById('submitPost').addEventListener('click', function() {
               console.log("Submit post button clicked");
               createPost();
+              // Move focus to a visible element after submission
+              document.querySelector('.banner h1').focus();
             });
           })
           .catch(err => {
