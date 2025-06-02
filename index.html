@@ -208,16 +208,22 @@ async function loadPosts() {
     // Function to upload file to S3 using presigned URL
     async function uploadFileToS3(presignedUrl, file) {
       try {
+        console.log("Uploading to URL:", presignedUrl);
+        
+        // Don't add Content-Type header - it's already in the presigned URL
         const response = await fetch(presignedUrl, {
           method: 'PUT',
           body: file,
-          headers: {
-            'Content-Type': file.type
-          }
+          // Remove Content-Type header as it can interfere with the signature
+          mode: 'cors'
         });
         
+        console.log("S3 upload response status:", response.status);
+        
         if (!response.ok) {
-          throw new Error('Failed to upload file to S3');
+          const errorText = await response.text().catch(() => "No error details");
+          console.error("S3 error response:", errorText);
+          throw new Error(`Failed to upload file to S3: ${response.status} ${response.statusText}`);
         }
         
         return true;
