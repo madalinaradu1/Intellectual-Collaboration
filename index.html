@@ -194,11 +194,21 @@ async function loadPosts() {
           })
         });
         
+        const data = await response.json();
+        
+        // Check if file exists (status code 409 Conflict)
+        if (response.status === 409 && data.fileExists) {
+          return {
+            fileExists: true,
+            fileName: data.fileName
+          };
+        }
+        
         if (!response.ok) {
           throw new Error('Failed to get upload URL');
         }
         
-        return await response.json();
+        return data;
       } catch (err) {
         console.error("Error getting presigned URL:", err);
         throw err;
@@ -229,6 +239,77 @@ async function loadPosts() {
         return true;
       } catch (err) {
         console.error("Error uploading to S3:", err);
+        throw err;
+      }
+    }
+    
+    // Function to handle file upload with conflict resolution
+    async function handleFileUpload(file) {
+      const statusEl = document.getElementById('postStatus');
+      
+      try {
+        // First attempt to get presigned URL
+        let uploadData = await getPresignedUrl(file.name, file.type);
+        
+        // If we get a file exists error, prompt user for a new name
+        if (uploadData.fileExists) {
+          statusEl.textContent = `File "${file.name}" already exists. Please rename it.`;
+          statusEl.classList.add('alert-warning');
+          statusEl.classList.remove('d-none', 'alert-danger', 'alert-success', 'alert-info');
+          
+          // Create rename form
+          const renameForm = document.createElement('div');
+          renameForm.className = 'mt-2';
+          renameForm.innerHTML = `
+            <div class="input-group">
+              <input type="text" class="form-control" id="newFileName" value="${file.name}">
+              <button class="btn btn-outline-secondary" type="button" id="renameFileBtn">Rename</button>
+            </div>
+          `;
+          
+          statusEl.appendChild(renameForm);
+          
+          // Wait for user to rename file
+          return new Promise((resolve, reject) => {
+            document.getElementById('renameFileBtn').addEventListener('click', async () => {
+              const newFileName = document.getElementById('newFileName').value.trim();
+              if (!newFileName) {
+                return;
+              }
+              
+              try {
+                statusEl.textContent = `Trying with new name: ${newFileName}...`;
+                statusEl.classList.add('alert-info');
+                statusEl.classList.remove('alert-warning', 'alert-danger', 'alert-success');
+                
+                // Try upload with new name
+                uploadData = await getPresignedUrl(newFileName, file.type);
+                
+                if (uploadData.fileExists) {
+                  statusEl.textContent = `File "${newFileName}" also exists. Please try another name.`;
+                  statusEl.classList.add('alert-warning');
+                  statusEl.classList.remove('alert-info', 'alert-danger', 'alert-success');
+                  return;
+                }
+                
+                // Create a new file object with the new name
+                const newFile = new File([file], newFileName, { type: file.type });
+                
+                // Upload file with new name
+                await uploadFileToS3(uploadData.uploadUrl, newFile);
+                resolve(uploadData);
+              } catch (err) {
+                reject(err);
+              }
+            });
+          });
+        }
+        
+        // Upload file
+        await uploadFileToS3(uploadData.uploadUrl, file);
+        return uploadData;
+      } catch (err) {
+        console.error("Error handling file upload:", err);
         throw err;
       }
     }
@@ -283,15 +364,12 @@ async function loadPosts() {
           statusEl.classList.remove('d-none', 'alert-danger', 'alert-success');
           
           try {
-            // Get presigned URL
-            const uploadData = await getPresignedUrl(file.name, file.type);
-            
-            // Upload file to S3
-            await uploadFileToS3(uploadData.uploadUrl, file);
+            // Use the new handler function that checks for file existence
+            const uploadData = await handleFileUpload(file);
             
             // Add attachment info to post data
             postData.Attachment = {
-              FileName: file.name,
+              FileName: uploadData.fileKey.split('/').pop(), // Get just the filename part
               FileType: file.type,
               FileKey: uploadData.fileKey,
               FileUrl: uploadData.fileUrl
