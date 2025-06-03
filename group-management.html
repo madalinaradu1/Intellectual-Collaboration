@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IC CMS - Group Management</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>
+    .banner {
+      background-color: #6f42c1; /* Bootstrap purple */
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+      border-radius: 0 0 8px 8px;
+      margin-bottom: 2rem;
+    }
+  </style>
+  
+  <!-- AWS Amplify (load in head with defer) -->
+  <script defer src="https://unpkg.com/aws-amplify@4.3.43/dist/aws-amplify.min.js"></script>
+</head>
+<body class="bg-light">
+  <!-- Purple Banner -->
+  <div class="banner">
+    <h1 class="mb-2">Group Management</h1>
+    <p class="lead mb-0">Create and manage collaboration groups</p>
+  </div>
+
+  <div class="container">
+    <!-- Navigation -->
+    <nav class="mb-4">
+      <div class="d-flex justify-content-between">
+        <a href="index.html" class="btn btn-outline-secondary">← Back to Dashboard</a>
+        <div>
+          <button id="refreshGroups" class="btn btn-primary">Refresh Groups</button>
+          <button id="createGroup" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#createGroupModal">Create Group</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- User Greeting -->
+    <div id="user-greeting" class="alert alert-info text-center d-none"></div>
+
+    <!-- Group List -->
+    <section class="mb-4">
+      <div class="card">
+        <div class="card-header bg-white">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Groups</h5>
+            <div class="input-group" style="max-width: 300px;">
+              <input type="text" id="groupSearch" class="form-control" placeholder="Search groups...">
+              <button class="btn btn-outline-secondary" type="button" id="searchButton">Search</button>
+            </div>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Description</th>
+                  <th>Visibility</th>
+                  <th>Members</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="groupTableBody">
+                <tr>
+                  <td colspan="5" class="text-center py-4">Loading groups...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Group Details Modal -->
+  <div class="modal fade" id="groupDetailsModal" tabindex="-1" aria-labelledby="groupDetailsModalLabel">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="groupDetailsModalLabel">Group Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <ul class="nav nav-tabs" id="groupTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="true">Details</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="members-tab" data-bs-toggle="tab" data-bs-target="#members" type="button" role="tab" aria-controls="members" aria-selected="false">Members</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="content-tab" data-bs-toggle="tab" data-bs-target="#content" type="button" role="tab" aria-controls="content" aria-selected="false">Content</button>
+            </li>
+          </ul>
+          <div class="tab-content pt-3" id="groupTabContent">
+            <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab">
+              <form id="groupDetailsForm">
+                <div class="mb-3">
+                  <label for="groupName" class="form-label">Group Name</label>
+                  <input type="text" class="form-control" id="groupName">
+                </div>
+                <div class="mb-3">
+                  <label for="groupDescription" class="form-label">Description</label>
+                  <textarea class="form-control" id="groupDescription" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="groupIsPublic">
+                    <label class="form-check-label" for="groupIsPublic">
+                      Public Group (visible to all users)
+                    </label>
+                  </div>
+                </div>
+              </form>
+            </div>
+            <div class="tab-pane fade" id="members" role="tabpanel" aria-labelledby="members-tab">
+              <div class="d-flex justify-content-between mb-3">
+                <h6>Group Members</h6>
+                <button class="btn btn-sm btn-primary" id="addMemberBtn">Add Member</button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="memberTableBody">
+                    <tr>
+                      <td colspan="4" class="text-center">Loading members...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="tab-pane fade" id="content" role="tabpanel" aria-labelledby="content-tab">
+              <div class="d-flex justify-content-between mb-3">
+                <h6>Group Content</h6>
+                <button class="btn btn-sm btn-primary" id="createContentBtn">Create Content</button>
+              </div>
+              <div id="groupContent">
+                <p class="text-center">Loading content...</p>
+              </div>
+            </div>
+          </div>
+          <div id="groupStatus" class="alert d-none mt-3"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-danger me-auto" id="deleteGroup">Delete Group</button>
+          <button type="button" class="btn btn-primary" id="saveGroupDetails">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Group Modal -->
+  <div class="modal fade" id="createGroupModal" tabindex="-1" aria-labelledby="createGroupModalLabel">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="createGroupModalLabel">Create New Group</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="createGroupForm">
+            <div class="mb-3">
+              <label for="newGroupName" class="form-label">Group Name</label>
+              <input type="text" class="form-control" id="newGroupName" required>
+            </div>
+            <div class="mb-3">
+              <label for="newGroupDescription" class="form-label">Description</label>
+              <textarea class="form-control" id="newGroupDescription" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="newGroupIsPublic">
+                <label class="form-check-label" for="newGroupIsPublic">
+                  Public Group (visible to all users)
+                </label>
+              </div>
+            </div>
+          </form>
+          <div id="createGroupStatus" class="alert d-none mt-3"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="submitCreateGroup">Create Group</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Member Modal -->
+  <div class="modal fade" id="addMemberModal" tabindex="-1" aria-labelledby="addMemberModalLabel">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addMemberModalLabel">Add Group Member</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="addMemberForm">
+            <div class="mb-3">
+              <label for="memberEmail" class="form-label">User Email</label>
+              <input type="email" class="form-control" id="memberEmail" required>
+            </div>
+            <div class="mb-3">
+              <label for="memberRole" class="form-label">Role in Group</label>
+              <select class="form-control" id="memberRole" required>
+                <option value="Admin">Admin</option>
+                <option value="Officer">Officer</option>
+                <option value="Member" selected>Member</option>
+              </select>
+            </div>
+          </form>
+          <div id="addMemberStatus" class="alert d-none mt-3"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="submitAddMember">Add Member</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- jQuery and Bootstrap -->
+  <script src="jquery-3.1.0.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Configuration -->
+  <script src="config.js"></script>
+  <script src="amplify-config.js"></script>
+
+  <script>
+    // Function to check user permissions
+    async function checkUserPermissions() {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken();
+        const userRole = idToken.payload['custom:role'] || 'Guest';
+        
+        // Only certain roles can access this page
+        const allowedRoles = ['ApplicationAdmin', 'GroupAdmin', 'GroupOfficer'];
+        if (!allowedRoles.includes(userRole)) {
+          alert('You do not have permission to access this page.');
+          window.location.href = 'index.html';
+          return null;
+        }
+        
+        return userRole;
+      } catch (err) {
+        console.error("Error checking permissions:", err);
+        alert('Authentication error. Please log in again.');
+        window.location.href = 'signin.html';
+        return null;
+      }
+    }
+
+    // Function to load groups
+    async function loadGroups() {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/groups`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const groups = await response.json();
+        displayGroups(groups);
+      } catch (err) {
+        console.error("Error loading groups:", err);
+        document.getElementById("groupTableBody").innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center py-4 text-danger">
+              Error loading groups. ${err.message}
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Function to display groups in the table
+    function displayGroups(groups) {
+      const tableBody = document.getElementById("groupTableBody");
+      
+      if (!groups || groups.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center py-4">No groups found</td>
+          </tr>
+        `;
+        return;
+      }
+      
+      const html = groups.map(group => `
+        <tr data-group-id="${group.groupId}">
+          <td>${group.name}</td>
+          <td>${group.description.substring(0, 50)}${group.description.length > 50 ? '...' : ''}</td>
+          <td>${group.isPublic ? '<span class="badge bg-success">Public</span>' : '<span class="badge bg-secondary">Private</span>'}</td>
+          <td>${group.memberCount || 0}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary view-group">View</button>
+            <button class="btn btn-sm btn-outline-secondary ms-1 manage-members">Members</button>
+          </td>
+        </tr>
+      `).join("");
+      
+      tableBody.innerHTML = html;
+      
+      // Add event listeners to buttons
+      document.querySelectorAll('.view-group').forEach(button => {
+        button.addEventListener('click', function() {
+          const groupId = this.closest('tr').dataset.groupId;
+          openGroupDetails(groupId);
+        });
+      });
+      
+      document.querySelectorAll('.manage-members').forEach(button => {
+        button.addEventListener('click', function() {
+          const groupId = this.closest('tr').dataset.groupId;
+          openGroupDetails(groupId, 'members');
+        });
+      });
+    }
+
+    // Function to open group details modal
+    async function openGroupDetails(groupId, activeTab = 'details') {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/groups/${groupId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const group = await response.json();
+        
+        // Populate form
+        document.getElementById('groupName').value = group.name || '';
+        document.getElementById('groupDescription').value = group.description || '';
+        document.getElementById('groupIsPublic').checked = group.isPublic || false;
+        
+        // Store group ID for saving
+        document.getElementById('groupDetailsForm').dataset.groupId = groupId;
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('groupDetailsModal'));
+        modal.show();
+        
+        // Activate the requested tab
+        if (activeTab === 'members') {
+          const membersTab = document.getElementById('members-tab');
+          bootstrap.Tab.getInstance(membersTab).show();
+          loadGroupMembers(groupId);
+        } else if (activeTab === 'content') {
+          const contentTab = document.getElementById('content-tab');
+          bootstrap.Tab.getInstance(contentTab).show();
+          loadGroupContent(groupId);
+        }
+        
+        // Set up tab change listeners
+        document.getElementById('members-tab').addEventListener('click', () => loadGroupMembers(groupId));
+        document.getElementById('content-tab').addEventListener('click', () => loadGroupContent(groupId));
+      } catch (err) {
+        console.error("Error loading group details:", err);
+        alert(`Error loading group details: ${err.message}`);
+      }
+    }
+
+    // Function to load group members
+    async function loadGroupMembers(groupId) {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/groups/${groupId}/members`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const members = await response.json();
+        
+        const tableBody = document.getElementById("memberTableBody");
+        
+        if (!members || members.length === 0) {
+          tableBody.innerHTML = `
+            <tr>
+              <td colspan="4" class="text-center py-4">No members found</td>
+            </tr>
+          `;
+          return;
+        }
+        
+        const html = members.map(member => `
+          <tr data-user-id="${member.userId}">
+            <td>${member.firstName} ${member.lastName}</td>
+            <td>${member.email}</td>
+            <td><span class="badge bg-info">${member.role}</span></td>
+            <td>
+              <button class="btn btn-sm btn-outline-secondary change-role">Change Role</button>
+              <button class="btn btn-sm btn-outline-danger ms-1 remove-member">Remove</button>
+            </td>
+          </tr>
+        `).join("");
+        
+        tableBody.innerHTML = html;
+        
+        // Add event listeners
+        document.getElementById('addMemberBtn').addEventListener('click', () => {
+          document.getElementById('addMemberForm').dataset.groupId = groupId;
+          const modal = new bootstrap.Modal(document.getElementById('addMemberModal'));
+          modal.show();
+        });
+      } catch (err) {
+        console.error("Error loading group members:", err);
+        document.getElementById("memberTableBody").innerHTML = `
+          <tr>
+            <td colspan="4" class="text-center py-4 text-danger">
+              Error loading members. ${err.message}
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Function to load group content
+    async function loadGroupContent(groupId) {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/groups/${groupId}/posts`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const posts = await response.json();
+        
+        const contentDiv = document.getElementById("groupContent");
+        
+        if (!posts || posts.length === 0) {
+          contentDiv.innerHTML = `<p class="text-center">No content found for this group</p>`;
+          return;
+        }
+        
+        const html = posts.map(post => `
+          <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between">
+              <h6 class="mb-0">${post.Title}</h6>
+              <small class="text-muted">${new Date(post.Timestamp).toLocaleDateString()}</small>
+            </div>
+            <div class="card-body">
+              <p>${post.Message}</p>
+              ${post.Attachment ? `
+                <div>
+                  <a href="${post.Attachment.FileUrl}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-paperclip"></i> ${post.Attachment.FileName}
+                  </a>
+                </div>
+              ` : ''}
+            </div>
+            <div class="card-footer text-muted">
+              Posted by ${post.Author}
+            </div>
+          </div>
+        `).join("");
+        
+        contentDiv.innerHTML = html;
+      } catch (err) {
+        console.error("Error loading group content:", err);
+        document.getElementById("groupContent").innerHTML = `
+          <p class="text-center text-danger">Error loading content. ${err.message}</p>
+        `;
+      }
+    }
+
+    // Function to save group details
+    async function saveGroupDetails() {
+      try {
+        const groupId = document.getElementById('groupDetailsForm').dataset.groupId;
+        const name = document.getElementById('groupName').value;
+        const description = document.getElementById('groupDescription').value;
+        const isPublic = document.getElementById('groupIsPublic').checked;
+        
+        if (!name || !description) {
+          throw new Error('Group name and description are required');
+        }
+        
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/groups/${groupId}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name,
+            description,
+            isPublic
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const statusEl = document.getElementById('groupStatus');
+        statusEl.textContent = "Group updated successfully!";
+        statusEl.classList.add('alert-success');
+        statusEl.classList.remove('d-none', 'alert-danger');
+        
+        // Reload groups after a short delay
+        setTimeout(() => {
+          loadGroups();
+          // Close modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('groupDetailsModal'));
+          modal.hide();
+        }, 1500);
+      } catch (err) {
+        console.error("Error saving group details:", err);
+        const statusEl = document.getElementById('groupStatus');
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-success');
+      }
+    }
+
+    // Function to create a new group
+    async function createGroup() {
+      try {
+        const name = document.getElementById('newGroupName').value;
+        const description = document.getElementById('newGroupDescription').value;
+        const isPublic = document.getElementById('newGroupIsPublic').checked;
+        
+        if (!name || !description) {
+          throw new Error('Group name and description are required');
+        }
+        
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/groups`, {
+          method: 'POST',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name,
+            description,
+            isPublic
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const statusEl = document.getElementById('createGroupStatus');
+        statusEl.textContent = "Group created successfully!";
+        statusEl.classList.add('alert-success');
+        statusEl.classList.remove('d-none', 'alert-danger');
+        
+        // Clear form
+        document.getElementById('newGroupName').value = '';
+        document.getElementById('newGroupDescription').value = '';
+        document.getElementById('newGroupIsPublic').checked = false;
+        
+        // Reload groups after a short delay
+        setTimeout(() => {
+          loadGroups();
+          // Close modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('createGroupModal'));
+          modal.hide();
+        }, 1500);
+      } catch (err) {
+        console.error("Error creating group:", err);
+        const statusEl = document.getElementById('createGroupStatus');
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-success');
+      }
+    }
+
+    // Function to add a member to a group
+    async function addMemberToGroup() {
+      try {
+        const groupId = document.getElementById('addMemberForm').dataset.groupId;
+        const email = document.getElementById('memberEmail').value;
+        const role = document.getElementById('memberRole').value;
+        
+        if (!email) {
+          throw new Error('Email is required');
+        }
+        
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/groups/${groupId}/members`, {
+          method: 'POST',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email,
+            role
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const statusEl = document.getElementById('addMemberStatus');
+        statusEl.textContent = "Member added successfully!";
+        statusEl.classList.add('alert-success');
+        statusEl.classList.remove('d-none', 'alert-danger');
+        
+        // Clear form
+        document.getElementById('memberEmail').value = '';
+        
+        // Reload members after a short delay
+        setTimeout(() => {
+          loadGroupMembers(groupId);
+          // Close modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('addMemberModal'));
+          modal.hide();
+        }, 1500);
+      } catch (err) {
+        console.error("Error adding member:", err);
+        const statusEl = document.getElementById('addMemberStatus');
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-success');
+      }
+    }
+
+    // Function to delete a group
+    async function deleteGroup() {
+      if (!confirm('Are you sure you want to delete this group? This action cannot be undone.')) {
+        return;
+      }
+      
+      try {
+        const groupId = document.getElementById('groupDetailsForm').dataset.groupId;
+        
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/groups/${groupId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('groupDetailsModal'));
+        modal.hide();
+        
+        // Reload groups
+        loadGroups();
+      } catch (err) {
+        console.error("Error deleting group:", err);
+        alert(`Error deleting group: ${err.message}`);
+      }
+    }
+
+    // Wait for Amplify to load
+    window.onload = async function() {
+      if (typeof window.aws_amplify !== 'undefined') {
+        window.Amplify = window.aws_amplify.Amplify;
+      }
+      
+      try {
+        if (typeof Amplify === 'undefined') {
+          throw new Error("AWS Amplify is not loaded");
+        }
+        
+        // Configure Amplify
+        Amplify.configure(window.awsConfig);
+        
+        // Check permissions
+        const userRole = await checkUserPermissions();
+        if (!userRole) return; // Permission check failed
+        
+        // Load user info
+        const user = await Amplify.Auth.currentAuthenticatedUser();
+        const username = user.getUsername();
+        document.getElementById("user-greeting").classList.remove("d-none");
+        document.getElementById("user-greeting").textContent = `Welcome, ${username}! You are logged in as ${userRole}.`;
+        
+        // Load groups
+        loadGroups();
+        
+        // Set up event listeners
+        document.getElementById('refreshGroups').addEventListener('click', loadGroups);
+        document.getElementById('saveGroupDetails').addEventListener('click', saveGroupDetails);
+        document.getElementById('submitCreateGroup').addEventListener('click', createGroup);
+        document.getElementById('submitAddMember').addEventListener('click', addMemberToGroup);
+        document.getElementById('deleteGroup').addEventListener('click', deleteGroup);
+        document.getElementById('searchButton').addEventListener('click', function() {
+          const searchTerm = document.getElementById('groupSearch').value.toLowerCase();
+          const rows = document.querySelectorAll('#groupTableBody tr');
+          
+          rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+          });
+        });
+      } catch (error) {
+        console.error("Error initializing:", error);
+        alert("Authentication error. Please log in again.");
+        window.location.href = "signin.html";
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IC CMS - User Management</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>
+    .banner {
+      background-color: #6f42c1; /* Bootstrap purple */
+      color: white;
+      padding: 2rem 1rem;
+      text-align: center;
+      border-radius: 0 0 8px 8px;
+      margin-bottom: 2rem;
+    }
+  </style>
+  
+  <!-- AWS Amplify (load in head with defer) -->
+  <script defer src="https://unpkg.com/aws-amplify@4.3.43/dist/aws-amplify.min.js"></script>
+</head>
+<body class="bg-light">
+  <!-- Purple Banner -->
+  <div class="banner">
+    <h1 class="mb-2">User Management</h1>
+    <p class="lead mb-0">Manage users and permissions</p>
+  </div>
+
+  <div class="container">
+    <!-- Navigation -->
+    <nav class="mb-4">
+      <div class="d-flex justify-content-between">
+        <a href="index.html" class="btn btn-outline-secondary">← Back to Dashboard</a>
+        <div>
+          <button id="refreshUsers" class="btn btn-primary">Refresh Users</button>
+          <button id="inviteUser" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#inviteUserModal">Invite User</button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- User Greeting -->
+    <div id="user-greeting" class="alert alert-info text-center d-none"></div>
+
+    <!-- User List -->
+    <section class="mb-4">
+      <div class="card">
+        <div class="card-header bg-white">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Users</h5>
+            <div class="input-group" style="max-width: 300px;">
+              <input type="text" id="userSearch" class="form-control" placeholder="Search users...">
+              <button class="btn btn-outline-secondary" type="button" id="searchButton">Search</button>
+            </div>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="userTableBody">
+                <tr>
+                  <td colspan="5" class="text-center py-4">Loading users...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- User Details Modal -->
+  <div class="modal fade" id="userDetailsModal" tabindex="-1" aria-labelledby="userDetailsModalLabel">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="userDetailsModalLabel">User Details</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="userDetailsForm">
+            <div class="mb-3">
+              <label for="userFirstName" class="form-label">First Name</label>
+              <input type="text" class="form-control" id="userFirstName">
+            </div>
+            <div class="mb-3">
+              <label for="userLastName" class="form-label">Last Name</label>
+              <input type="text" class="form-control" id="userLastName">
+            </div>
+            <div class="mb-3">
+              <label for="userEmail" class="form-label">Email</label>
+              <input type="email" class="form-control" id="userEmail" readonly>
+            </div>
+            <div class="mb-3">
+              <label for="userRole" class="form-label">Role</label>
+              <select class="form-control" id="userRole">
+                <option value="ApplicationAdmin">Application Admin</option>
+                <option value="GroupAdmin">Group Admin</option>
+                <option value="GroupOfficer">Group Officer</option>
+                <option value="FacultyMember">Faculty Member</option>
+                <option value="Student">Student</option>
+                <option value="OffCampusUser">Off Campus User</option>
+                <option value="Guest">Guest</option>
+              </select>
+            </div>
+            <div id="userGroups" class="mb-3">
+              <label class="form-label">Groups</label>
+              <div class="list-group" id="userGroupsList">
+                <div class="list-group-item text-center">Loading groups...</div>
+              </div>
+            </div>
+          </form>
+          <div id="userStatus" class="alert d-none mt-3"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="saveUserDetails">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invite User Modal -->
+  <div class="modal fade" id="inviteUserModal" tabindex="-1" aria-labelledby="inviteUserModalLabel">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="inviteUserModalLabel">Invite New User</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="inviteUserForm">
+            <div class="mb-3">
+              <label for="inviteEmail" class="form-label">Email Address</label>
+              <input type="email" class="form-control" id="inviteEmail" required>
+            </div>
+            <div class="mb-3">
+              <label for="inviteFirstName" class="form-label">First Name</label>
+              <input type="text" class="form-control" id="inviteFirstName" required>
+            </div>
+            <div class="mb-3">
+              <label for="inviteLastName" class="form-label">Last Name</label>
+              <input type="text" class="form-control" id="inviteLastName" required>
+            </div>
+            <div class="mb-3">
+              <label for="inviteRole" class="form-label">Role</label>
+              <select class="form-control" id="inviteRole" required>
+                <option value="">Select a role</option>
+                <option value="ApplicationAdmin">Application Admin</option>
+                <option value="GroupAdmin">Group Admin</option>
+                <option value="GroupOfficer">Group Officer</option>
+                <option value="FacultyMember">Faculty Member</option>
+                <option value="Student">Student</option>
+                <option value="OffCampusUser">Off Campus User</option>
+                <option value="Guest">Guest</option>
+              </select>
+            </div>
+          </form>
+          <div id="inviteStatus" class="alert d-none mt-3"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="sendInvite">Send Invitation</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- jQuery and Bootstrap -->
+  <script src="jquery-3.1.0.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Configuration -->
+  <script src="config.js"></script>
+  <script src="amplify-config.js"></script>
+
+  <script>
+    // Function to check user permissions
+    async function checkUserPermissions() {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken();
+        const userRole = idToken.payload['custom:role'] || 'Guest';
+        
+        // Only ApplicationAdmin can access this page
+        if (userRole !== 'ApplicationAdmin') {
+          alert('You do not have permission to access this page.');
+          window.location.href = 'index.html';
+          return null;
+        }
+        
+        return userRole;
+      } catch (err) {
+        console.error("Error checking permissions:", err);
+        alert('Authentication error. Please log in again.');
+        window.location.href = 'signin.html';
+        return null;
+      }
+    }
+
+    // Function to load users
+    async function loadUsers() {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/users`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const users = await response.json();
+        displayUsers(users);
+      } catch (err) {
+        console.error("Error loading users:", err);
+        document.getElementById("userTableBody").innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center py-4 text-danger">
+              Error loading users. ${err.message}
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Function to display users in the table
+    function displayUsers(users) {
+      const tableBody = document.getElementById("userTableBody");
+      
+      if (!users || users.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center py-4">No users found</td>
+          </tr>
+        `;
+        return;
+      }
+      
+      const html = users.map(user => `
+        <tr data-user-id="${user.userId}">
+          <td>${user.firstName} ${user.lastName}</td>
+          <td>${user.email}</td>
+          <td><span class="badge bg-info">${user.role}</span></td>
+          <td>${user.enabled ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-warning">Inactive</span>'}</td>
+          <td>
+            <button class="btn btn-sm btn-outline-primary view-user">View</button>
+            <button class="btn btn-sm btn-outline-danger ms-1 disable-user">${user.enabled ? 'Disable' : 'Enable'}</button>
+          </td>
+        </tr>
+      `).join("");
+      
+      tableBody.innerHTML = html;
+      
+      // Add event listeners to buttons
+      document.querySelectorAll('.view-user').forEach(button => {
+        button.addEventListener('click', function() {
+          const userId = this.closest('tr').dataset.userId;
+          openUserDetails(userId);
+        });
+      });
+      
+      document.querySelectorAll('.disable-user').forEach(button => {
+        button.addEventListener('click', function() {
+          const userId = this.closest('tr').dataset.userId;
+          const isEnabled = this.textContent === 'Disable';
+          toggleUserStatus(userId, !isEnabled);
+        });
+      });
+    }
+
+    // Function to open user details modal
+    async function openUserDetails(userId) {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/users/${userId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const user = await response.json();
+        
+        // Populate form
+        document.getElementById('userFirstName').value = user.firstName || '';
+        document.getElementById('userLastName').value = user.lastName || '';
+        document.getElementById('userEmail').value = user.email || '';
+        document.getElementById('userRole').value = user.role || 'Guest';
+        
+        // Populate groups
+        const groupsList = document.getElementById('userGroupsList');
+        if (user.groups && user.groups.length > 0) {
+          groupsList.innerHTML = user.groups.map(group => `
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              ${group.name}
+              <span class="badge bg-primary">${group.role}</span>
+            </div>
+          `).join("");
+        } else {
+          groupsList.innerHTML = '<div class="list-group-item text-center">No groups</div>';
+        }
+        
+        // Store user ID for saving
+        document.getElementById('userDetailsForm').dataset.userId = userId;
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('userDetailsModal'));
+        modal.show();
+      } catch (err) {
+        console.error("Error loading user details:", err);
+        alert(`Error loading user details: ${err.message}`);
+      }
+    }
+
+    // Function to save user details
+    async function saveUserDetails() {
+      try {
+        const userId = document.getElementById('userDetailsForm').dataset.userId;
+        const firstName = document.getElementById('userFirstName').value;
+        const lastName = document.getElementById('userLastName').value;
+        const role = document.getElementById('userRole').value;
+        
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/users/${userId}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            firstName,
+            lastName,
+            role
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const statusEl = document.getElementById('userStatus');
+        statusEl.textContent = "User updated successfully!";
+        statusEl.classList.add('alert-success');
+        statusEl.classList.remove('d-none', 'alert-danger');
+        
+        // Reload users after a short delay
+        setTimeout(() => {
+          loadUsers();
+          // Close modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('userDetailsModal'));
+          modal.hide();
+        }, 1500);
+      } catch (err) {
+        console.error("Error saving user details:", err);
+        const statusEl = document.getElementById('userStatus');
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-success');
+      }
+    }
+
+    // Function to toggle user status (enable/disable)
+    async function toggleUserStatus(userId, disable) {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/users/${userId}/status`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            enabled: !disable
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Reload users
+        loadUsers();
+      } catch (err) {
+        console.error("Error toggling user status:", err);
+        alert(`Error toggling user status: ${err.message}`);
+      }
+    }
+
+    // Function to send user invitation
+    async function sendInvitation() {
+      try {
+        const email = document.getElementById('inviteEmail').value;
+        const firstName = document.getElementById('inviteFirstName').value;
+        const lastName = document.getElementById('inviteLastName').value;
+        const role = document.getElementById('inviteRole').value;
+        
+        if (!email || !firstName || !lastName || !role) {
+          throw new Error('Please fill in all required fields');
+        }
+        
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/users/invite`, {
+          method: 'POST',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email,
+            firstName,
+            lastName,
+            role
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const statusEl = document.getElementById('inviteStatus');
+        statusEl.textContent = "Invitation sent successfully!";
+        statusEl.classList.add('alert-success');
+        statusEl.classList.remove('d-none', 'alert-danger');
+        
+        // Clear form
+        document.getElementById('inviteEmail').value = '';
+        document.getElementById('inviteFirstName').value = '';
+        document.getElementById('inviteLastName').value = '';
+        document.getElementById('inviteRole').value = '';
+        
+        // Reload users after a short delay
+        setTimeout(() => {
+          loadUsers();
+          // Close modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('inviteUserModal'));
+          modal.hide();
+        }, 1500);
+      } catch (err) {
+        console.error("Error sending invitation:", err);
+        const statusEl = document.getElementById('inviteStatus');
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-success');
+      }
+    }
+
+    // Wait for Amplify to load
+    window.onload = async function() {
+      if (typeof window.aws_amplify !== 'undefined') {
+        window.Amplify = window.aws_amplify.Amplify;
+      }
+      
+      try {
+        if (typeof Amplify === 'undefined') {
+          throw new Error("AWS Amplify is not loaded");
+        }
+        
+        // Configure Amplify
+        Amplify.configure(window.awsConfig);
+        
+        // Check permissions
+        const userRole = await checkUserPermissions();
+        if (!userRole) return; // Permission check failed
+        
+        // Load user info
+        const user = await Amplify.Auth.currentAuthenticatedUser();
+        const username = user.getUsername();
+        document.getElementById("user-greeting").classList.remove("d-none");
+        document.getElementById("user-greeting").textContent = `Welcome, ${username}! You are logged in as ${userRole}.`;
+        
+        // Load users
+        loadUsers();
+        
+        // Set up event listeners
+        document.getElementById('refreshUsers').addEventListener('click', loadUsers);
+        document.getElementById('saveUserDetails').addEventListener('click', saveUserDetails);
+        document.getElementById('sendInvite').addEventListener('click', sendInvitation);
+        document.getElementById('searchButton').addEventListener('click', function() {
+          const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+          const rows = document.querySelectorAll('#userTableBody tr');
+          
+          rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+          });
+        });
+      } catch (error) {
+        console.error("Error initializing:", error);
+        alert("Authentication error. Please log in again.");
+        window.location.href = "signin.html";
+      }
+    };
+  </script>
+</body>
+</html>

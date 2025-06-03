@@ -43,14 +43,17 @@
     <section class="mb-4">
       <h4 class="text-success">⚡ Quick Actions</h4>
       <div class="row g-3">
-        <div class="col-md-4">
+        <div class="col-md-3">
           <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#createPostModal">Create New Post</button>
         </div>
-        <div class="col-md-4">
-          <button class="btn btn-outline-secondary w-100">Manage Groups</button>
+        <div class="col-md-3">
+          <a href="group-management.html" class="btn btn-outline-secondary w-100" data-requires-role="ApplicationAdmin,GroupAdmin,GroupOfficer">Manage Groups</a>
         </div>
-        <div class="col-md-4">
-          <button class="btn btn-outline-dark w-100">View Users</button>
+        <div class="col-md-3">
+          <a href="user-management.html" class="btn btn-outline-dark w-100" data-requires-role="ApplicationAdmin">Manage Users</a>
+        </div>
+        <div class="col-md-3">
+          <button class="btn btn-outline-info w-100" id="viewProfileBtn">My Profile</button>
         </div>
       </div>
     </section>
@@ -435,6 +438,32 @@ async function loadPosts() {
       }
     }
 
+    // Function to check user permissions
+    async function checkUserPermissions() {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken();
+        const userRole = idToken.payload['custom:role'] || 'Guest';
+        
+        // Store role in global variable
+        window.userRole = userRole;
+        
+        // Hide/show elements based on permissions
+        const elements = document.querySelectorAll('[data-requires-role]');
+        elements.forEach(el => {
+          const requiredRoles = el.dataset.requiresRole.split(',');
+          if (!requiredRoles.includes(userRole)) {
+            el.style.display = 'none';
+          }
+        });
+        
+        return userRole;
+      } catch (err) {
+        console.error("Error checking permissions:", err);
+        return 'Guest';
+      }
+    }
+    
     // Wait for Amplify to load
     window.onload = function() {
       console.log("Window loaded");
@@ -446,6 +475,11 @@ async function loadPosts() {
         console.log("Create button clicked");
         const modal = new bootstrap.Modal(document.getElementById('createPostModal'));
         modal.show();
+      });
+      
+      // Set up profile button
+      document.getElementById('viewProfileBtn').addEventListener('click', function() {
+        window.location.href = "profile.html";
       });
       
       if (typeof window.aws_amplify !== 'undefined') {
@@ -464,10 +498,14 @@ async function loadPosts() {
         
         // Check authentication and load user info
         Amplify.Auth.currentAuthenticatedUser()
-          .then(user => {
+          .then(async user => {
             const username = user.getUsername();
             document.getElementById("user-greeting").classList.remove("d-none");
             document.getElementById("user-greeting").textContent = `Welcome, ${username}! You are now logged in.`;
+
+            // Check permissions
+            const userRole = await checkUserPermissions();
+            console.log("User role:", userRole);
 
             // Don't show temporary announcements, just load posts
             setTimeout(() => {
