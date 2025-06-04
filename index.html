@@ -67,7 +67,7 @@
 
     <!-- Announcements -->
     <section class="mb-4">
-      <h4 class="text-primary">📢 Announcements</h4>
+      <h4 class="text-primary">Announcements</h4>
       <div id="announcements" class="bg-white p-3 border rounded shadow-sm">
         <p>Loading announcements...</p>
       </div>
@@ -75,7 +75,7 @@
 
     <!-- Quick Actions -->
     <section class="mb-4">
-      <h4 class="text-success">⚡ Quick Actions</h4>
+      <h4 class="text-success">Quick Actions</h4>
       <div class="row g-3">
         <div class="col-md-3">
           <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#createPostModal">Create New Post</button>
@@ -137,11 +137,11 @@
 
     <!-- Events -->
     <section>
-      <h4 class="text-warning">📅 Upcoming Events</h4>
+      <h4 class="text-warning">Upcoming Events</h4>
       <ul class="list-group shadow-sm">
-        <li class="list-group-item">🎓 Faculty Training – Sept 10</li>
-        <li class="list-group-item">🛠️ System Maintenance – Sept 14</li>
-        <li class="list-group-item">📢 Town Hall – Sept 21</li>
+        <li class="list-group-item">Faculty Training – Sept 10</li>
+        <li class="list-group-item">System Maintenance – Sept 14</li>
+        <li class="list-group-item">Town Hall – Sept 21</li>
       </ul>
     </section>
   </div>
@@ -186,21 +186,38 @@ async function loadPosts() {
     console.log("Posts:", posts);
 
     const html = posts.map(p => {
+      // Format the timestamp
+      const timestamp = new Date(p.Timestamp).toLocaleString();
+      
+      // Extract username from Author ID if it's a UUID
+      let authorName = p.Author;
+      if (authorName && authorName.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        // If it's a UUID, use a friendly name instead
+        authorName = "User " + authorName.substring(0, 4);
+      }
+      
       // Check if post has an attachment
       const attachmentHtml = p.Attachment ? `
         <div class="mt-2">
           <a href="${p.Attachment.FileUrl}" target="_blank" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-paperclip"></i> ${p.Attachment.FileName}
+            ${p.Attachment.FileName}
           </a>
         </div>
       ` : '';
       
       return `
-      <div class="border-bottom mb-3 pb-2">
-        <h5>${p.Title}</h5>
-        <p class="text-muted small">By ${p.Author} • ${p.Timestamp}</p>
-        <p>${p.Message}</p>
-        ${attachmentHtml}
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">${p.Title}</h5>
+          <span class="text-muted small">${timestamp}</span>
+        </div>
+        <div class="card-body">
+          <p class="card-text">${p.Message}</p>
+          ${attachmentHtml}
+        </div>
+        <div class="card-footer text-muted">
+          Posted by ${authorName}
+        </div>
       </div>
       `;
     }).join("");
@@ -209,7 +226,7 @@ async function loadPosts() {
 
   } catch (err) {
     console.error("Error loading posts:", err);
-    document.getElementById("announcements").textContent = "❌ Could not load posts.";
+    document.getElementById("announcements").textContent = "Could not load posts. Please try again later.";
   }
 }
 
@@ -609,7 +626,7 @@ async function loadPosts() {
           });
       } catch (error) {
         console.error("Error initializing Amplify:", error);
-        document.getElementById("announcements").textContent = "❌ Authentication system error. Please try again later.";
+        document.getElementById("announcements").textContent = "Authentication system error. Please try again later.";
       }
     };
   </script>
