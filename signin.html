@@ -8,8 +8,12 @@
   
   <!-- AWS Amplify (load in head with defer) -->
   <script defer src="https://unpkg.com/aws-amplify@4.3.43/dist/aws-amplify.min.js"></script>
+  <script defer src="navbar.js"></script>
 </head>
 <body class="bg-light">
+  <div class="text-center mt-3">
+    <a href="login-selection.html" class="btn btn-sm btn-outline-secondary">← Back to Login Selection</a>
+  </div>
   <div class="container d-flex justify-content-center align-items-center vh-100">
     <div class="card shadow p-4" style="max-width: 400px; width: 100%;">
       <h3 class="text-center mb-3">Sign In to IC CMS</h3>
@@ -48,6 +52,29 @@
         // Use aws_amplify namespace
         window.Amplify = window.aws_amplify.Amplify;
         console.log("Amplify loaded via aws_amplify namespace");
+      }
+      
+      // Check if we came from the login selection page
+      const urlParams = new URLSearchParams(window.location.search);
+      const userType = urlParams.get('type');
+      
+      if (userType) {
+        // Update the page based on user type
+        let title = "Sign In to IC CMS";
+        
+        switch(userType) {
+          case 'gcu':
+            title = "GCU Student, Faculty, Staff Sign In";
+            break;
+          case 'external':
+            title = "External Content Expert Sign In";
+            break;
+          case 'guest':
+            title = "Guest Sign In";
+            break;
+        }
+        
+        document.querySelector('h3').textContent = title;
       }
       
       // Bind form handler

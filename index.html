@@ -21,6 +21,40 @@
   <script defer src="https://unpkg.com/aws-amplify@4.3.43/dist/aws-amplify.min.js"></script>
 </head>
 <body class="bg-light">
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="index.html">IC CMS</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link active" href="index.html">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="group-management.html" data-requires-role="ApplicationAdmin,GroupAdmin,GroupOfficer">Groups</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="user-management.html" data-requires-role="ApplicationAdmin">Users</a>
+          </li>
+        </ul>
+        <ul class="navbar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="profile.html" id="navProfileLink">Profile</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="signin.html" id="navSignInLink">Sign In</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#" id="navSignOutLink">Sign Out</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  
   <!-- Purple Banner -->
   <div class="banner">
     <h1 class="mb-2">Welcome to the IC Content Management System</h1>
@@ -478,6 +512,31 @@ async function loadPosts() {
       }
     }
     
+    // Function to handle sign out
+    async function handleSignOut() {
+      try {
+        await Amplify.Auth.signOut();
+        console.log("User signed out successfully");
+        window.location.href = "login-selection.html";
+      } catch (error) {
+        console.error("Error signing out:", error);
+        alert("Error signing out. Please try again.");
+      }
+    }
+    
+    // Function to update navigation based on authentication state
+    function updateNavigation(isAuthenticated) {
+      if (isAuthenticated) {
+        document.getElementById('navSignInLink').style.display = 'none';
+        document.getElementById('navSignOutLink').style.display = '';
+        document.getElementById('navProfileLink').style.display = '';
+      } else {
+        document.getElementById('navSignInLink').style.display = '';
+        document.getElementById('navSignOutLink').style.display = 'none';
+        document.getElementById('navProfileLink').style.display = 'none';
+      }
+    }
+    
     // Wait for Amplify to load
     window.onload = function() {
       console.log("Window loaded");
@@ -494,6 +553,12 @@ async function loadPosts() {
       // Set up profile button
       document.getElementById('viewProfileBtn').addEventListener('click', function() {
         window.location.href = "profile.html";
+      });
+      
+      // Set up sign out button
+      document.getElementById('navSignOutLink').addEventListener('click', function(e) {
+        e.preventDefault();
+        handleSignOut();
       });
       
       if (typeof window.aws_amplify !== 'undefined') {
@@ -517,6 +582,9 @@ async function loadPosts() {
             document.getElementById("user-greeting").classList.remove("d-none");
             document.getElementById("user-greeting").textContent = `Welcome, ${username}! You are now logged in.`;
 
+            // Update navigation
+            updateNavigation(true);
+
             // Check permissions
             const userRole = await checkUserPermissions();
             console.log("User role:", userRole);
@@ -536,7 +604,8 @@ async function loadPosts() {
           })
           .catch(err => {
             console.warn("Not logged in:", err);
-            window.location.href = "signin.html";
+            updateNavigation(false);
+            window.location.href = "login-selection.html";
           });
       } catch (error) {
         console.error("Error initializing Amplify:", error);
