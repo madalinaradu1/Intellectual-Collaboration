@@ -168,12 +168,13 @@
         
         // Get additional user details from API
         const token = idToken.getJwtToken();
-        const response = await fetch(`${_config.api.invokeUrl}/users/me`, {
+        const response = await fetch(`${_config.api.invokeUrl}/cms/users/me`, {
           method: 'GET',
           headers: {
             'Authorization': token,
             'Content-Type': 'application/json'
-          }
+          },
+          credentials: 'include'
         });
         
         if (response.ok) {
@@ -290,12 +291,13 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/users/me`, {
+        const response = await fetch(`${_config.api.invokeUrl}/cms/users/me`, {
           method: 'PUT',
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
           },
+          credentials: 'include',
           body: JSON.stringify({
             firstName,
             lastName
