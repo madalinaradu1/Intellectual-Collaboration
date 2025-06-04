@@ -224,12 +224,13 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/users`, {
+        const response = await fetch(`${_config.api.invokeUrl}/cms/users`, {
           method: 'GET',
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
-          }
+          },
+          credentials: 'include'
         });
         
         if (!response.ok) {
@@ -301,12 +302,13 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/users/${userId}`, {
+        const response = await fetch(`${_config.api.invokeUrl}/cms/users/${userId}`, {
           method: 'GET',
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
-          }
+          },
+          credentials: 'include'
         });
         
         if (!response.ok) {
@@ -357,12 +359,13 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/users/${userId}`, {
+        const response = await fetch(`${_config.api.invokeUrl}/cms/users/${userId}`, {
           method: 'PUT',
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
           },
+          credentials: 'include',
           body: JSON.stringify({
             firstName,
             lastName,
@@ -401,12 +404,13 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/users/${userId}/status`, {
+        const response = await fetch(`${_config.api.invokeUrl}/cms/users/${userId}/status`, {
           method: 'PUT',
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
           },
+          credentials: 'include',
           body: JSON.stringify({
             enabled: !disable
           })
@@ -439,12 +443,13 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/users/invite`, {
+        const response = await fetch(`${_config.api.invokeUrl}/cms/users/invite`, {
           method: 'POST',
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
           },
+          credentials: 'include',
           body: JSON.stringify({
             email,
             firstName,

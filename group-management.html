@@ -283,12 +283,13 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/groups`, {
+        const response = await fetch(`${_config.api.invokeUrl}/cms/groups`, {
           method: 'GET',
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
-          }
+          },
+          credentials: 'include'
         });
         
         if (!response.ok) {
@@ -359,12 +360,13 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/groups/${groupId}`, {
+        const response = await fetch(`${_config.api.invokeUrl}/cms/groups/${groupId}`, {
           method: 'GET',
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
-          }
+          },
+          credentials: 'include'
         });
         
         if (!response.ok) {
@@ -411,12 +413,13 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/groups/${groupId}/members`, {
+        const response = await fetch(`${_config.api.invokeUrl}/cms/groups/${groupId}/members`, {
           method: 'GET',
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
-          }
+          },
+          credentials: 'include'
         });
         
         if (!response.ok) {
@@ -474,12 +477,13 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/groups/${groupId}/posts`, {
+        const response = await fetch(`${_config.api.invokeUrl}/cms/groups/${groupId}/posts`, {
           method: 'GET',
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
-          }
+          },
+          credentials: 'include'
         });
         
         if (!response.ok) {
@@ -541,12 +545,13 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/groups/${groupId}`, {
+        const response = await fetch(`${_config.api.invokeUrl}/cms/groups/${groupId}`, {
           method: 'PUT',
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
           },
+          credentials: 'include',
           body: JSON.stringify({
             name,
             description,
@@ -593,12 +598,13 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/groups`, {
+        const response = await fetch(`${_config.api.invokeUrl}/cms/groups`, {
           method: 'POST',
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
           },
+          credentials: 'include',
           body: JSON.stringify({
             name,
             description,
@@ -650,12 +656,13 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/groups/${groupId}/members`, {
+        const response = await fetch(`${_config.api.invokeUrl}/cms/groups/${groupId}/members`, {
           method: 'POST',
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
           },
+          credentials: 'include',
           body: JSON.stringify({
             email,
             role
@@ -702,12 +709,13 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/groups/${groupId}`, {
+        const response = await fetch(`${_config.api.invokeUrl}/cms/groups/${groupId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
-          }
+          },
+          credentials: 'include'
         });
         
         if (!response.ok) {
