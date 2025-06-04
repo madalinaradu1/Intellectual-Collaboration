@@ -189,7 +189,18 @@
       try {
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken();
-        const userRole = idToken.payload['custom:role'] || 'Guest';
+        
+        // Check for role in custom attribute
+        let userRole = idToken.payload['custom:role'] || 'Guest';
+        
+        // If user is in ApplicationAdmin group, set role to ApplicationAdmin
+        const cognitoGroups = idToken.payload['cognito:groups'] || [];
+        if (cognitoGroups.includes('ApplicationAdmin')) {
+          userRole = 'ApplicationAdmin';
+          console.log("User is in ApplicationAdmin group, setting role to ApplicationAdmin");
+        }
+        
+        console.log("Final user role:", userRole);
         
         // Only ApplicationAdmin can access this page
         if (userRole !== 'ApplicationAdmin') {

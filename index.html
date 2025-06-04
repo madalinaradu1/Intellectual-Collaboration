@@ -443,7 +443,18 @@ async function loadPosts() {
       try {
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken();
-        const userRole = idToken.payload['custom:role'] || 'Guest';
+        
+        // Check for role in custom attribute
+        let userRole = idToken.payload['custom:role'] || 'Guest';
+        
+        // If user is in ApplicationAdmin group, set role to ApplicationAdmin
+        const cognitoGroups = idToken.payload['cognito:groups'] || [];
+        if (cognitoGroups.includes('ApplicationAdmin')) {
+          userRole = 'ApplicationAdmin';
+          console.log("User is in ApplicationAdmin group, setting role to ApplicationAdmin");
+        }
+        
+        console.log("Final user role:", userRole);
         
         // Store role in global variable
         window.userRole = userRole;
@@ -454,6 +465,9 @@ async function loadPosts() {
           const requiredRoles = el.dataset.requiresRole.split(',');
           if (!requiredRoles.includes(userRole)) {
             el.style.display = 'none';
+          } else {
+            console.log("Showing element for role:", userRole, el);
+            el.style.display = ''; // Ensure element is visible
           }
         });
         
