@@ -17,6 +17,14 @@
 
       <form id="registrationForm">
         <div class="mb-3">
+          <label for="firstNameInputRegister" class="form-label">First Name</label>
+          <input type="text" class="form-control" id="firstNameInputRegister" required />
+        </div>
+        <div class="mb-3">
+          <label for="lastNameInputRegister" class="form-label">Last Name</label>
+          <input type="text" class="form-control" id="lastNameInputRegister" required />
+        </div>
+        <div class="mb-3">
           <label for="emailInputRegister" class="form-label">Email</label>
           <input type="email" class="form-control" id="emailInputRegister" required />
         </div>
@@ -63,9 +71,16 @@
     async function handleRegister(event) {
       event.preventDefault();
       
+      const firstName = document.getElementById('firstNameInputRegister').value;
+      const lastName = document.getElementById('lastNameInputRegister').value;
       const email = document.getElementById('emailInputRegister').value;
       const password = document.getElementById('passwordInputRegister').value;
       const password2 = document.getElementById('password2InputRegister').value;
+      
+      if (!firstName || !lastName) {
+        document.getElementById('signup-status').textContent = 'First name and last name are required';
+        return;
+      }
       
       if (password !== password2) {
         document.getElementById('signup-status').textContent = 'Passwords do not match';
@@ -84,7 +99,10 @@
           username: email,
           password,
           attributes: {
-            email
+            email,
+            given_name: firstName,
+            family_name: lastName,
+            'custom:role': 'Guest'  // Default role
           }
         });
         

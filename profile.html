@@ -77,6 +77,29 @@
       </div>
       
       <div class="col-md-8">
+        <!-- Role Request Section (only visible for Guest users) -->
+        <div class="profile-section" id="roleRequestSection" style="display: none;">
+          <h4 class="mb-4">Request Role Upgrade</h4>
+          <form id="roleRequestForm">
+            <div class="mb-3">
+              <label for="requestedRole" class="form-label">Requested Role</label>
+              <select class="form-control" id="requestedRole" required>
+                <option value="">Select a role</option>
+                <option value="ExternalExpert">External Expert</option>
+                <option value="FacultyMember">Faculty Member</option>
+                <option value="Student">Student</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="justification" class="form-label">Justification</label>
+              <textarea class="form-control" id="justification" rows="3" required 
+                placeholder="Please explain why you need this role and provide any relevant information."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" id="submitRoleRequest">Submit Request</button>
+          </form>
+          <div id="roleRequestStatus" class="alert mt-3 d-none"></div>
+        </div>
+        
         <div class="profile-section">
           <h4 class="mb-4">My Groups</h4>
           <div class="table-responsive">
@@ -150,6 +173,16 @@
   <script src="amplify-config.js"></script>
 
   <script>
+    // Show role request section only for Guest users
+    function updateRoleRequestVisibility(userRole) {
+      const roleRequestSection = document.getElementById('roleRequestSection');
+      if (userRole === 'Guest') {
+        roleRequestSection.style.display = 'block';
+      } else {
+        roleRequestSection.style.display = 'none';
+      }
+    }
+    
     // Function to load user profile
     async function loadUserProfile() {
       try {
@@ -159,9 +192,13 @@
         
         // Basic user info from token
         document.getElementById('email').value = idToken.payload.email || '';
-        document.getElementById('role').value = idToken.payload['custom:role'] || 'Guest';
+        const userRole = idToken.payload['custom:role'] || 'Guest';
+        document.getElementById('role').value = userRole;
         document.getElementById('firstName').value = idToken.payload.given_name || '';
         document.getElementById('lastName').value = idToken.payload.family_name || '';
+        
+        // Update role request visibility
+        updateRoleRequestVisibility(userRole);
         
         // Format last login time
         const lastLogin = new Date(user.getSignInUserSession().getAccessToken().getIssuedAt() * 1000);
@@ -402,6 +439,53 @@
         document.getElementById('submitChangePassword').addEventListener('click', changePassword);
         document.getElementById('setupMfaBtn').addEventListener('click', function() {
           alert('MFA setup functionality will be implemented in a future update.');
+        });
+        
+        // Handle role request submission
+        document.getElementById('roleRequestForm').addEventListener('submit', async function(e) {
+          e.preventDefault();
+          
+          const requestedRole = document.getElementById('requestedRole').value;
+          const justification = document.getElementById('justification').value;
+          const statusEl = document.getElementById('roleRequestStatus');
+          
+          try {
+            const session = await Amplify.Auth.currentSession();
+            const idToken = session.getIdToken().getJwtToken();
+            const user = await Amplify.Auth.currentAuthenticatedUser();
+            
+            const response = await fetch(`${_config.api.invokeUrl}/cms/users/role-request`, {
+              method: 'POST',
+              headers: {
+                'Authorization': idToken,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                userId: user.attributes.sub,
+                email: user.attributes.email,
+                requestedRole: requestedRole,
+                justification: justification,
+                timestamp: new Date().toISOString()
+              }),
+              credentials: 'include'
+            });
+            
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            statusEl.textContent = "Role request submitted successfully. An administrator will review your request.";
+            statusEl.classList.add('alert-success');
+            statusEl.classList.remove('d-none', 'alert-danger');
+            
+            // Clear form
+            document.getElementById('justification').value = '';
+          } catch (err) {
+            console.error("Error submitting role request:", err);
+            statusEl.textContent = `Error: ${err.message}`;
+            statusEl.classList.add('alert-danger');
+            statusEl.classList.remove('d-none', 'alert-success');
+          }
         });
       } catch (error) {
         console.error("Error initializing:", error);
