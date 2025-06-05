@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IC CMS - Bulk User Import</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <style>
+    body {
+      background: linear-gradient(180deg, rgb(117, 81, 194), rgb(255, 255, 255));
+      min-height: 100vh;
+    }
+    .content-container {
+      padding-top: 2rem;
+    }
+    .import-section {
+      background-color: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+  </style>
+  
+  <!-- AWS Amplify (load in head with defer) -->
+  <script defer src="https://unpkg.com/aws-amplify@4.3.43/dist/aws-amplify.min.js"></script>
+  <script defer src="navbar.js"></script>
+</head>
+<body>
+  <div class="container content-container">
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="import-section">
+          <h2 class="mb-4">Bulk User Import</h2>
+          <p class="mb-4">Upload a CSV file with user information to create multiple accounts at once. Users will receive an email with instructions to set their password.</p>
+          
+          <form id="importForm">
+            <div class="mb-3">
+              <label for="csvFile" class="form-label">CSV File</label>
+              <input type="file" class="form-control" id="csvFile" accept=".csv" required>
+              <div class="form-text">
+                File must be in CSV format with the following columns: firstName, lastName, email, role
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label class="form-label">CSV Format Example:</label>
+              <pre class="bg-light p-2 border rounded">firstName,lastName,email,role
+John,Doe,john.doe@example.com,FacultyMember
+Jane,Smith,jane.smith@example.com,Student</pre>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Upload and Process</button>
+          </form>
+          
+          <div id="importStatus" class="alert mt-3 d-none"></div>
+          
+          <div id="importResults" class="mt-4 d-none">
+            <h4>Import Results</h4>
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Name</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="resultsTableBody">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- jQuery and Bootstrap -->
+  <script src="jquery-3.1.0.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Configuration -->
+  <script src="config.js"></script>
+  <script src="amplify-config.js"></script>
+  
+  <script>
+    // Function to parse CSV
+    function parseCSV(text) {
+      const lines = text.split('\n');
+      const headers = lines[0].split(',').map(h => h.trim());
+      
+      const results = [];
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        
+        const values = lines[i].split(',').map(v => v.trim());
+        const row = {};
+        
+        headers.forEach((header, index) => {
+          row[header] = values[index];
+        });
+        
+        results.push(row);
+      }
+      
+      return results;
+    }
+    
+    // Function to validate CSV data
+    function validateCSVData(data) {
+      const requiredFields = ['firstName', 'lastName', 'email', 'role'];
+      const validRoles = ['FacultyMember', 'Student', 'ExternalExpert', 'Guest', 'GroupAdmin', 'GroupOfficer'];
+      const errors = [];
+      
+      data.forEach((row, index) => {
+        const rowNum = index + 2; // +2 because index starts at 0 and we skip header row
+        
+        // Check required fields
+        requiredFields.forEach(field => {
+          if (!row[field]) {
+            errors.push(`Row ${rowNum}: Missing ${field}`);
+          }
+        });
+        
+        // Validate email format
+        if (row.email && !row.email.match(/^[^@]+@[^@]+\.[^@]+$/)) {
+          errors.push(`Row ${rowNum}: Invalid email format - ${row.email}`);
+        }
+        
+        // Validate role
+        if (row.role && !validRoles.includes(row.role)) {
+          errors.push(`Row ${rowNum}: Invalid role - ${row.role}. Must be one of: ${validRoles.join(', ')}`);
+        }
+      });
+      
+      return errors;
+    }
+    
+    // Function to handle form submission
+    async function handleImport(event) {
+      event.preventDefault();
+      
+      const fileInput = document.getElementById('csvFile');
+      const statusEl = document.getElementById('importStatus');
+      const resultsEl = document.getElementById('importResults');
+      const resultsTableBody = document.getElementById('resultsTableBody');
+      
+      if (!fileInput.files || fileInput.files.length === 0) {
+        statusEl.textContent = "Please select a CSV file";
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-success');
+        return;
+      }
+      
+      try {
+        // Read file
+        const file = fileInput.files[0];
+        const text = await file.text();
+        const userData = parseCSV(text);
+        
+        // Validate data
+        const validationErrors = validateCSVData(userData);
+        if (validationErrors.length > 0) {
+          statusEl.innerHTML = `<strong>Validation errors:</strong><ul>${validationErrors.map(err => `<li>${err}</li>`).join('')}</ul>`;
+          statusEl.classList.add('alert-danger');
+          statusEl.classList.remove('d-none', 'alert-success');
+          return;
+        }
+        
+        // Show processing message
+        statusEl.textContent = "Processing users...";
+        statusEl.classList.add('alert-info');
+        statusEl.classList.remove('d-none', 'alert-danger', 'alert-success');
+        
+        // Get auth token
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        // Send to API
+        const response = await fetch(`${_config.api.invokeUrl}/cms/users/bulk-import`, {
+          method: 'POST',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ users: userData }),
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        // Show success message
+        statusEl.textContent = `Successfully processed ${result.successful.length} users. ${result.failed.length} failures.`;
+        statusEl.classList.add('alert-success');
+        statusEl.classList.remove('alert-info', 'alert-danger');
+        
+        // Show results table
+        resultsEl.classList.remove('d-none');
+        
+        // Populate results table
+        const allResults = [
+          ...result.successful.map(user => ({ ...user, status: 'Success' })),
+          ...result.failed.map(user => ({ ...user, status: 'Failed' }))
+        ];
+        
+        resultsTableBody.innerHTML = allResults.map(user => `
+          <tr>
+            <td>${user.email}</td>
+            <td>${user.firstName} ${user.lastName}</td>
+            <td>${user.role}</td>
+            <td>${user.status === 'Success' ? 
+              '<span class="badge bg-success">Success</span>' : 
+              `<span class="badge bg-danger">Failed</span><br><small class="text-danger">${user.error || ''}</small>`}
+            </td>
+          </tr>
+        `).join('');
+        
+      } catch (err) {
+        console.error("Error importing users:", err);
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-info', 'alert-success');
+      }
+    }
+    
+    // Wait for Amplify to load
+    window.onload = async function() {
+      if (typeof window.aws_amplify !== 'undefined') {
+        window.Amplify = window.aws_amplify.Amplify;
+      }
+      
+      try {
+        if (typeof Amplify === 'undefined') {
+          throw new Error("AWS Amplify is not loaded");
+        }
+        
+        // Configure Amplify
+        Amplify.configure(window.awsConfig);
+        
+        // Check authentication and permissions
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken();
+        
+        // Check for role in custom attribute or Cognito groups
+        let userRole = idToken.payload['custom:role'] || 'Guest';
+        const cognitoGroups = idToken.payload['cognito:groups'] || [];
+        if (cognitoGroups.includes('ApplicationAdmin')) {
+          userRole = 'ApplicationAdmin';
+        }
+        
+        // Only ApplicationAdmin and GroupAdmin can access this page
+        if (userRole !== 'ApplicationAdmin' && userRole !== 'GroupAdmin') {
+          alert('You do not have permission to access this page.');
+          window.location.href = 'index.html';
+          return;
+        }
+        
+        // Set up form submission handler
+        document.getElementById('importForm').addEventListener('submit', handleImport);
+        
+      } catch (error) {
+        console.error("Error initializing:", error);
+        alert("Authentication error. Please log in again.");
+        window.location.href = "signin.html";
+      }
+    };
+  </script>
+</body>
+</html>

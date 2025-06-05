@@ -79,11 +79,35 @@ function addNavigationBar() {
     handleSignOut();
   });
   
-  // Check authentication state
+  // Check authentication state and update role-based elements
   try {
     Amplify.Auth.currentAuthenticatedUser()
-      .then(() => {
+      .then(async (user) => {
         updateNavigation(true);
+        
+        // Get user role
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken();
+        let userRole = idToken.payload['custom:role'] || 'Guest';
+        const cognitoGroups = idToken.payload['cognito:groups'] || [];
+        
+        if (cognitoGroups.includes('ApplicationAdmin')) {
+          userRole = 'ApplicationAdmin';
+        }
+        
+        console.log("Navbar - User role:", userRole);
+        
+        // Update role-based elements
+        const roleElements = document.querySelectorAll('[data-requires-role]');
+        roleElements.forEach(el => {
+          const requiredRoles = el.dataset.requiresRole.split(',');
+          if (requiredRoles.includes(userRole)) {
+            el.style.display = '';
+            console.log("Showing element for role:", userRole, el);
+          } else {
+            el.style.display = 'none';
+          }
+        });
       })
       .catch(() => {
         updateNavigation(false);
