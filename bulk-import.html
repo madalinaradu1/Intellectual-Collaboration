@@ -49,6 +49,9 @@
               <pre class="bg-light p-2 border rounded">firstName,lastName,email,role
 John,Doe,john.doe@example.com,FacultyMember
 Jane,Smith,jane.smith@example.com,Student</pre>
+              <div class="alert alert-warning mt-2">
+                <strong>Important:</strong> Make sure there are no spaces in email addresses. If your CSV has spaces in email addresses, please remove them before uploading.
+              </div>
             </div>
             
             <button type="submit" class="btn btn-primary">Upload and Process</button>
@@ -89,21 +92,30 @@ Jane,Smith,jane.smith@example.com,Student</pre>
   <script>
     // Function to parse CSV
     function parseCSV(text) {
+      // If there's no header row, add one
+      if (!text.toLowerCase().includes('firstname') && !text.toLowerCase().includes('lastname')) {
+        text = "firstName,lastName,email,role\n" + text;
+      }
+      
       const lines = text.split('\n');
-      const headers = lines[0].split(',').map(h => h.trim());
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
       
       const results = [];
       for (let i = 1; i < lines.length; i++) {
         if (!lines[i].trim()) continue;
         
-        const values = lines[i].split(',').map(v => v.trim());
+        // Handle case where there might be spaces in email addresses
         const row = {};
+        const values = lines[i].split(',');
         
-        headers.forEach((header, index) => {
-          row[header] = values[index];
-        });
-        
-        results.push(row);
+        // Make sure we have exactly 4 values
+        if (values.length === 4) {
+          row.firstName = values[0].trim();
+          row.lastName = values[1].trim();
+          row.email = values[2].trim();
+          row.role = values[3].trim();
+          results.push(row);
+        }
       }
       
       return results;
