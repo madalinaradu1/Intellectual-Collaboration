@@ -77,6 +77,21 @@ Jane,Smith,jane.smith@example.com,Student</pre>
             </div>
           </div>
         </div>
+        
+        <div class="import-section mt-4">
+          <h2 class="mb-4">Delete Users</h2>
+          <p class="mb-4">Delete users from the system for testing purposes.</p>
+          
+          <form id="deleteForm">
+            <div class="mb-3">
+              <label for="deleteEmail" class="form-label">Email Address</label>
+              <input type="email" class="form-control" id="deleteEmail" required>
+            </div>
+            <button type="submit" class="btn btn-danger">Delete User</button>
+          </form>
+          
+          <div id="deleteStatus" class="alert mt-3 d-none"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -275,8 +290,9 @@ Jane,Smith,jane.smith@example.com,Student</pre>
           return;
         }
         
-        // Set up form submission handler
+        // Set up form submission handlers
         document.getElementById('importForm').addEventListener('submit', handleImport);
+        document.getElementById('deleteForm').addEventListener('submit', handleDelete);
         
       } catch (error) {
         console.error("Error initializing:", error);
@@ -284,6 +300,62 @@ Jane,Smith,jane.smith@example.com,Student</pre>
         window.location.href = "signin.html";
       }
     };
+    
+    // Function to handle user deletion
+    async function handleDelete(event) {
+      event.preventDefault();
+      
+      const email = document.getElementById('deleteEmail').value;
+      const statusEl = document.getElementById('deleteStatus');
+      
+      if (!email) {
+        statusEl.textContent = "Please enter an email address";
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-success');
+        return;
+      }
+      
+      try {
+        // Show processing message
+        statusEl.textContent = "Deleting user...";
+        statusEl.classList.add('alert-info');
+        statusEl.classList.remove('d-none', 'alert-danger', 'alert-success');
+        
+        // Get auth token
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        // Send to API
+        const response = await fetch(`${_config.api.invokeUrl}/cms/users/delete`, {
+          method: 'POST',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email }),
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+        
+        // Show success message
+        statusEl.textContent = `User ${email} deleted successfully.`;
+        statusEl.classList.add('alert-success');
+        statusEl.classList.remove('alert-info', 'alert-danger');
+        
+        // Clear form
+        document.getElementById('deleteEmail').value = '';
+        
+      } catch (err) {
+        console.error("Error deleting user:", err);
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-info', 'alert-success');
+      }
+    }
   </script>
 </body>
 </html>
