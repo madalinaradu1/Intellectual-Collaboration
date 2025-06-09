@@ -79,55 +79,67 @@ function addNavigationBar() {
     handleSignOut();
   });
   
-  // Check authentication state and update role-based elements
-  try {
-    Amplify.Auth.currentAuthenticatedUser()
-      .then(async (user) => {
-        updateNavigation(true);
-        
-        // Get user role
-        const session = await Amplify.Auth.currentSession();
-        const idToken = session.getIdToken();
-        let userRole = idToken.payload['custom:role'] || 'Guest';
-        const cognitoGroups = idToken.payload['cognito:groups'] || [];
-        
-        if (cognitoGroups.includes('ApplicationAdmin')) {
-          userRole = 'ApplicationAdmin';
-        }
-        
-        console.log("Navbar - User role:", userRole);
-        
-        // Update role-based elements
-        const roleElements = document.querySelectorAll('[data-requires-role]');
-        roleElements.forEach(el => {
-          const requiredRoles = el.dataset.requiresRole.split(',');
-          if (requiredRoles.includes(userRole)) {
-            el.style.display = '';
-            console.log("Showing element for role:", userRole, el);
-          } else {
-            el.style.display = 'none';
-          }
-        });
-      })
-      .catch(() => {
-        updateNavigation(false);
-      });
-  } catch (error) {
-    updateNavigation(false);
-  }
+  // We'll handle authentication check in the window.onload function
+  updateNavigation(false);
 }
 
 // Call this function after the DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-  if (typeof Amplify !== 'undefined') {
-    addNavigationBar();
-  } else {
-    // Wait for Amplify to load
-    window.addEventListener('load', function() {
+  // First add the navigation bar structure
+  addNavigationBar();
+  
+  // Then try to configure Amplify if it's available
+  window.addEventListener('load', function() {
+    try {
+      // Check if Amplify is available
       if (typeof window.aws_amplify !== 'undefined') {
         window.Amplify = window.aws_amplify.Amplify;
       }
-      addNavigationBar();
-    });
-  }
+      
+      // Check if config is available
+      if (typeof window.awsConfig !== 'undefined' && typeof Amplify !== 'undefined') {
+        console.log("Configuring Amplify in navbar.js");
+        Amplify.configure(window.awsConfig);
+        
+        // Now try to check authentication
+        Amplify.Auth.currentAuthenticatedUser()
+          .then(async (user) => {
+            updateNavigation(true);
+            
+            // Get user role
+            const session = await Amplify.Auth.currentSession();
+            const idToken = session.getIdToken();
+            let userRole = idToken.payload['custom:role'] || 'Guest';
+            const cognitoGroups = idToken.payload['cognito:groups'] || [];
+            
+            if (cognitoGroups.includes('ApplicationAdmin')) {
+              userRole = 'ApplicationAdmin';
+            }
+            
+            console.log("Navbar - User role:", userRole);
+            
+            // Update role-based elements
+            const roleElements = document.querySelectorAll('[data-requires-role]');
+            roleElements.forEach(el => {
+              const requiredRoles = el.dataset.requiresRole.split(',');
+              if (requiredRoles.includes(userRole)) {
+                el.style.display = '';
+                console.log("Showing element for role:", userRole, el);
+              } else {
+                el.style.display = 'none';
+              }
+            });
+          })
+          .catch(() => {
+            updateNavigation(false);
+          });
+      } else {
+        console.log("Amplify or config not available in navbar.js");
+        updateNavigation(false);
+      }
+    } catch (error) {
+      console.error("Error in navbar.js:", error);
+      updateNavigation(false);
+    }
+  });
 });
