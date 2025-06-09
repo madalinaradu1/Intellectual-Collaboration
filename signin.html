@@ -33,6 +33,8 @@
 
       <div class="text-center mt-3">
         <small>Don't have an account? <a href="signup.html">Register here</a></small>
+        <br>
+        <small><a href="#" id="forgotPasswordLink">Forgot password?</a></small>
       </div>
     </div>
   </div>
@@ -91,6 +93,9 @@
         
         // Bind form handler
         document.getElementById('signinForm').addEventListener('submit', handleSignin);
+        
+        // Add forgot password handler
+        document.getElementById('forgotPasswordLink').addEventListener('click', handleForgotPassword);
       } catch (error) {
         console.error("Error initializing signin page:", error);
         document.getElementById('error-message').textContent = "Error initializing. Please try again later.";
@@ -200,6 +205,64 @@
       } catch (error) {
         console.error("❌ Sign-in error:", error);
         document.getElementById('error-message').textContent = error.message || "Login failed.";
+      }
+    }
+    // Handle forgot password flow
+    async function handleForgotPassword(event) {
+      event.preventDefault();
+      
+      const email = document.getElementById('username').value;
+      if (!email) {
+        document.getElementById('error-message').textContent = "Please enter your email address first";
+        return;
+      }
+      
+      try {
+        // Hide the signin form
+        document.getElementById('signinForm').style.display = 'none';
+        
+        // Create forgot password form
+        const forgotPasswordHtml = `
+          <form id="forgotPasswordForm">
+            <h4 class="mb-3">Reset Password</h4>
+            <p>We'll send a verification code to your email.</p>
+            <div class="mb-3">
+              <label for="verificationCode" class="form-label">Verification Code</label>
+              <input type="text" class="form-control" id="verificationCode" required />
+            </div>
+            <div class="mb-3">
+              <label for="newPassword" class="form-label">New Password</label>
+              <input type="password" class="form-control" id="newPassword" required />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Reset Password</button>
+            <div id="reset-error" class="text-danger mt-3 text-center"></div>
+          </form>
+        `;
+        
+        // Add the form after the signin form
+        document.getElementById('signinForm').insertAdjacentHTML('afterend', forgotPasswordHtml);
+        
+        // Send the code
+        await Amplify.Auth.forgotPassword(email);
+        
+        // Handle form submission
+        document.getElementById('forgotPasswordForm').addEventListener('submit', async function(e) {
+          e.preventDefault();
+          
+          const code = document.getElementById('verificationCode').value;
+          const newPassword = document.getElementById('newPassword').value;
+          
+          try {
+            await Amplify.Auth.forgotPasswordSubmit(email, code, newPassword);
+            alert("Password reset successfully! You can now sign in with your new password.");
+            window.location.reload();
+          } catch (resetError) {
+            document.getElementById('reset-error').textContent = resetError.message || "Failed to reset password";
+          }
+        });
+      } catch (error) {
+        document.getElementById('error-message').textContent = error.message || "Failed to send verification code";
+        document.getElementById('signinForm').style.display = '';
       }
     }
   </script>
