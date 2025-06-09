@@ -249,6 +249,15 @@ Jane,Smith,jane.smith@example.com,Student</pre>
             </td>
           </tr>
         `).join('');
+            <td>${user.email}</td>
+            <td>${user.firstName} ${user.lastName}</td>
+            <td>${user.role}</td>
+            <td>${user.status === 'Success' ? 
+              '<span class="badge bg-success">Success</span>' : 
+              `<span class="badge bg-danger">Failed</span><br><small class="text-danger">${user.error || ''}</small>`}
+            </td>
+          </tr>
+        `).join('');
         
       } catch (err) {
         console.error("Error importing users:", err);
