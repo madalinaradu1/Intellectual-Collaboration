@@ -111,74 +111,92 @@
         
         // Amplify should already be configured in window.onload
         
-        const user = await Amplify.Auth.signIn(email, password);
-        
-        // Handle MFA if required
-        if (user.challengeName === 'SMS_MFA' || user.challengeName === 'SOFTWARE_TOKEN_MFA') {
-          const code = prompt("Enter MFA code from your Authenticator app:");
-          await Amplify.Auth.confirmSignIn(user, code, user.challengeName);
-        }
-        
-        // Handle new password required
-        if (user.challengeName === 'NEW_PASSWORD_REQUIRED') {
-          // Show password reset form
-          document.getElementById('signinForm').style.display = 'none';
+        try {
+          // Try normal sign in first
+          const user = await Amplify.Auth.signIn(email, password);
           
-          // Create password reset form
-          const resetFormHtml = `
-            <form id="resetPasswordForm">
-              <h4 class="mb-3">Set New Password</h4>
-              <p>You need to set a new password before continuing.</p>
-              <div class="mb-3">
-                <label for="newPassword" class="form-label">New Password</label>
-                <input type="password" class="form-control" id="newPassword" required />
-                <div class="form-text">Password must be at least 8 characters with uppercase, lowercase, numbers and special characters.</div>
-              </div>
-              <div class="mb-3">
-                <label for="confirmPassword" class="form-label">Confirm Password</label>
-                <input type="password" class="form-control" id="confirmPassword" required />
-              </div>
-              <button type="submit" class="btn btn-primary w-100">Set Password</button>
-              <div id="reset-error" class="text-danger mt-3 text-center"></div>
-            </form>
-          `;
+          // Handle MFA if required
+          if (user.challengeName === 'SMS_MFA' || user.challengeName === 'SOFTWARE_TOKEN_MFA') {
+            const code = prompt("Enter MFA code from your Authenticator app:");
+            await Amplify.Auth.confirmSignIn(user, code, user.challengeName);
+          }
           
-          // Add the form after the signin form
-          document.getElementById('signinForm').insertAdjacentHTML('afterend', resetFormHtml);
-          
-          // Handle password reset form submission
-          document.getElementById('resetPasswordForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+          // Handle new password required
+          if (user.challengeName === 'NEW_PASSWORD_REQUIRED') {
+            // Show password reset form
+            document.getElementById('signinForm').style.display = 'none';
             
-            const newPassword = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
+            // Create password reset form
+            const resetFormHtml = `
+              <form id="resetPasswordForm">
+                <h4 class="mb-3">Set New Password</h4>
+                <p>You need to set a new password before continuing.</p>
+                <div class="mb-3">
+                  <label for="newPassword" class="form-label">New Password</label>
+                  <input type="password" class="form-control" id="newPassword" required />
+                  <div class="form-text">Password must be at least 8 characters with uppercase, lowercase, numbers and special characters.</div>
+                </div>
+                <div class="mb-3">
+                  <label for="confirmPassword" class="form-label">Confirm Password</label>
+                  <input type="password" class="form-control" id="confirmPassword" required />
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Set Password</button>
+                <div id="reset-error" class="text-danger mt-3 text-center"></div>
+              </form>
+            `;
             
-            if (newPassword !== confirmPassword) {
-              document.getElementById('reset-error').textContent = "Passwords do not match";
-              return;
-            }
+            // Add the form after the signin form
+            document.getElementById('signinForm').insertAdjacentHTML('afterend', resetFormHtml);
             
-            try {
-              // Complete the new password challenge
-              const loggedUser = await Amplify.Auth.completeNewPassword(
-                user,               // the Cognito User object
-                newPassword,        // the new password
-                {}                  // optional attributes
-              );
+            // Handle password reset form submission
+            document.getElementById('resetPasswordForm').addEventListener('submit', async function(e) {
+              e.preventDefault();
               
-              console.log("✅ Password reset successfully");
-              window.location.href = "index.html";
-            } catch (resetError) {
-              console.error("❌ Password reset error:", resetError);
-              document.getElementById('reset-error').textContent = resetError.message || "Failed to set new password";
-            }
-          });
+              const newPassword = document.getElementById('newPassword').value;
+              const confirmPassword = document.getElementById('confirmPassword').value;
+              
+              if (newPassword !== confirmPassword) {
+                document.getElementById('reset-error').textContent = "Passwords do not match";
+                return;
+              }
+              
+              try {
+                // Complete the new password challenge
+                const loggedUser = await Amplify.Auth.completeNewPassword(
+                  user,               // the Cognito User object
+                  newPassword,        // the new password
+                  {}                  // optional attributes
+                );
+                
+                console.log("✅ Password reset successfully");
+                window.location.href = "index.html";
+              } catch (resetError) {
+                console.error("❌ Password reset error:", resetError);
+                document.getElementById('reset-error').textContent = resetError.message || "Failed to set new password";
+              }
+            });
+            
+            return;
+          }
           
-          return;
+          console.log("✅ Logged in successfully");
+          window.location.href = "index.html";
+        } catch (initialError) {
+          console.error("Initial sign-in error:", initialError);
+          
+          // If this is a NotAuthorizedException, try admin auth flow
+          if (initialError.code === 'NotAuthorizedException') {
+            // Show a more helpful error message for admin-created users
+            document.getElementById('error-message').innerHTML = `
+              <p>${initialError.message}</p>
+              <p class="mt-2">If you were added by an administrator, make sure to use the temporary password from your email exactly as provided.</p>
+              <p>If you've forgotten your password, please contact an administrator.</p>
+            `;
+          } else {
+            // For other errors, just show the message
+            document.getElementById('error-message').textContent = initialError.message || "Login failed.";
+          }
         }
-        
-        console.log("✅ Logged in successfully");
-        window.location.href = "index.html";
       } catch (error) {
         console.error("❌ Sign-in error:", error);
         document.getElementById('error-message').textContent = error.message || "Login failed.";
