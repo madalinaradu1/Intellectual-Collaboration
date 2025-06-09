@@ -44,6 +44,9 @@
           <li class="nav-item">
             <a class="nav-link" href="user-management.html" data-requires-role="ApplicationAdmin">Users</a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link" href="bulk-import.html" data-requires-role="ApplicationAdmin,GroupAdmin">Bulk Import</a>
+          </li>
         </ul>
         <ul class="navbar-nav">
           <li class="nav-item">
@@ -130,15 +133,7 @@
       </div>
     </div>
 
-    <!-- Events -->
-    <section>
-      <h4 class="text-warning">Upcoming Events</h4>
-      <ul class="list-group shadow-sm">
-        <li class="list-group-item">Faculty Training – Sept 10</li>
-        <li class="list-group-item">System Maintenance – Sept 14</li>
-        <li class="list-group-item">Town Hall – Sept 21</li>
-      </ul>
-    </section>
+    <!-- Events section removed as requested -->
   </div>
 
   <!-- jQuery and Bootstrap -->
@@ -184,11 +179,33 @@ async function loadPosts() {
       // Format the timestamp
       const timestamp = new Date(p.Timestamp).toLocaleString();
       
-      // Extract username from Author ID if it's a UUID
+      // Get author's full name from DynamoDB Users table
       let authorName = p.Author;
-      if (authorName && authorName.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        // If it's a UUID, use a friendly name instead
-        authorName = "User " + authorName.substring(0, 4);
+      
+      // If we have author data with first and last name, use it
+      if (p.AuthorData && p.AuthorData.firstName && p.AuthorData.lastName) {
+        authorName = `${p.AuthorData.firstName} ${p.AuthorData.lastName}`;
+      } else if (authorName && authorName.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        // If it's a UUID and we don't have author data, try to get it from the session
+        try {
+          const session = Amplify.Auth.currentSession();
+          if (session) {
+            const idToken = session.getIdToken();
+            if (idToken && idToken.payload.sub === authorName) {
+              // If this is the current user's post
+              authorName = `${idToken.payload.given_name || ''} ${idToken.payload.family_name || ''}`.trim();
+              if (!authorName) {
+                authorName = idToken.payload.email || "Unknown User";
+              }
+            } else {
+              // For other users, just show "User" with ID prefix
+              authorName = "User " + authorName.substring(0, 4);
+            }
+          }
+        } catch (e) {
+          // If we can't get the session, just use the UUID prefix
+          authorName = "User " + authorName.substring(0, 4);
+        }
       }
       
       // Check if post has an attachment

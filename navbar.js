@@ -122,7 +122,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const roleElements = document.querySelectorAll('[data-requires-role]');
             roleElements.forEach(el => {
               const requiredRoles = el.dataset.requiresRole.split(',');
-              if (requiredRoles.includes(userRole)) {
+              
+              // Check if user has any of the required roles
+              const hasRequiredRole = requiredRoles.includes(userRole);
+              
+              // Special case for ApplicationAdmin and GroupAdmin - they should see all their elements
+              const isAdmin = (userRole === 'ApplicationAdmin' || userRole === 'GroupAdmin');
+              const isAdminElement = requiredRoles.includes('ApplicationAdmin') || requiredRoles.includes('GroupAdmin');
+              
+              if (hasRequiredRole || (isAdmin && isAdminElement)) {
                 el.style.display = '';
                 console.log("Showing element for role:", userRole, el);
               } else {
