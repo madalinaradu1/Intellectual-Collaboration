@@ -121,7 +121,59 @@
         
         // Handle new password required
         if (user.challengeName === 'NEW_PASSWORD_REQUIRED') {
-          document.getElementById('error-message').textContent = "Your password must be reset. This flow is not yet supported.";
+          // Show password reset form
+          document.getElementById('signinForm').style.display = 'none';
+          
+          // Create password reset form
+          const resetFormHtml = `
+            <form id="resetPasswordForm">
+              <h4 class="mb-3">Set New Password</h4>
+              <p>You need to set a new password before continuing.</p>
+              <div class="mb-3">
+                <label for="newPassword" class="form-label">New Password</label>
+                <input type="password" class="form-control" id="newPassword" required />
+                <div class="form-text">Password must be at least 8 characters with uppercase, lowercase, numbers and special characters.</div>
+              </div>
+              <div class="mb-3">
+                <label for="confirmPassword" class="form-label">Confirm Password</label>
+                <input type="password" class="form-control" id="confirmPassword" required />
+              </div>
+              <button type="submit" class="btn btn-primary w-100">Set Password</button>
+              <div id="reset-error" class="text-danger mt-3 text-center"></div>
+            </form>
+          `;
+          
+          // Add the form after the signin form
+          document.getElementById('signinForm').insertAdjacentHTML('afterend', resetFormHtml);
+          
+          // Handle password reset form submission
+          document.getElementById('resetPasswordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (newPassword !== confirmPassword) {
+              document.getElementById('reset-error').textContent = "Passwords do not match";
+              return;
+            }
+            
+            try {
+              // Complete the new password challenge
+              const loggedUser = await Amplify.Auth.completeNewPassword(
+                user,               // the Cognito User object
+                newPassword,        // the new password
+                {}                  // optional attributes
+              );
+              
+              console.log("✅ Password reset successfully");
+              window.location.href = "index.html";
+            } catch (resetError) {
+              console.error("❌ Password reset error:", resetError);
+              document.getElementById('reset-error').textContent = resetError.message || "Failed to set new password";
+            }
+          });
+          
           return;
         }
         
