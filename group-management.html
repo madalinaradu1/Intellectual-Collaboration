@@ -596,10 +596,6 @@ async function createGroup() {
       throw new Error('Group name and description are required');
     }
     
-    // Get current user and token - same approach as createPost
-    const session = await Amplify.Auth.currentSession();
-    const idToken = session.getIdToken().getJwtToken();
-    
     // Create group object
     const groupData = {
       name,
@@ -610,21 +606,12 @@ async function createGroup() {
     // Log what we're sending
     console.log("Sending group data:", JSON.stringify(groupData));
     
-    // Send to API - same approach as createPost
-    const response = await fetch(`${_config.api.invokeUrl}/cms/groups`, {
-      method: 'POST',
-      headers: {
-        'Authorization': idToken,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(groupData),
-      credentials: 'include'
+    // Use Amplify API to make the request (handles signing automatically)
+    const response = await Amplify.API.post('ICCMSRestApi', '/cms/groups', {
+      body: groupData
     });
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Failed to create group: ${errorText}`);
-    }
+    console.log("Group created successfully:", response);
     
     const statusEl = document.getElementById('createGroupStatus');
     statusEl.textContent = "Group created successfully!";
