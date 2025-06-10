@@ -597,11 +597,11 @@ async function createGroup() {
     }
     
     const session = await Amplify.Auth.currentSession();
-    const idToken = session.getIdToken().getJwtToken();
+    const idToken = session.getIdToken();
+    const jwtToken = idToken.getJwtToken();
     
-    // Log role information before making the request
-    console.log("Creating group with role:", idToken.payload['custom:role']);
-    console.log("User ID:", idToken.payload.sub);
+    // Log role information safely
+    console.log("Creating group with token:", idToken);
     
     // Make the request with detailed logging
     console.log("Making request to:", `${_config.api.invokeUrl}/cms/groups`);
@@ -614,7 +614,7 @@ async function createGroup() {
     const response = await fetch(`${_config.api.invokeUrl}/cms/groups`, {
       method: 'POST',
       headers: {
-        'Authorization': idToken,
+        'Authorization': jwtToken,
         'Content-Type': 'application/json'
       },
       credentials: 'include',
@@ -660,6 +660,7 @@ async function createGroup() {
     statusEl.classList.remove('d-none', 'alert-success');
   }
 }
+
 
     // Function to add a member to a group
     async function addMemberToGroup() {
