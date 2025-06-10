@@ -278,38 +278,42 @@
       }
     }
 
-    // Function to load groups
-    async function loadGroups() {
-      try {
-        const session = await Amplify.Auth.currentSession();
-        const idToken = session.getIdToken().getJwtToken();
-        
-        const response = await fetch(`${_config.api.invokeUrl}/cms/groups`, {
-          method: 'GET',
-          headers: {
-            'Authorization': idToken,
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include'
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const groups = await response.json();
-        displayGroups(groups);
-      } catch (err) {
-        console.error("Error loading groups:", err);
-        document.getElementById("groupTableBody").innerHTML = `
-          <tr>
-            <td colspan="5" class="text-center py-4 text-danger">
-              Error loading groups. ${err.message}
-            </td>
-          </tr>
-        `;
-      }
+// Function to load groups
+async function loadGroups() {
+  try {
+    const session = await Amplify.Auth.currentSession();
+    const idToken = session.getIdToken().getJwtToken();
+    
+    console.log("Loading groups...");
+    
+    const response = await fetch(`${_config.api.invokeUrl}/cms/groups`, {
+      method: 'GET',
+      headers: {
+        'Authorization': idToken,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+    
+    const groups = await response.json();
+    console.log("Groups loaded:", groups);
+    displayGroups(groups);
+  } catch (err) {
+    console.error("Error loading groups:", err);
+    document.getElementById("groupTableBody").innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center py-4 text-danger">
+          Error loading groups. ${err.message}
+        </td>
+      </tr>
+    `;
+  }
+}
+
 
     // Function to display groups in the table
     function displayGroups(groups) {
