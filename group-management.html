@@ -281,21 +281,24 @@
     // Function to load groups
     async function loadGroups() {
       try {
-        // Use the Auth class to make a signed request
-        const apiName = 'ICCMSRestApi';
-        const path = '/cms/groups';
-        const myInit = {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/cms/groups`, {
+          method: 'GET',
           headers: {
+            'Authorization': idToken,
             'Content-Type': 'application/json'
-          }
-        };
+          },
+          credentials: 'include'
+        });
         
-        console.log("Making API request with Amplify.API.get");
-        const groups = await Amplify.API.get(apiName, path, myInit);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const groups = await response.json();
         displayGroups(groups);
-        return;
-        
-      } catch (err) {
       } catch (err) {
         console.error("Error loading groups:", err);
         document.getElementById("groupTableBody").innerHTML = `
