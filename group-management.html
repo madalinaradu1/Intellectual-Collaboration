@@ -317,48 +317,59 @@ async function loadGroups() {
 
 
     // Function to display groups in the table
-    function displayGroups(groups) {
-      const tableBody = document.getElementById("groupTableBody");
-      
-      if (!groups || groups.length === 0) {
-        tableBody.innerHTML = `
-          <tr>
-            <td colspan="5" class="text-center py-4">No groups found</td>
-          </tr>
-        `;
-        return;
-      }
-      
-      const html = groups.map(group => `
-        <tr data-group-id="${group.groupId}">
-          <td>${group.name}</td>
-          <td>${group.description.substring(0, 50)}${group.description.length > 50 ? '...' : ''}</td>
-          <td>${group.isPublic ? '<span class="badge bg-success">Public</span>' : '<span class="badge bg-secondary">Private</span>'}</td>
-          <td>${group.memberCount || 0}</td>
-          <td>
-            <button class="btn btn-sm btn-outline-primary view-group">View</button>
-            <button class="btn btn-sm btn-outline-secondary ms-1 manage-members">Members</button>
-          </td>
-        </tr>
-      `).join("");
-      
-      tableBody.innerHTML = html;
-      
-      // Add event listeners to buttons
-      document.querySelectorAll('.view-group').forEach(button => {
-        button.addEventListener('click', function() {
-          const groupId = this.closest('tr').dataset.groupId;
-          openGroupDetails(groupId);
-        });
-      });
-      
-      document.querySelectorAll('.manage-members').forEach(button => {
-        button.addEventListener('click', function() {
-          const groupId = this.closest('tr').dataset.groupId;
-          openGroupDetails(groupId, 'members');
-        });
-      });
-    }
+function displayGroups(groups) {
+  const tableBody = document.getElementById("groupTableBody");
+  
+  if (!groups || groups.length === 0) {
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="5" class="text-center py-4">No groups found</td>
+      </tr>
+    `;
+    return;
+  }
+  
+  // Log each group for debugging
+  groups.forEach(group => {
+    console.log("Processing group:", group);
+  });
+  
+  const html = groups.map(group => {
+    // Check for isPublic field with fallback to visibility
+    const isPublic = group.isPublic !== undefined ? group.isPublic : 
+                    (group.visibility === 'Public');
+    
+    return `
+      <tr data-group-id="${group.groupId}">
+        <td>${group.name || 'Unnamed Group'}</td>
+        <td>${group.description ? group.description.substring(0, 50) + (group.description.length > 50 ? '...' : '') : 'No description'}</td>
+        <td>${isPublic ? '<span class="badge bg-success">Public</span>' : '<span class="badge bg-secondary">Private</span>'}</td>
+        <td>${group.memberCount || 0}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary view-group">View</button>
+          <button class="btn btn-sm btn-outline-secondary ms-1 manage-members">Members</button>
+        </td>
+      </tr>
+    `;
+  }).join("");
+  
+  tableBody.innerHTML = html;
+  
+  // Add event listeners to buttons
+  document.querySelectorAll('.view-group').forEach(button => {
+    button.addEventListener('click', function() {
+      const groupId = this.closest('tr').dataset.groupId;
+      openGroupDetails(groupId);
+    });
+  });
+  
+  document.querySelectorAll('.manage-members').forEach(button => {
+    button.addEventListener('click', function() {
+      const groupId = this.closest('tr').dataset.groupId;
+      openGroupDetails(groupId, 'members');
+    });
+  });
+}
 
     // Function to open group details modal
     async function openGroupDetails(groupId, activeTab = 'details') {
