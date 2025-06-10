@@ -281,24 +281,21 @@
     // Function to load groups
     async function loadGroups() {
       try {
-        const session = await Amplify.Auth.currentSession();
-        const idToken = session.getIdToken().getJwtToken();
-        
-        const response = await fetch(`${_config.api.invokeUrl}/cms/groups`, {
-          method: 'GET',
+        // Use the Auth class to make a signed request
+        const apiName = 'ICCMSRestApi';
+        const path = '/cms/groups';
+        const myInit = {
           headers: {
-            'Authorization': idToken,
             'Content-Type': 'application/json'
-          },
-          credentials: 'include'
-        });
+          }
+        };
         
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const groups = await response.json();
+        console.log("Making API request with Amplify.API.get");
+        const groups = await Amplify.API.get(apiName, path, myInit);
         displayGroups(groups);
+        return;
+        
+      } catch (err) {
       } catch (err) {
         console.error("Error loading groups:", err);
         document.getElementById("groupTableBody").innerHTML = `
@@ -612,28 +609,27 @@
           isPublic
         }));
         
-        const response = await fetch(`${_config.api.invokeUrl}/cms/groups`, {
-          method: 'POST',
-          headers: {
-            'Authorization': token,
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include',
-          body: JSON.stringify({
+        // Use the Auth class to make a signed request
+        const apiName = 'ICCMSRestApi';
+        const path = '/cms/groups';
+        const myInit = {
+          body: {
             name,
             description,
             isPublic
-          })
-        });
+          },
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        };
         
-        // Log the response status and headers
-        console.log("Response status:", response.status);
-        console.log("Response headers:", [...response.headers.entries()]);
+        console.log("Making API request with Amplify.API.post");
+        const response = await Amplify.API.post(apiName, path, myInit);
         
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Error response body:", errorText);
-          throw new Error(`HTTP error! status: ${response.status}`);
+        // Log the response
+        console.log("API response:", response);
+        
+        // Success - no need to check response.ok since Amplify.API.post throws on error
         }
         
         const statusEl = document.getElementById('createGroupStatus');
