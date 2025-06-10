@@ -597,12 +597,25 @@
         }
         
         const session = await Amplify.Auth.currentSession();
-        const idToken = session.getIdToken().getJwtToken();
+        const idToken = session.getIdToken();
+        const token = idToken.getJwtToken();
+        
+        // Log role information before making the request
+        console.log("Creating group with role:", idToken.payload['custom:role']);
+        console.log("User ID:", idToken.payload.sub);
+        
+        // Make the request with detailed logging
+        console.log("Making request to:", `${_config.api.invokeUrl}/cms/groups`);
+        console.log("With payload:", JSON.stringify({
+          name,
+          description,
+          isPublic
+        }));
         
         const response = await fetch(`${_config.api.invokeUrl}/cms/groups`, {
           method: 'POST',
           headers: {
-            'Authorization': idToken,
+            'Authorization': token,
             'Content-Type': 'application/json'
           },
           credentials: 'include',
@@ -613,7 +626,13 @@
           })
         });
         
+        // Log the response status and headers
+        console.log("Response status:", response.status);
+        console.log("Response headers:", [...response.headers.entries()]);
+        
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Error response body:", errorText);
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
