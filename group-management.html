@@ -735,6 +735,48 @@
       }
     }
 
+    // Function to test user role
+    async function testRole() {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken();
+        const token = idToken.getJwtToken();
+        
+        // Log token payload
+        console.log("Token payload:", idToken.payload);
+        console.log("Role:", idToken.payload['custom:role']);
+        console.log("Groups:", idToken.payload['cognito:groups'] || []);
+        
+        // Create a display div
+        const roleInfoDiv = document.createElement('div');
+        roleInfoDiv.className = 'alert alert-info';
+        roleInfoDiv.innerHTML = `
+          <h5>Your User Information:</h5>
+          <p><strong>Email:</strong> ${idToken.payload.email}</p>
+          <p><strong>Role:</strong> ${idToken.payload['custom:role'] || 'Not set'}</p>
+          <p><strong>Groups:</strong> ${(idToken.payload['cognito:groups'] || []).join(', ') || 'None'}</p>
+        `;
+        
+        // Add to page
+        document.querySelector('.container').prepend(roleInfoDiv);
+        
+        // Make a simple request to check headers
+        const response = await fetch(`${_config.api.invokeUrl}/cms/groups`, {
+          method: 'OPTIONS',
+          headers: {
+            'Authorization': token
+          }
+        });
+        
+        console.log("Response:", response);
+        
+        alert("Role information displayed on page and logged to console");
+      } catch (err) {
+        console.error("Error testing role:", err);
+        alert("Error: " + err.message);
+      }
+    }
+    
     // Wait for Amplify to load
     window.onload = async function() {
       if (typeof window.aws_amplify !== 'undefined') {
@@ -748,6 +790,13 @@
         
         // Configure Amplify
         Amplify.configure(window.awsConfig);
+        
+        // Add test role button
+        const testButton = document.createElement('button');
+        testButton.textContent = 'Test Role';
+        testButton.className = 'btn btn-info mb-3';
+        testButton.onclick = testRole;
+        document.querySelector('.container').prepend(testButton);
         
         // Check permissions
         const userRole = await checkUserPermissions();
