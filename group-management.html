@@ -585,81 +585,81 @@
       }
     }
 
-    // Function to create a new group
-    async function createGroup() {
-      try {
-        const name = document.getElementById('newGroupName').value;
-        const description = document.getElementById('newGroupDescription').value;
-        const isPublic = document.getElementById('newGroupIsPublic').checked;
-        
-        if (!name || !description) {
-          throw new Error('Group name and description are required');
-        }
-        
-        const session = await Amplify.Auth.currentSession();
-        const idToken = session.getIdToken();
-        const token = idToken.getJwtToken();
-        
-        // Log role information before making the request
-        console.log("Creating group with role:", idToken.payload['custom:role']);
-        console.log("User ID:", idToken.payload.sub);
-        
-        // Make the request with detailed logging
-        console.log("Making request to:", `${_config.api.invokeUrl}/cms/groups`);
-        console.log("With payload:", JSON.stringify({
-          name,
-          description,
-          isPublic
-        }));
-        
-        // Use the Auth class to make a signed request
-        const apiName = 'ICCMSRestApi';
-        const path = '/cms/groups';
-        const myInit = {
-          body: {
-            name,
-            description,
-            isPublic
-          },
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        };
-        
-        console.log("Making API request with Amplify.API.post");
-        const response = await Amplify.API.post(apiName, path, myInit);
-        
-        // Log the response
-        console.log("API response:", response);
-        
-        // Success - no need to check response.ok since Amplify.API.post throws on error
-        }
-        
-        const statusEl = document.getElementById('createGroupStatus');
-        statusEl.textContent = "Group created successfully!";
-        statusEl.classList.add('alert-success');
-        statusEl.classList.remove('d-none', 'alert-danger');
-        
-        // Clear form
-        document.getElementById('newGroupName').value = '';
-        document.getElementById('newGroupDescription').value = '';
-        document.getElementById('newGroupIsPublic').checked = false;
-        
-        // Reload groups after a short delay
-        setTimeout(() => {
-          loadGroups();
-          // Close modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('createGroupModal'));
-          modal.hide();
-        }, 1500);
-      } catch (err) {
-        console.error("Error creating group:", err);
-        const statusEl = document.getElementById('createGroupStatus');
-        statusEl.textContent = `Error: ${err.message}`;
-        statusEl.classList.add('alert-danger');
-        statusEl.classList.remove('d-none', 'alert-success');
-      }
+// Function to create a new group
+async function createGroup() {
+  try {
+    const name = document.getElementById('newGroupName').value;
+    const description = document.getElementById('newGroupDescription').value;
+    const isPublic = document.getElementById('newGroupIsPublic').checked;
+    
+    if (!name || !description) {
+      throw new Error('Group name and description are required');
     }
+    
+    const session = await Amplify.Auth.currentSession();
+    const idToken = session.getIdToken().getJwtToken();
+    
+    // Log role information before making the request
+    console.log("Creating group with role:", idToken.payload['custom:role']);
+    console.log("User ID:", idToken.payload.sub);
+    
+    // Make the request with detailed logging
+    console.log("Making request to:", `${_config.api.invokeUrl}/cms/groups`);
+    console.log("With payload:", JSON.stringify({
+      name,
+      description,
+      isPublic
+    }));
+    
+    const response = await fetch(`${_config.api.invokeUrl}/cms/groups`, {
+      method: 'POST',
+      headers: {
+        'Authorization': idToken,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        name,
+        description,
+        isPublic
+      })
+    });
+    
+    // Log the response status and headers
+    console.log("Response status:", response.status);
+    console.log("Response headers:", [...response.headers.entries()]);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Error response body:", errorText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const statusEl = document.getElementById('createGroupStatus');
+    statusEl.textContent = "Group created successfully!";
+    statusEl.classList.add('alert-success');
+    statusEl.classList.remove('d-none', 'alert-danger');
+    
+    // Clear form
+    document.getElementById('newGroupName').value = '';
+    document.getElementById('newGroupDescription').value = '';
+    document.getElementById('newGroupIsPublic').checked = false;
+    
+    // Reload groups after a short delay
+    setTimeout(() => {
+      loadGroups();
+      // Close modal
+      const modal = bootstrap.Modal.getInstance(document.getElementById('createGroupModal'));
+      modal.hide();
+    }, 1500);
+  } catch (err) {
+    console.error("Error creating group:", err);
+    const statusEl = document.getElementById('createGroupStatus');
+    statusEl.textContent = `Error: ${err.message}`;
+    statusEl.classList.add('alert-danger');
+    statusEl.classList.remove('d-none', 'alert-success');
+  }
+}
 
     // Function to add a member to a group
     async function addMemberToGroup() {
