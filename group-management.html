@@ -299,8 +299,9 @@ async function loadGroups() {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     
+    console.log("Response status:", response.status);
     const groups = await response.json();
-    console.log("Groups loaded:", groups);
+    console.log("Groups loaded:", JSON.stringify(groups));
     displayGroups(groups);
   } catch (err) {
     console.error("Error loading groups:", err);
@@ -574,12 +575,13 @@ async function loadGroups() {
         statusEl.classList.remove('d-none', 'alert-danger');
         
         // Reload groups after a short delay
-        setTimeout(() => {
-          loadGroups();
-          // Close modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('groupDetailsModal'));
-          modal.hide();
-        }, 1500);
+       setTimeout(() => {
+      console.log("Reloading groups after create...");
+      loadGroups();
+      // Close modal
+      const modal = bootstrap.Modal.getInstance(document.getElementById('createGroupModal'));
+      modal.hide();
+     }, 1500);
       } catch (err) {
         console.error("Error saving group details:", err);
         const statusEl = document.getElementById('groupStatus');
