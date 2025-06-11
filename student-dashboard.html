@@ -571,9 +571,17 @@
           userRole = 'ApplicationAdmin';
         }
         
-        // Only Students can access this page
-        if (userRole !== 'Student') {
-          alert('This page is for students only.');
+        // Check for role in custom attribute or Cognito groups
+        let userRole = idToken.payload['custom:role'] || 'Guest';
+        let parentGroup = idToken.payload['custom:parentGroup'] || '';
+        const cognitoGroups = idToken.payload['cognito:groups'] || [];
+        if (cognitoGroups.includes('ApplicationAdmin')) {
+          userRole = 'ApplicationAdmin';
+        }
+        
+        // Only Students from DC Network can access this page
+        if (userRole !== 'Student' || parentGroup !== 'DC Network') {
+          alert('This page is for DC Network students only.');
           window.location.href = 'index.html';
           return;
         }

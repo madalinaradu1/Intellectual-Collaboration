@@ -47,7 +47,7 @@ function addNavigationBar() {
             <a class="nav-link" href="bulk-import.html" data-requires-role="ApplicationAdmin,GroupAdmin">Bulk Import</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="student-dashboard.html" data-requires-role="Student">Student Dashboard</a>
+            <a class="nav-link" href="student-dashboard.html" data-requires-role="Student" data-requires-parent-group="DC Network">Student Dashboard</a>
           </li>
         </ul>
         <ul class="navbar-nav">
@@ -121,6 +121,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log("Navbar - User role:", userRole);
             
+            // Get parent group
+            let parentGroup = idToken.payload['custom:parentGroup'] || '';
+            console.log("Navbar - User role:", userRole, "Parent group:", parentGroup);
+            
             // Update role-based elements
             const roleElements = document.querySelectorAll('[data-requires-role]');
             roleElements.forEach(el => {
@@ -133,9 +137,13 @@ document.addEventListener('DOMContentLoaded', function() {
               const isAdmin = (userRole === 'ApplicationAdmin' || userRole === 'GroupAdmin');
               const isAdminElement = requiredRoles.includes('ApplicationAdmin') || requiredRoles.includes('GroupAdmin');
               
-              if (hasRequiredRole || (isAdmin && isAdminElement)) {
+              // Check parent group restrictions
+              const requiredParentGroups = el.dataset.requiresParentGroup ? el.dataset.requiresParentGroup.split(',') : [];
+              const hasRequiredParentGroup = requiredParentGroups.length === 0 || requiredParentGroups.includes(parentGroup);
+              
+              if ((hasRequiredRole || (isAdmin && isAdminElement)) && hasRequiredParentGroup) {
                 el.style.display = '';
-                console.log("Showing element for role:", userRole, el);
+                console.log("Showing element for role:", userRole, "and parent group:", parentGroup, el);
               } else {
                 el.style.display = 'none';
               }

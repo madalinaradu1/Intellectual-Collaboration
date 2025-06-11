@@ -40,15 +40,18 @@
               <label for="csvFile" class="form-label">CSV File</label>
               <input type="file" class="form-control" id="csvFile" accept=".csv" required>
               <div class="form-text">
-                File must be in CSV format with the following columns: firstName, lastName, email, role
+                File must be in CSV format with the following columns: firstName, lastName, email, role, parentGroup
               </div>
             </div>
             
             <div class="mb-3">
               <label class="form-label">CSV Format Example:</label>
-              <pre class="bg-light p-2 border rounded">firstName,lastName,email,role
-John,Doe,john.doe@example.com,FacultyMember
-Jane,Smith,jane.smith@example.com,Student</pre>
+              <pre class="bg-light p-2 border rounded">firstName,lastName,email,role,parentGroup
+John,Doe,john.doe@example.com,FacultyMember,DC Network
+Jane,Smith,jane.smith@example.com,Student,DC Network</pre>
+              <div class="alert alert-info mt-2">
+                <strong>Parent Groups:</strong> DC Network, PLN, CCE, Dual Enrollment, CIRT, Research Grants
+              </div>
               <div class="alert alert-warning mt-2">
                 <strong>Important:</strong> Make sure there are no spaces in email addresses. If your CSV has spaces in email addresses, please remove them before uploading.
               </div>
@@ -109,7 +112,7 @@ Jane,Smith,jane.smith@example.com,Student</pre>
     function parseCSV(text) {
       // If there's no header row, add one
       if (!text.toLowerCase().includes('firstname') && !text.toLowerCase().includes('lastname')) {
-        text = "firstName,lastName,email,role\n" + text;
+        text = "firstName,lastName,email,role,parentGroup\n" + text;
       }
       
       const lines = text.split('\n');
@@ -123,12 +126,13 @@ Jane,Smith,jane.smith@example.com,Student</pre>
         const row = {};
         const values = lines[i].split(',');
         
-        // Make sure we have exactly 4 values
-        if (values.length === 4) {
+        // Make sure we have at least 4 values
+        if (values.length >= 4) {
           row.firstName = values[0].trim();
           row.lastName = values[1].trim();
           row.email = values[2].trim();
           row.role = values[3].trim();
+          row.parentGroup = values.length >= 5 ? values[4].trim() : '';
           results.push(row);
         }
       }
@@ -138,8 +142,9 @@ Jane,Smith,jane.smith@example.com,Student</pre>
     
     // Function to validate CSV data
     function validateCSVData(data) {
-      const requiredFields = ['firstName', 'lastName', 'email', 'role'];
+      const requiredFields = ['firstName', 'lastName', 'email', 'role', 'parentGroup'];
       const validRoles = ['FacultyMember', 'Student', 'ExternalExpert', 'Guest', 'GroupAdmin', 'GroupOfficer'];
+      const validParentGroups = ['DC Network', 'PLN', 'CCE', 'Dual Enrollment', 'CIRT', 'Research Grants'];
       const errors = [];
       
       data.forEach((row, index) => {
@@ -160,6 +165,11 @@ Jane,Smith,jane.smith@example.com,Student</pre>
         // Validate role
         if (row.role && !validRoles.includes(row.role)) {
           errors.push(`Row ${rowNum}: Invalid role - ${row.role}. Must be one of: ${validRoles.join(', ')}`);
+        }
+        
+        // Validate parent group
+        if (row.parentGroup && !validParentGroups.includes(row.parentGroup)) {
+          errors.push(`Row ${rowNum}: Invalid parent group - ${row.parentGroup}. Must be one of: ${validParentGroups.join(', ')}`);
         }
       });
       
