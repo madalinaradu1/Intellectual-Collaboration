@@ -46,6 +46,13 @@
       <div class="col-md-4">
         <div class="profile-section">
           <h4 class="mb-4">Account Information</h4>
+          <div class="mb-3 text-center">
+            <img id="profileImage" src="https://via.placeholder.com/100" class="rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover;">
+            <div>
+              <input type="file" class="form-control" id="profilePicture" accept="image/*">
+              <small class="form-text text-muted">Max file size: 5MB</small>
+            </div>
+          </div>
           <div class="mb-3">
             <label class="form-label">Name</label>
             <div class="input-group">
@@ -64,20 +71,6 @@
           <div class="mb-3">
             <label for="lastLogin" class="form-label">Last Login</label>
             <input type="text" class="form-control" id="lastLogin" readonly>
-          </div>
-          <div class="mb-3">
-            <label for="profilePicture" class="form-label">Profile Picture</label>
-            <div class="d-flex align-items-center">
-              <img id="profileImage" src="https://via.placeholder.com/100" class="rounded-circle me-3" style="width: 100px; height: 100px; object-fit: cover;">
-              <div>
-                <input type="file" class="form-control" id="profilePicture" accept="image/*">
-                <small class="form-text text-muted">Max file size: 5MB</small>
-              </div>
-            </div>
-          </div>
-          <div class="mb-3">
-            <label for="contactDetails" class="form-label">Contact Details</label>
-            <textarea class="form-control" id="contactDetails" rows="3" placeholder="Phone, address, etc."></textarea>
           </div>
           <button class="btn btn-primary" id="saveProfileBtn">Save Changes</button>
           <div id="profileStatus" class="alert mt-3 d-none"></div>
@@ -239,10 +232,7 @@
             document.getElementById('profileImage').src = userData.profilePicture;
           }
           
-          // Load contact details if available
-          if (userData.contactDetails) {
-            document.getElementById('contactDetails').value = userData.contactDetails;
-          }
+
           
           loadUserGroups(userData.groups);
           loadRecentActivity(userData.recentActivity);
@@ -252,8 +242,19 @@
           document.getElementById('role').value = userRole;
         }
         
-        document.getElementById('firstName').value = idToken.payload.given_name || '';
-        document.getElementById('lastName').value = idToken.payload.family_name || '';
+        // Store original values and set input values
+        const firstName = idToken.payload.given_name || '';
+        const lastName = idToken.payload.family_name || '';
+        
+        const firstNameInput = document.getElementById('firstName');
+        const lastNameInput = document.getElementById('lastName');
+        
+        firstNameInput.value = firstName;
+        lastNameInput.value = lastName;
+        
+        // Store original values as data attributes
+        firstNameInput.setAttribute('data-original', firstName);
+        lastNameInput.setAttribute('data-original', lastName);
         
         // Update role request visibility
         updateRoleRequestVisibility(document.getElementById('role').value);
@@ -409,21 +410,15 @@
       try {
         const firstName = document.getElementById('firstName').value;
         const lastName = document.getElementById('lastName').value;
-        const contactDetails = document.getElementById('contactDetails').value;
         const profilePictureInput = document.getElementById('profilePicture');
-        
-        if (!firstName || !lastName) {
-          throw new Error('First name and last name are required');
-        }
         
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        // Prepare profile data
+        // Prepare profile data with existing values
         const profileData = {
-          firstName,
-          lastName,
-          contactDetails
+          firstName: firstName || document.getElementById('firstName').getAttribute('data-original'),
+          lastName: lastName || document.getElementById('lastName').getAttribute('data-original')
         };
         
         // Upload profile picture if a new one was selected
@@ -564,8 +559,8 @@
           alert('MFA setup functionality will be implemented in a future update.');
         });
         
-        // Preview profile picture before upload
-        document.getElementById('profilePicture').addEventListener('change', function(e) {
+        // Preview profile picture before upload and handle direct upload
+        document.getElementById('profilePicture').addEventListener('change', async function(e) {
           if (this.files && this.files[0]) {
             const file = this.files[0];
             
@@ -589,6 +584,12 @@
               document.getElementById('profileImage').src = e.target.result;
             };
             reader.readAsDataURL(file);
+            
+            // Show status message
+            const statusEl = document.getElementById('profileStatus');
+            statusEl.textContent = "Click 'Save Changes' to upload your new profile picture";
+            statusEl.classList.add('alert-info');
+            statusEl.classList.remove('d-none', 'alert-danger', 'alert-success');
           }
         });
         
