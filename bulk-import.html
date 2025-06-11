@@ -176,6 +176,63 @@ Jane,Smith,jane.smith@example.com,Student,DC Network</pre>
       return errors;
     }
     
+    // Function to handle user deletion
+    async function handleDelete(event) {
+      event.preventDefault();
+      
+      const email = document.getElementById('deleteEmail').value;
+      const statusEl = document.getElementById('deleteStatus');
+      
+      if (!email) {
+        statusEl.textContent = "Please enter an email address";
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-success');
+        return;
+      }
+      
+      try {
+        // Show processing message
+        statusEl.textContent = "Deleting user...";
+        statusEl.classList.add('alert-info');
+        statusEl.classList.remove('d-none', 'alert-danger', 'alert-success');
+        
+        // Get auth token
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        // Send to API
+        const response = await fetch(`${_config.api.invokeUrl}/cms/users/delete`, {
+          method: 'POST',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email }),
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Error response body:", errorText);
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Show success message
+        statusEl.textContent = `User ${email} deleted successfully.`;
+        statusEl.classList.add('alert-success');
+        statusEl.classList.remove('alert-info', 'alert-danger');
+        
+        // Clear form
+        document.getElementById('deleteEmail').value = '';
+        
+      } catch (err) {
+        console.error("Error deleting user:", err);
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-info', 'alert-success');
+      }
+    }
+    
     // Function to handle form submission
     async function handleImport(event) {
       event.preventDefault();
@@ -299,6 +356,10 @@ Jane,Smith,jane.smith@example.com,Student,DC Network</pre>
           window.location.href = 'index.html';
           return;
         }
+        
+        // Set up form submission handlers
+        document.getElementById('importForm').addEventListener('submit', handleImport);
+        document.getElementById('deleteForm').addEventListener('submit', handleDelete);
         
         // Set up form submission handlers
         document.getElementById('importForm').addEventListener('submit', handleImport);
