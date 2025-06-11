@@ -65,6 +65,20 @@
             <label for="lastLogin" class="form-label">Last Login</label>
             <input type="text" class="form-control" id="lastLogin" readonly>
           </div>
+          <div class="mb-3">
+            <label for="profilePicture" class="form-label">Profile Picture</label>
+            <div class="d-flex align-items-center">
+              <img id="profileImage" src="https://via.placeholder.com/100" class="rounded-circle me-3" style="width: 100px; height: 100px; object-fit: cover;">
+              <div>
+                <input type="file" class="form-control" id="profilePicture" accept="image/*">
+                <small class="form-text text-muted">Max file size: 5MB</small>
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="contactDetails" class="form-label">Contact Details</label>
+            <textarea class="form-control" id="contactDetails" rows="3" placeholder="Phone, address, etc."></textarea>
+          </div>
           <button class="btn btn-primary" id="saveProfileBtn">Save Changes</button>
           <div id="profileStatus" class="alert mt-3 d-none"></div>
         </div>
@@ -172,6 +186,15 @@
   <!-- Configuration -->
   <script src="config.js"></script>
   <script src="amplify-config.js"></script>
+  
+  <!-- S3 Configuration -->
+  <script>
+    // S3 bucket configuration
+    window._s3Config = {
+      bucketName: 'mycmsstoragespace',
+      region: 'us-east-1' // Make sure this matches your bucket region
+    };
+  </script>
 
   <script>
     // Show role request section only for Guest users
@@ -193,19 +216,8 @@
         
         // Basic user info from token
         document.getElementById('email').value = idToken.payload.email || '';
-        const userRole = idToken.payload['custom:role'] || 'Guest';
-        document.getElementById('role').value = userRole;
-        document.getElementById('firstName').value = idToken.payload.given_name || '';
-        document.getElementById('lastName').value = idToken.payload.family_name || '';
         
-        // Update role request visibility
-        updateRoleRequestVisibility(userRole);
-        
-        // Format last login time
-        const lastLogin = new Date(user.getSignInUserSession().getAccessToken().getIssuedAt() * 1000);
-        document.getElementById('lastLogin').value = lastLogin.toLocaleString();
-        
-        // Get additional user details from API
+        // Get user role from API instead of token to ensure it's up-to-date
         const token = idToken.getJwtToken();
         const response = await fetch(`${_config.api.invokeUrl}/cms/users/me`, {
           method: 'GET',
@@ -218,9 +230,37 @@
         
         if (response.ok) {
           const userData = await response.json();
+          // Use the role from API response instead of token
+          const userRole = userData.role || idToken.payload['custom:role'] || 'Guest';
+          document.getElementById('role').value = userRole;
+          
+          // Load profile picture if available
+          if (userData.profilePicture) {
+            document.getElementById('profileImage').src = userData.profilePicture;
+          }
+          
+          // Load contact details if available
+          if (userData.contactDetails) {
+            document.getElementById('contactDetails').value = userData.contactDetails;
+          }
+          
           loadUserGroups(userData.groups);
           loadRecentActivity(userData.recentActivity);
+        } else {
+          // Fallback to token if API fails
+          const userRole = idToken.payload['custom:role'] || 'Guest';
+          document.getElementById('role').value = userRole;
         }
+        
+        document.getElementById('firstName').value = idToken.payload.given_name || '';
+        document.getElementById('lastName').value = idToken.payload.family_name || '';
+        
+        // Update role request visibility
+        updateRoleRequestVisibility(document.getElementById('role').value);
+        
+        // Format last login time
+        const lastLogin = new Date(user.getSignInUserSession().getAccessToken().getIssuedAt() * 1000);
+        document.getElementById('lastLogin').value = lastLogin.toLocaleString();
       } catch (err) {
         console.error("Error loading profile:", err);
         alert("Error loading profile. Please try again later.");
@@ -317,11 +357,60 @@
       return `${years} year${years > 1 ? 's' : ''} ago`;
     }
     
+    // Function to upload profile picture to S3
+    async function uploadProfilePicture(file) {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        const userId = session.getIdToken().payload.sub;
+        
+        // Get pre-signed URL for S3 upload
+        const response = await fetch(`${_config.api.invokeUrl}/cms/users/profile-picture-upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            fileName: file.name,
+            contentType: file.type
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to get upload URL: ${response.status}`);
+        }
+        
+        const { uploadUrl, imageUrl } = await response.json();
+        
+        // Upload file directly to S3 using the pre-signed URL
+        const uploadResponse = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': file.type
+          },
+          body: file
+        });
+        
+        if (!uploadResponse.ok) {
+          throw new Error(`Failed to upload image: ${uploadResponse.status}`);
+        }
+        
+        // Return the public URL of the uploaded image
+        return imageUrl;
+      } catch (err) {
+        console.error("Error uploading profile picture:", err);
+        throw err;
+      }
+    }
+    
     // Function to save profile changes
     async function saveProfile() {
       try {
         const firstName = document.getElementById('firstName').value;
         const lastName = document.getElementById('lastName').value;
+        const contactDetails = document.getElementById('contactDetails').value;
+        const profilePictureInput = document.getElementById('profilePicture');
         
         if (!firstName || !lastName) {
           throw new Error('First name and last name are required');
@@ -330,6 +419,42 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
+        // Prepare profile data
+        const profileData = {
+          firstName,
+          lastName,
+          contactDetails
+        };
+        
+        // Upload profile picture if a new one was selected
+        if (profilePictureInput.files && profilePictureInput.files[0]) {
+          const file = profilePictureInput.files[0];
+          
+          // Validate file size (max 5MB)
+          if (file.size > 5 * 1024 * 1024) {
+            throw new Error('Profile picture must be less than 5MB');
+          }
+          
+          // Validate file type
+          if (!file.type.match('image.*')) {
+            throw new Error('Only image files are allowed');
+          }
+          
+          // Show loading state
+          const statusEl = document.getElementById('profileStatus');
+          statusEl.textContent = "Uploading profile picture...";
+          statusEl.classList.add('alert-info');
+          statusEl.classList.remove('d-none', 'alert-danger', 'alert-success');
+          
+          // Upload to S3 and get the URL
+          const imageUrl = await uploadProfilePicture(file);
+          profileData.profilePicture = imageUrl;
+          
+          // Update the profile image on the page
+          document.getElementById('profileImage').src = imageUrl;
+        }
+        
+        // Update user profile in the database
         const response = await fetch(`${_config.api.invokeUrl}/cms/users/me`, {
           method: 'PUT',
           headers: {
@@ -337,10 +462,7 @@
             'Content-Type': 'application/json'
           },
           credentials: 'include',
-          body: JSON.stringify({
-            firstName,
-            lastName
-          })
+          body: JSON.stringify(profileData)
         });
         
         if (!response.ok) {
@@ -350,7 +472,7 @@
         const statusEl = document.getElementById('profileStatus');
         statusEl.textContent = "Profile updated successfully!";
         statusEl.classList.add('alert-success');
-        statusEl.classList.remove('d-none', 'alert-danger');
+        statusEl.classList.remove('d-none', 'alert-danger', 'alert-info');
         
         // Hide status message after a delay
         setTimeout(() => {
@@ -361,7 +483,7 @@
         const statusEl = document.getElementById('profileStatus');
         statusEl.textContent = `Error: ${err.message}`;
         statusEl.classList.add('alert-danger');
-        statusEl.classList.remove('d-none', 'alert-success');
+        statusEl.classList.remove('d-none', 'alert-success', 'alert-info');
       }
     }
     
@@ -440,6 +562,34 @@
         document.getElementById('submitChangePassword').addEventListener('click', changePassword);
         document.getElementById('setupMfaBtn').addEventListener('click', function() {
           alert('MFA setup functionality will be implemented in a future update.');
+        });
+        
+        // Preview profile picture before upload
+        document.getElementById('profilePicture').addEventListener('change', function(e) {
+          if (this.files && this.files[0]) {
+            const file = this.files[0];
+            
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+              alert('Profile picture must be less than 5MB');
+              this.value = '';
+              return;
+            }
+            
+            // Validate file type
+            if (!file.type.match('image.*')) {
+              alert('Only image files are allowed');
+              this.value = '';
+              return;
+            }
+            
+            // Preview the image
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              document.getElementById('profileImage').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
         });
         
         // Handle role request submission
