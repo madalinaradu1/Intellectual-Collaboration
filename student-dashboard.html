@@ -29,7 +29,13 @@
 </head>
 <body>
   <div class="container content-container">
-    <h2 class="text-white mb-4">Student Dashboard</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2 class="text-white mb-0">Student Dashboard</h2>
+      <div id="adminControls" class="d-none">
+        <a href="user-management.html" class="btn btn-warning">Manage Users</a>
+        <a href="group-management.html" class="btn btn-info ms-2">Manage Groups</a>
+      </div>
+    </div>
     
     <!-- Available Groups -->
     <div class="row mb-4">
@@ -566,13 +572,6 @@
         
         // Check for role in custom attribute or Cognito groups
         let userRole = idToken.payload['custom:role'] || 'Guest';
-        const cognitoGroups = idToken.payload['cognito:groups'] || [];
-        if (cognitoGroups.includes('ApplicationAdmin')) {
-          userRole = 'ApplicationAdmin';
-        }
-        
-        // Check for role in custom attribute or Cognito groups
-        let userRole = idToken.payload['custom:role'] || 'Guest';
         let parentGroup = idToken.payload['custom:parentGroup'] || '';
         const cognitoGroups = idToken.payload['cognito:groups'] || [];
         if (cognitoGroups.includes('ApplicationAdmin')) {
@@ -584,6 +583,11 @@
           alert('This page is for DC Network students and Application Admins only.');
           window.location.href = 'index.html';
           return;
+        }
+        
+        // Show admin controls if user is ApplicationAdmin
+        if (userRole === 'ApplicationAdmin') {
+          document.getElementById('adminControls').classList.remove('d-none');
         }
         
         // Load groups
