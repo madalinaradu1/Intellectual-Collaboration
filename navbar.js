@@ -47,7 +47,7 @@ function addNavigationBar() {
             <a class="nav-link" href="bulk-import.html" data-requires-role="ApplicationAdmin,GroupAdmin">Bulk Import</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="student-dashboard.html" data-requires-role="Student" data-requires-parent-group="DC Network">Student Dashboard</a>
+            <a class="nav-link" href="student-dashboard.html" data-requires-role="Student,ApplicationAdmin" data-requires-parent-group="DC Network">Student Dashboard</a>
           </li>
         </ul>
         <ul class="navbar-nav">

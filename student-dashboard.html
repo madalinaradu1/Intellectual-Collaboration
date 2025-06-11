@@ -579,9 +579,9 @@
           userRole = 'ApplicationAdmin';
         }
         
-        // Only Students from DC Network can access this page
-        if (userRole !== 'Student' || parentGroup !== 'DC Network') {
-          alert('This page is for DC Network students only.');
+        // Only Students from DC Network or Application Admins can access this page
+        if ((userRole !== 'Student' || parentGroup !== 'DC Network') && userRole !== 'ApplicationAdmin') {
+          alert('This page is for DC Network students and Application Admins only.');
           window.location.href = 'index.html';
           return;
         }
