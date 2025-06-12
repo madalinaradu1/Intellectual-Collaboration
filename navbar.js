@@ -43,8 +43,8 @@ function addNavigationBar() {
           <li class="nav-item">
             <a class="nav-link" href="user-management.html" data-requires-role="ApplicationAdmin">Users</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="role-requests.html" data-requires-role="ApplicationAdmin">Role Requests</a>
+          <li class="nav-item" id="roleRequestsNav">
+            <a class="nav-link" href="role-requests.html">Role Requests</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="bulk-import.html" data-requires-role="ApplicationAdmin,GroupAdmin">Import Users</a>
@@ -128,6 +128,16 @@ document.addEventListener('DOMContentLoaded', function() {
             let parentGroup = idToken.payload['custom:parentGroup'] || '';
             console.log("Navbar - User role:", userRole, "Parent group:", parentGroup);
             
+            // Handle Role Requests link visibility
+            const roleRequestsNav = document.getElementById('roleRequestsNav');
+            if (userRole === 'ApplicationAdmin') {
+              roleRequestsNav.style.display = '';
+              console.log("Showing Role Requests link for ApplicationAdmin");
+            } else {
+              roleRequestsNav.style.display = 'none';
+              console.log("Hiding Role Requests link for non-admin users");
+            }
+            
             // Update role-based elements
             const roleElements = document.querySelectorAll('[data-requires-role]');
             roleElements.forEach(el => {
@@ -144,11 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
               const requiredParentGroups = el.dataset.requiresParentGroup ? el.dataset.requiresParentGroup.split(',') : [];
               const hasRequiredParentGroup = requiredParentGroups.length === 0 || requiredParentGroups.includes(parentGroup);
               
-              // Special handling for Role Requests link
-              if (el.href && el.href.endsWith('role-requests.html') && userRole === 'ApplicationAdmin') {
-                el.parentElement.style.display = '';
-                console.log("Showing Role Requests link for ApplicationAdmin");
-              } else if ((hasRequiredRole || (isAdmin && isAdminElement)) && hasRequiredParentGroup) {
+              if ((hasRequiredRole || (isAdmin && isAdminElement)) && hasRequiredParentGroup) {
                 el.parentElement.style.display = '';
                 console.log("Showing element for role:", userRole, "and parent group:", parentGroup, el);
               } else {
