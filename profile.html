@@ -47,7 +47,7 @@
         <div class="profile-section">
           <h4 class="mb-4">Account Information</h4>
           <div class="mb-3 text-center">
-            <img id="profileImage" src="https://via.placeholder.com/100" class="rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover;">
+            <img id="profileImage" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAAB4CAMAAAAOusbgAAAAM1BMVEX///+6urq3t7fKysr4+PjQ0NDFxcXc3Nzj4+P8/PzU1NTq6ur09PTx8fG/v7/n5+fZ2dkJz8w1AAADQUlEQVRoge1a27arIAyUgYCI2v//2gMqKlJvR7vWyTyc3W6FYUgyE7Tso0cPpGjZfHQTVkGIzD66CSsgHPuEXwDh8QnfHxQ/4ftD4xO+P/QnfH/oT/j+0J/w/aE/4ftDf8L3h/6E7w/9Cd8f+hO+P/QnfH/oT/j+0J/w/aE/4ftDf8L3h/6E7w/9Cd8f+hO+P/QnfH/oT/j+0J/w/aGfJCzMJ8n+jDARo5QyZvkTzIQQQpj9AWkiLDgTQkwpjOYHmLEQQmWMqZQyxnJKKWMspXTOGZVSaq2N0VprrY3RWmvnrLXWOeecMcY551wIIYQQUkoppZRKKaWUUkqttdZaa621McY555xzIYQQQkgppZRSSqmUUkqptdZaa621McY555wLIYSQUkoppZRKKaXUWmuttdZaG2Occ865EEJIKaWUUkqllFJqrbXWWmttjHHOORdCCCmllFJKpZRSaq211lprY4xzzrkQQkoppZRSKqWUUmuttdZaG2Occ86FEFJKKaWUUiml1Fprra/Rea2UUkrFGGOMIYQQQggh5JxzzjnnnHPOOWuttdZaa621McY555wLIaSUUkqplFJKrbXWWmttjHHOORdCSCmllFIppZRaa6211sYY55xzIYSUUkoppZRSaq211toY45xzLoSQUkoppZRSaq211toY45xzIYSUUkoppZRSa6211sYY55wLIaSUUkoppZRaa621McY551wIIaWUUkoppZRaa62NMc4550JIKaWUUkoppbXW2hjjnHMhhJRSSimllFJrrbUxxjnnXAgppZRSSqm11toYY5xzLoSQUkoppZRSa621McY550IIKaWUUkqptdbaGOOccy6ElFJKKaXUWmttjHHOORdCSimllFJqrbU2xjjnnAsppZRSSqm11toY45xzLqSUUkqptdbaGOOccy6klFJKKbXWWhtjnHPOpZRSSqm11toY45xzLqWUUkqttdbGGOecc1JKKaXUWmtjjHPOuZRSSim11toY45xzLqWUUmqttTHGOedcSiml1FprY4xzzrmUUkqttTbGOOecSyml1FprY4xzzrmUUmqttTHGOedcSim11toY45xzLqXUWmtjjHPOuZRSa62NMc4551JKrbUxxjnnnEsptTHGOeecSymNMc4551xKaYxxzjnnUhrnnHMupf8AoRJDqUhOkxwAAAAASUVORK5CYII=" class="rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover;">
             <div>
               <input type="file" class="form-control" id="profilePicture" accept="image/*">
               <small class="form-text text-muted">Max file size: 5MB</small>
@@ -227,12 +227,24 @@
           const userRole = userData.role || idToken.payload['custom:role'] || 'Guest';
           document.getElementById('role').value = userRole;
           
+          // Get name from database instead of token
+          const firstName = userData.firstName || idToken.payload.given_name || '';
+          const lastName = userData.lastName || idToken.payload.family_name || '';
+          
+          const firstNameInput = document.getElementById('firstName');
+          const lastNameInput = document.getElementById('lastName');
+          
+          firstNameInput.value = firstName;
+          lastNameInput.value = lastName;
+          
+          // Store original values as data attributes
+          firstNameInput.setAttribute('data-original', firstName);
+          lastNameInput.setAttribute('data-original', lastName);
+          
           // Load profile picture if available
           if (userData.profilePicture) {
             document.getElementById('profileImage').src = userData.profilePicture;
           }
-          
-
           
           loadUserGroups(userData.groups);
           loadRecentActivity(userData.recentActivity);
@@ -240,21 +252,21 @@
           // Fallback to token if API fails
           const userRole = idToken.payload['custom:role'] || 'Guest';
           document.getElementById('role').value = userRole;
+          
+          // Fallback to token for name values
+          const firstName = idToken.payload.given_name || '';
+          const lastName = idToken.payload.family_name || '';
+          
+          const firstNameInput = document.getElementById('firstName');
+          const lastNameInput = document.getElementById('lastName');
+          
+          firstNameInput.value = firstName;
+          lastNameInput.value = lastName;
+          
+          // Store original values as data attributes
+          firstNameInput.setAttribute('data-original', firstName);
+          lastNameInput.setAttribute('data-original', lastName);
         }
-        
-        // Store original values and set input values
-        const firstName = idToken.payload.given_name || '';
-        const lastName = idToken.payload.family_name || '';
-        
-        const firstNameInput = document.getElementById('firstName');
-        const lastNameInput = document.getElementById('lastName');
-        
-        firstNameInput.value = firstName;
-        lastNameInput.value = lastName;
-        
-        // Store original values as data attributes
-        firstNameInput.setAttribute('data-original', firstName);
-        lastNameInput.setAttribute('data-original', lastName);
         
         // Update role request visibility
         updateRoleRequestVisibility(document.getElementById('role').value);
