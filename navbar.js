@@ -32,7 +32,7 @@ function addNavigationBar() {
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
+      <div class="collapse navbar-collapse show" id="navbarNav">
         <ul class="navbar-nav me-auto">
           <li class="nav-item">
             <a class="nav-link" href="index.html">Home</a>
@@ -47,7 +47,7 @@ function addNavigationBar() {
             <a class="nav-link" href="role-requests.html" data-requires-role="ApplicationAdmin">Role Requests</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="bulk-import.html" data-requires-role="ApplicationAdmin,GroupAdmin">Bulk Import</a>
+            <a class="nav-link" href="bulk-import.html" data-requires-role="ApplicationAdmin,GroupAdmin">Import Users</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="student-dashboard.html" data-requires-role="Student,ApplicationAdmin" data-requires-parent-group="DC Network">Student Dashboard</a>
@@ -144,11 +144,15 @@ document.addEventListener('DOMContentLoaded', function() {
               const requiredParentGroups = el.dataset.requiresParentGroup ? el.dataset.requiresParentGroup.split(',') : [];
               const hasRequiredParentGroup = requiredParentGroups.length === 0 || requiredParentGroups.includes(parentGroup);
               
-              if ((hasRequiredRole || (isAdmin && isAdminElement)) && hasRequiredParentGroup) {
-                el.style.display = '';
+              // Special handling for Role Requests link
+              if (el.href && el.href.endsWith('role-requests.html') && userRole === 'ApplicationAdmin') {
+                el.parentElement.style.display = '';
+                console.log("Showing Role Requests link for ApplicationAdmin");
+              } else if ((hasRequiredRole || (isAdmin && isAdminElement)) && hasRequiredParentGroup) {
+                el.parentElement.style.display = '';
                 console.log("Showing element for role:", userRole, "and parent group:", parentGroup, el);
               } else {
-                el.style.display = 'none';
+                el.parentElement.style.display = 'none';
               }
             });
           })
