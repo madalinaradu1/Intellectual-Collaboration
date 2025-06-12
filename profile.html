@@ -333,7 +333,8 @@
         
         // Show Role Requests button only for admins
         const roleRequestsBtn = document.getElementById('roleRequestsBtn');
-        if (userRole === 'Application Admin') {
+        const currentRole = document.getElementById('role').value;
+        if (currentRole === 'Application Admin') {
           roleRequestsBtn.style.display = 'inline-block';
         } else {
           roleRequestsBtn.style.display = 'none';
