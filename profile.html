@@ -215,17 +215,18 @@
         
         // Get user role from API instead of token to ensure it's up-to-date
         const token = idToken.getJwtToken();
-        const response = await fetch(`${_config.api.invokeUrl}/cms/users/me`, {
-          method: 'GET',
-          headers: {
-            'Authorization': token,
-            'Content-Type': 'application/json'
-          },
-          credentials: 'include'
-        });
         
-        if (response.ok) {
-          const userData = await response.json();
+        try {
+          const response = await fetch(`${_config.api.invokeUrl}/cms/users/me`, {
+            method: 'GET',
+            headers: {
+              'Authorization': token,
+              'Content-Type': 'application/json'
+            }
+          });
+        
+          if (response.ok) {
+            const userData = await response.json();
           // Use the role from API response instead of token
           let userRole = userData.role || idToken.payload['custom:role'] || 'Guest';
           
@@ -263,9 +264,9 @@
           
           loadUserGroups(userData.groups);
           loadRecentActivity(userData.recentActivity);
-        } else {
-          // Fallback to token if API fails
-          let userRole = idToken.payload['custom:role'] || 'Guest';
+          } else {
+            // Fallback to token if API fails
+            let userRole = idToken.payload['custom:role'] || 'Guest';
           
           // Format role with spaces (e.g., "ApplicationAdmin" -> "Application Admin")
           if (userRole === 'ApplicationAdmin') {
@@ -281,6 +282,38 @@
           document.getElementById('role').value = userRole;
           
           // Fallback to token for name values
+          const firstName = idToken.payload.given_name || '';
+          const lastName = idToken.payload.family_name || '';
+          
+          const firstNameInput = document.getElementById('firstName');
+          const lastNameInput = document.getElementById('lastName');
+          
+          firstNameInput.value = firstName;
+          lastNameInput.value = lastName;
+          
+          // Store original values as data attributes
+          firstNameInput.setAttribute('data-original', firstName);
+          lastNameInput.setAttribute('data-original', lastName);
+          }
+        } catch (apiError) {
+          console.error("API error:", apiError);
+          // Fallback to token if API call throws an error
+          let userRole = idToken.payload['custom:role'] || 'Guest';
+          
+          // Format role with spaces
+          if (userRole === 'ApplicationAdmin') {
+            userRole = 'Application Admin';
+          } else if (userRole === 'GroupAdmin') {
+            userRole = 'Group Admin';
+          } else if (userRole === 'FacultyMember') {
+            userRole = 'Faculty Member';
+          } else if (userRole === 'GroupOfficer') {
+            userRole = 'Group Officer';
+          }
+          
+          document.getElementById('role').value = userRole;
+          
+          // Use token values for name
           const firstName = idToken.payload.given_name || '';
           const lastName = idToken.payload.family_name || '';
           
@@ -503,7 +536,6 @@
             'Authorization': idToken,
             'Content-Type': 'application/json'
           },
-          credentials: 'include',
           body: JSON.stringify(profileData)
         });
         
@@ -665,8 +697,7 @@
                 requestedRole: requestedRole,
                 justification: justification,
                 timestamp: new Date().toISOString()
-              }),
-              credentials: 'include'
+              })
             });
             
             if (!response.ok) {
