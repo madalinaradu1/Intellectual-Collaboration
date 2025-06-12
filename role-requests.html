@@ -170,11 +170,17 @@
         return;
       }
       
-      const html = requests.map(req => `
+      const html = requests.map(req => {
+        // Handle undefined userName by using firstName and lastName if available
+        const displayName = req.userName || 
+                           ((req.firstName || '') + ' ' + (req.lastName || '')).trim() || 
+                           'Unknown User';
+        
+        return `
         <div class="request-card">
           <div class="d-flex justify-content-between align-items-start mb-3">
             <div>
-              <h5 class="mb-1">${req.userName} (${req.email})</h5>
+              <h5 class="mb-1">${displayName} (${req.email})</h5>
               <p class="mb-0 text-muted">Requested on ${new Date(req.timestamp).toLocaleString()}</p>
             </div>
             <span class="badge bg-warning">Pending</span>
@@ -201,7 +207,7 @@
             <button class="btn btn-primary review-btn" 
               data-request-id="${req.requestId}"
               data-user-id="${req.userId}"
-              data-user-name="${req.userName}"
+              data-user-name="${displayName}"
               data-email="${req.email}"
               data-current-role="${req.currentRole}"
               data-requested-role="${req.requestedRole}"
@@ -211,7 +217,8 @@
             </button>
           </div>
         </div>
-      `).join('');
+        `;
+      }).join('');
       
       container.innerHTML = html;
       
@@ -233,11 +240,17 @@
         return;
       }
       
-      const html = requests.map(req => `
+      const html = requests.map(req => {
+        // Handle undefined userName by using firstName and lastName if available
+        const displayName = req.userName || 
+                           ((req.firstName || '') + ' ' + (req.lastName || '')).trim() || 
+                           'Unknown User';
+        
+        return `
         <div class="request-card">
           <div class="d-flex justify-content-between align-items-start mb-3">
             <div>
-              <h5 class="mb-1">${req.userName} (${req.email})</h5>
+              <h5 class="mb-1">${displayName} (${req.email})</h5>
               <p class="mb-0 text-muted">Requested on ${new Date(req.timestamp).toLocaleString()}</p>
             </div>
             <span class="badge ${req.status === 'Approved' ? 'bg-success' : 'bg-danger'}">${req.status}</span>
@@ -268,7 +281,8 @@
             Reviewed by ${req.reviewedBy} on ${new Date(req.reviewedAt).toLocaleString()}
           </div>
         </div>
-      `).join('');
+        `;
+      }).join('');
       
       container.innerHTML = html;
     }
@@ -306,6 +320,15 @@
         const idToken = session.getIdToken();
         const reviewerName = `${idToken.payload.given_name} ${idToken.payload.family_name}`;
         
+        console.log("Processing request with data:", {
+          status: approved ? 'Approved' : 'Rejected',
+          reviewedBy: reviewerName,
+          reviewedAt: new Date().toISOString(),
+          reviewNotes: reviewNotes,
+          userId: userId,
+          requestedRole: requestedRole
+        });
+        
         const response = await fetch(`${_config.api.invokeUrl}/cms/role-requests/${requestId}`, {
           method: 'PUT',
           headers: {
@@ -318,7 +341,7 @@
             reviewedAt: new Date().toISOString(),
             reviewNotes: reviewNotes,
             userId: userId,
-            newRole: approved ? requestedRole : null
+            requestedRole: requestedRole
           }),
           credentials: 'include'
         });
