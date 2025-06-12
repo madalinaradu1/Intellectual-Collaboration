@@ -182,6 +182,7 @@
   <!-- Configuration -->
   <script src="config.js"></script>
   <script src="amplify-config.js"></script>
+  <script src="profile-update.js"></script>
   
   <!-- S3 Configuration -->
   <script>
@@ -260,6 +261,8 @@
           // Load profile picture if available
           if (userData.profilePicture) {
             document.getElementById('profileImage').src = userData.profilePicture;
+          } else {
+            document.getElementById('profileImage').src = 'no-profile.png';
           }
           
           loadUserGroups(userData.groups);
