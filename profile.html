@@ -38,7 +38,10 @@
   <div class="container">
     <!-- Navigation -->
     <nav class="mb-4">
-      <a href="index.html" class="btn btn-outline-secondary">← Back to Dashboard</a>
+      <div class="d-flex">
+        <a href="index.html" class="btn btn-outline-secondary me-2">← Back to Dashboard</a>
+        <a href="role-requests.html" class="btn btn-outline-primary" id="roleRequestsBtn">Role Requests</a>
+      </div>
     </nav>
 
     <!-- User Info -->
@@ -224,7 +227,19 @@
         if (response.ok) {
           const userData = await response.json();
           // Use the role from API response instead of token
-          const userRole = userData.role || idToken.payload['custom:role'] || 'Guest';
+          let userRole = userData.role || idToken.payload['custom:role'] || 'Guest';
+          
+          // Format role with spaces (e.g., "ApplicationAdmin" -> "Application Admin")
+          if (userRole === 'ApplicationAdmin') {
+            userRole = 'Application Admin';
+          } else if (userRole === 'GroupAdmin') {
+            userRole = 'Group Admin';
+          } else if (userRole === 'FacultyMember') {
+            userRole = 'Faculty Member';
+          } else if (userRole === 'GroupOfficer') {
+            userRole = 'Group Officer';
+          }
+          
           document.getElementById('role').value = userRole;
           
           // Get name from database instead of token
@@ -250,7 +265,19 @@
           loadRecentActivity(userData.recentActivity);
         } else {
           // Fallback to token if API fails
-          const userRole = idToken.payload['custom:role'] || 'Guest';
+          let userRole = idToken.payload['custom:role'] || 'Guest';
+          
+          // Format role with spaces (e.g., "ApplicationAdmin" -> "Application Admin")
+          if (userRole === 'ApplicationAdmin') {
+            userRole = 'Application Admin';
+          } else if (userRole === 'GroupAdmin') {
+            userRole = 'Group Admin';
+          } else if (userRole === 'FacultyMember') {
+            userRole = 'Faculty Member';
+          } else if (userRole === 'GroupOfficer') {
+            userRole = 'Group Officer';
+          }
+          
           document.getElementById('role').value = userRole;
           
           // Fallback to token for name values
@@ -270,6 +297,14 @@
         
         // Update role request visibility
         updateRoleRequestVisibility(document.getElementById('role').value);
+        
+        // Show Role Requests button only for admins
+        const roleRequestsBtn = document.getElementById('roleRequestsBtn');
+        if (userRole === 'Application Admin') {
+          roleRequestsBtn.style.display = 'inline-block';
+        } else {
+          roleRequestsBtn.style.display = 'none';
+        }
         
         // Format last login time
         const lastLogin = new Date(user.getSignInUserSession().getAccessToken().getIssuedAt() * 1000);

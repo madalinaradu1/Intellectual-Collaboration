@@ -44,6 +44,9 @@ function addNavigationBar() {
             <a class="nav-link" href="user-management.html" data-requires-role="ApplicationAdmin">Users</a>
           </li>
           <li class="nav-item">
+            <a class="nav-link" href="role-requests.html" data-requires-role="ApplicationAdmin">Role Requests</a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link" href="bulk-import.html" data-requires-role="ApplicationAdmin,GroupAdmin">Bulk Import</a>
           </li>
           <li class="nav-item">
