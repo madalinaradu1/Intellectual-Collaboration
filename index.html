@@ -245,7 +245,7 @@ async function loadPosts() {
               <h6 class="mt-0">${authorName}</h6>
               <p class="card-text">${p.Message}</p>
               ${imageHtml}
-              ${p.Attachment && !p.Attachment.FileType.startsWith('image/') ? attachmentHtml : ''}
+              ${p.Attachment && p.Attachment.FileType && !p.Attachment.FileType.startsWith('image/') ? attachmentHtml : ''}
             </div>
           </div>
         </div>
