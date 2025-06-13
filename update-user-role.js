@@ -1,5 +1,5 @@
 // Function to update a user's role in both Cognito and the database
-async function updateUserRole(userId, newRole) {
+async function updateUserRole(userId, newRole, firstName, lastName) {
   try {
     const session = await Amplify.Auth.currentSession();
     const idToken = session.getIdToken().getJwtToken();
@@ -10,6 +10,14 @@ async function updateUserRole(userId, newRole) {
     statusEl.classList.add('alert-info');
     statusEl.classList.remove('d-none', 'alert-danger', 'alert-success');
     
+    // Get the current firstName and lastName if not provided
+    if (!firstName || !lastName) {
+      const userFirstName = document.getElementById('userFirstName');
+      const userLastName = document.getElementById('userLastName');
+      firstName = userFirstName ? userFirstName.value : '';
+      lastName = userLastName ? userLastName.value : '';
+    }
+    
     // Call the API to update the user's role in both Cognito and the database
     const response = await fetch(`${_config.api.invokeUrl}/cms/users/${userId}`, {
       method: 'PUT',
@@ -18,7 +26,9 @@ async function updateUserRole(userId, newRole) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        role: newRole
+        role: newRole,
+        firstName: firstName,
+        lastName: lastName
       }),
       // Remove credentials: 'include' to avoid CORS issues
     });

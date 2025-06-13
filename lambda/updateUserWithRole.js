@@ -109,7 +109,9 @@ export const handler = async (event) => {
             body: JSON.stringify({
                 message: 'User updated successfully',
                 userId,
-                role: body.role
+                role: body.role,
+                firstName: body.firstName || '',
+                lastName: body.lastName || ''
             })
         };
     } catch (error) {

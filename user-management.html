@@ -368,7 +368,7 @@
         // Check if role has changed
         if (role !== oldRole) {
           // Use the updateUserRole function to update role in both Cognito and database
-          const roleUpdateSuccess = await updateUserRole(userId, role);
+          const roleUpdateSuccess = await updateUserRole(userId, role, firstName, lastName);
           if (!roleUpdateSuccess) {
             return; // Stop if role update failed
           }
