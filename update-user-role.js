@@ -11,16 +11,16 @@ async function updateUserRole(userId, newRole) {
     statusEl.classList.remove('d-none', 'alert-danger', 'alert-success');
     
     // Call the API to update the user's role in both Cognito and the database
-    const response = await fetch(`${_config.api.invokeUrl}/cms/users/${userId}/role`, {
+    const response = await fetch(`${_config.api.invokeUrl}/cms/users/${userId}`, {
       method: 'PUT',
       headers: {
         'Authorization': idToken,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        role: newRole,
-        updateCognito: true // This flag tells the backend to update both Cognito and the database
-      })
+        role: newRole
+      }),
+      credentials: 'include'
     });
     
     if (!response.ok) {
