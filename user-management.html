@@ -183,6 +183,7 @@
   <!-- Configuration -->
   <script src="config.js"></script>
   <script src="amplify-config.js"></script>
+  <script src="update-user-role.js"></script>
 
   <script>
     // Function to check user permissions
@@ -324,6 +325,9 @@
         document.getElementById('userEmail').value = user.email || '';
         document.getElementById('userRole').value = user.role || 'Guest';
         
+        // Store the original role for comparison when saving
+        document.getElementById('userDetailsForm').dataset.oldRole = user.role || 'Guest';
+        
         // Populate groups
         const groupsList = document.getElementById('userGroupsList');
         if (user.groups && user.groups.length > 0) {
@@ -356,10 +360,21 @@
         const firstName = document.getElementById('userFirstName').value;
         const lastName = document.getElementById('userLastName').value;
         const role = document.getElementById('userRole').value;
+        const oldRole = document.getElementById('userDetailsForm').dataset.oldRole;
         
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
+        // Check if role has changed
+        if (role !== oldRole) {
+          // Use the updateUserRole function to update role in both Cognito and database
+          const roleUpdateSuccess = await updateUserRole(userId, role);
+          if (!roleUpdateSuccess) {
+            return; // Stop if role update failed
+          }
+        }
+        
+        // Continue with updating other user details
         const response = await fetch(`${_config.api.invokeUrl}/cms/users/${userId}`, {
           method: 'PUT',
           headers: {
@@ -369,8 +384,8 @@
           credentials: 'include',
           body: JSON.stringify({
             firstName,
-            lastName,
-            role
+            lastName
+            // Role is already updated separately if needed
           })
         });
         
