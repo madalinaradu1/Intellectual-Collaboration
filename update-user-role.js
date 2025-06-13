@@ -20,7 +20,7 @@ async function updateUserRole(userId, newRole) {
       body: JSON.stringify({
         role: newRole
       }),
-      credentials: 'include'
+      // Remove credentials: 'include' to avoid CORS issues
     });
     
     if (!response.ok) {

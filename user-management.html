@@ -231,8 +231,8 @@
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
-          },
-          credentials: 'include'
+          }
+          // Removed credentials: 'include' to fix CORS issues
         });
         
         if (!response.ok) {
@@ -309,8 +309,8 @@
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
-          },
-          credentials: 'include'
+          }
+          // Removed credentials: 'include' to fix CORS issues
         });
         
         if (!response.ok) {
@@ -381,7 +381,6 @@
             'Authorization': idToken,
             'Content-Type': 'application/json'
           },
-          credentials: 'include',
           body: JSON.stringify({
             firstName,
             lastName
@@ -426,7 +425,6 @@
             'Authorization': idToken,
             'Content-Type': 'application/json'
           },
-          credentials: 'include',
           body: JSON.stringify({
             enabled: !disable
           })
@@ -465,7 +463,6 @@
             'Authorization': idToken,
             'Content-Type': 'application/json'
           },
-          credentials: 'include',
           body: JSON.stringify({
             email,
             firstName,

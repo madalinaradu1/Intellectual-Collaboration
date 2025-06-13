@@ -11,14 +11,33 @@ exports.handler = async (event) => {
     try {
         console.log('Event:', JSON.stringify(event));
         
+        // Get origin from request headers
+        const origin = event.headers && event.headers.origin 
+            ? event.headers.origin 
+            : 'https://master.ddue50gwnbp85.amplifyapp.com';
+        
+        // CORS headers with specific origin
+        const headers = {
+            'Access-Control-Allow-Origin': origin,
+            'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+            'Access-Control-Allow-Methods': 'OPTIONS,GET,PUT,POST,DELETE',
+            'Access-Control-Allow-Credentials': true
+        };
+        
+        // Handle OPTIONS request (preflight)
+        if (event.httpMethod === 'OPTIONS') {
+            return {
+                statusCode: 200,
+                headers,
+                body: ''
+            };
+        }
+        
         // Check if this is an API Gateway event
         if (!event.pathParameters || !event.body) {
             return {
                 statusCode: 400,
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Credentials': true
-                },
+                headers,
                 body: JSON.stringify({ message: 'Invalid request format' })
             };
         }
@@ -32,10 +51,7 @@ exports.handler = async (event) => {
         if (!userId || !newRole) {
             return {
                 statusCode: 400,
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Credentials': true
-                },
+                headers,
                 body: JSON.stringify({ message: 'Missing required parameters' })
             };
         }
@@ -84,10 +100,7 @@ exports.handler = async (event) => {
         
         return {
             statusCode: 200,
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Credentials': true
-            },
+            headers,
             body: JSON.stringify({ 
                 message: 'User role updated successfully',
                 userId,
@@ -97,10 +110,17 @@ exports.handler = async (event) => {
     } catch (error) {
         console.error('Error updating user role:', error);
         
+        // Get origin from request headers
+        const origin = event.headers && event.headers.origin 
+            ? event.headers.origin 
+            : 'https://master.ddue50gwnbp85.amplifyapp.com';
+        
         return {
             statusCode: 500,
             headers: {
-                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Origin': origin,
+                'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+                'Access-Control-Allow-Methods': 'OPTIONS,GET,PUT,POST,DELETE',
                 'Access-Control-Allow-Credentials': true
             },
             body: JSON.stringify({ 
