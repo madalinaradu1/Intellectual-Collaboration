@@ -153,6 +153,38 @@ async function loadPosts() {
     const idToken = session.getIdToken().getJwtToken();
     console.log("Using ID Token for authorization");
     
+    // Get current user info to use for posts without author data
+    const currentUser = await Amplify.Auth.currentAuthenticatedUser();
+    window.currentUserProfilePicture = null;
+    window.currentUsername = currentUser.username;
+    console.log("Current username:", window.currentUsername);
+    
+    // Try to get user's profile picture from API
+    try {
+      const userResponse = await fetch(`${_config.api.invokeUrl}/cms/users/me`, {
+        method: 'GET',
+        headers: {
+          'Authorization': idToken,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        console.log("User data:", userData);
+        if (userData.profilePicture) {
+          window.currentUserProfilePicture = userData.profilePicture;
+          console.log("Got user profile picture:", window.currentUserProfilePicture);
+        } else {
+          console.log("No profile picture in user data");
+        }
+      } else {
+        console.log("User response not OK:", userResponse.status);
+      }
+    } catch (userErr) {
+      console.error("Error fetching user profile:", userErr);
+    }
+    
     // Make direct request with authorization headers
     const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
       method: 'GET',
@@ -185,6 +217,9 @@ async function loadPosts() {
       // If we have author data with first and last name, use it
       if (p.AuthorData && p.AuthorData.firstName && p.AuthorData.lastName) {
         authorName = `${p.AuthorData.firstName} ${p.AuthorData.lastName}`;
+        
+        // Store profile picture in post data for debugging
+        console.log("Author data profile picture:", p.AuthorData.profilePicture);
       } else if (authorName && authorName.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
         // If it's a UUID and we don't have author data, try to get it from the session
         try {
@@ -228,7 +263,18 @@ async function loadPosts() {
       }
       
       // Get profile image
-      const profileImage = p.AuthorData && p.AuthorData.profilePicture ? p.AuthorData.profilePicture : 'no-profile.png';
+      let profileImage = 'no-profile.png';
+      
+      // If post has author data with profile picture, use it
+      if (p.AuthorData && p.AuthorData.profilePicture) {
+        profileImage = p.AuthorData.profilePicture;
+        console.log("Using author data profile picture:", profileImage);
+      } 
+      // If this is the current user's post and we have their profile picture
+      else if (window.currentUserProfilePicture && p.Author === window.currentUsername) {
+        profileImage = window.currentUserProfilePicture;
+        console.log("Using current user profile picture for post by", p.Author);
+      }
       
       return `
       <div class="card mb-3">
