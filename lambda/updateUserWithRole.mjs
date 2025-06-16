@@ -1,4 +1,4 @@
-// Lambda function with fixed userId extraction and CORS headers
+// Lambda function with fixed userId extraction and hardcoded USER_POOL_ID
 import { DynamoDBClient, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
 import { 
   CognitoIdentityProviderClient, 
@@ -11,7 +11,7 @@ import { marshall } from "@aws-sdk/util-dynamodb";
 const dynamoClient = new DynamoDBClient();
 const cognitoClient = new CognitoIdentityProviderClient();
 
-// Environment variables
+// Hardcoded values instead of environment variables
 const USER_POOL_ID = 'us-east-1_JHnm7JteW';
 const USERS_TABLE = 'Users';
 
@@ -69,36 +69,75 @@ export const handler = async (event) => {
         
         // Update Cognito if role is provided
         if (body.role) {
-            // Find user in Cognito
-            const listUsersParams = {
-                UserPoolId: USER_POOL_ID,
-                Filter: `sub = "${userId}"`
-            };
-            
-            const listUsersResponse = await cognitoClient.send(
-                new ListUsersCommand(listUsersParams)
-            );
-            
-            if (listUsersResponse.Users && listUsersResponse.Users.length > 0) {
-                const cognitoUsername = listUsersResponse.Users[0].Username;
+            try {
+                // Find user in Cognito
+                const listUsersParams = {
+                    UserPoolId: USER_POOL_ID,
+                    Filter: `sub = "${userId}"`
+                };
                 
-                // Update user attribute
-                await cognitoClient.send(
-                    new AdminUpdateUserAttributesCommand({
-                        UserPoolId: USER_POOL_ID,
-                        Username: cognitoUsername,
-                        UserAttributes: [
-                            {
-                                Name: 'custom:role',
-                                Value: body.role
-                            }
-                        ]
-                    })
+                const listUsersResponse = await cognitoClient.send(
+                    new ListUsersCommand(listUsersParams)
                 );
                 
-                console.log(`Updated Cognito user ${cognitoUsername} role to ${body.role}`);
-            } else {
-                console.warn(`No Cognito user found with sub=${userId}`);
+                if (listUsersResponse.Users && listUsersResponse.Users.length > 0) {
+                    const cognitoUsername = listUsersResponse.Users[0].Username;
+                    
+                    // Update user attribute
+                    await cognitoClient.send(
+                        new AdminUpdateUserAttributesCommand({
+                            UserPoolId: USER_POOL_ID,
+                            Username: cognitoUsername,
+                            UserAttributes: [
+                                {
+                                    Name: 'custom:role',
+                                    Value: body.role
+                                }
+                            ]
+                        })
+                    );
+                    
+                    console.log(`Updated Cognito user ${cognitoUsername} role to ${body.role}`);
+                } else {
+                    console.warn(`No Cognito user found with sub=${userId}, trying email lookup`);
+                    
+                    // Try to find by email if available
+                    if (body.email) {
+                        const emailLookupParams = {
+                            UserPoolId: USER_POOL_ID,
+                            Filter: `email = "${body.email}"`
+                        };
+                        
+                        const emailLookupResponse = await cognitoClient.send(
+                            new ListUsersCommand(emailLookupParams)
+                        );
+                        
+                        if (emailLookupResponse.Users && emailLookupResponse.Users.length > 0) {
+                            const cognitoUsername = emailLookupResponse.Users[0].Username;
+                            
+                            // Update user attribute
+                            await cognitoClient.send(
+                                new AdminUpdateUserAttributesCommand({
+                                    UserPoolId: USER_POOL_ID,
+                                    Username: cognitoUsername,
+                                    UserAttributes: [
+                                        {
+                                            Name: 'custom:role',
+                                            Value: body.role
+                                        }
+                                    ]
+                                })
+                            );
+                            
+                            console.log(`Updated Cognito user ${cognitoUsername} role to ${body.role} via email lookup`);
+                        } else {
+                            console.warn(`No Cognito user found with email=${body.email}`);
+                        }
+                    }
+                }
+            } catch (cognitoError) {
+                console.error('Error updating Cognito:', cognitoError);
+                // Continue execution - we still want to return success for the DynamoDB update
             }
         }
         

@@ -7,6 +7,7 @@ async function updateUserRole(userId, newRole, firstName, lastName) {
     // Get auth token
     const session = await Amplify.Auth.currentSession();
     const idToken = session.getIdToken().getJwtToken();
+    const email = session.getIdToken().payload.email || '';
     
     // Call API to update user role
     const response = await fetch(`${_config.api.invokeUrl}/cms/users/${userId}`, {
@@ -18,7 +19,8 @@ async function updateUserRole(userId, newRole, firstName, lastName) {
       body: JSON.stringify({
         role: newRole,
         firstName: firstName || '',
-        lastName: lastName || ''
+        lastName: lastName || '',
+        email: email // Include email to help with Cognito lookup
       })
     });
     
