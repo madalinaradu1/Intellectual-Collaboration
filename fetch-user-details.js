@@ -5,7 +5,7 @@
 const userCache = {};
 
 // Function to fetch user details by user ID
-async function fetchUserDetails(userId) {
+async function fetchUserDetails(userId, email) {
   try {
     // Return from cache if available
     if (userCache[userId]) {
@@ -13,29 +13,21 @@ async function fetchUserDetails(userId) {
       return userCache[userId];
     }
     
-    // Get auth token
-    const session = await Amplify.Auth.currentSession();
-    const idToken = session.getIdToken().getJwtToken();
-    
-    // Fetch user details from API
-    const response = await fetch(`${_config.api.invokeUrl}/cms/users/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': idToken,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch user details: ${response.status}`);
+    // If we don't have a direct API endpoint for user ID, use the email-based approach
+    // Create a basic user object with the email
+    if (email) {
+      const basicUserData = {
+        email: email,
+        firstName: null,
+        lastName: null
+      };
+      
+      // Cache this basic data
+      userCache[userId] = basicUserData;
+      return basicUserData;
     }
     
-    const userData = await response.json();
-    
-    // Cache the result
-    userCache[userId] = userData;
-    
-    return userData;
+    return null;
   } catch (error) {
     console.error(`Error fetching user details for ${userId}:`, error);
     return null;

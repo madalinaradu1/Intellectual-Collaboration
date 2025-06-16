@@ -173,8 +173,6 @@
       }
     }
     
-    // This function is now provided by fetch-user-details.js
-    
     // Function to display pending requests
     async function displayPendingRequests(requests) {
       const container = document.getElementById("pendingRequests");
@@ -184,25 +182,9 @@
         return;
       }
       
-      // First, fetch all user details in parallel
-      const userDetailsPromises = requests.map(req => window.userUtils.fetchUserDetails(req.userId));
-      const userDetailsArray = await Promise.all(userDetailsPromises);
-      
-      // Create a map of userId to user details
-      const userDetailsMap = {};
-      requests.forEach((req, index) => {
-        userDetailsMap[req.userId] = userDetailsArray[index];
-      });
-      
       const html = requests.map(req => {
-        // Get user details from the map
-        const userDetails = userDetailsMap[req.userId];
-        
-        // Format user name with first and last name if available
-        let displayName = req.userName || window.userUtils.getDisplayNameFromEmail(req.email);
-        if (userDetails && (userDetails.firstName || userDetails.lastName)) {
-          displayName = `${userDetails.firstName || ''} ${userDetails.lastName || ''}`.trim();
-        }
+        // Use email username as display name
+        const displayName = window.userUtils.getDisplayNameFromEmail(req.email);
         
         return `
         <div class="request-card">
@@ -268,25 +250,9 @@
         return;
       }
       
-      // First, fetch all user details in parallel
-      const userDetailsPromises = requests.map(req => window.userUtils.fetchUserDetails(req.userId));
-      const userDetailsArray = await Promise.all(userDetailsPromises);
-      
-      // Create a map of userId to user details
-      const userDetailsMap = {};
-      requests.forEach((req, index) => {
-        userDetailsMap[req.userId] = userDetailsArray[index];
-      });
-      
       const html = requests.map(req => {
-        // Get user details from the map
-        const userDetails = userDetailsMap[req.userId];
-        
-        // Format user name with first and last name if available
-        let displayName = req.userName || window.userUtils.getDisplayNameFromEmail(req.email);
-        if (userDetails && (userDetails.firstName || userDetails.lastName)) {
-          displayName = `${userDetails.firstName || ''} ${userDetails.lastName || ''}`.trim();
-        }
+        // Use email username as display name
+        const displayName = window.userUtils.getDisplayNameFromEmail(req.email);
         
         return `
         <div class="request-card">
@@ -320,7 +286,7 @@
             <p>${req.reviewNotes || 'No notes provided'}</p>
           </div>
           <div class="text-end text-muted">
-            Reviewed by ${req.reviewedBy || getDisplayNameFromEmail(req.reviewerEmail) || 'Admin'} on ${new Date(req.reviewedAt).toLocaleString()}
+            Reviewed by ${req.reviewedBy || window.userUtils.getDisplayNameFromEmail(req.reviewerEmail) || 'Admin'} on ${new Date(req.reviewedAt).toLocaleString()}
           </div>
         </div>
         `;
@@ -340,15 +306,7 @@
       document.getElementById('parentGroup').value = data.parentGroup;
       document.getElementById('justification').value = data.justification;
       document.getElementById('reviewNotes').value = '';
-      
-      // Try to get full user details
-      const userDetails = await window.userUtils.fetchUserDetails(data.userId);
-      if (userDetails && (userDetails.firstName || userDetails.lastName)) {
-        const fullName = `${userDetails.firstName || ''} ${userDetails.lastName || ''}`.trim();
-        document.getElementById('userName').value = fullName;
-      } else {
-        document.getElementById('userName').value = data.userName;
-      }
+      document.getElementById('userName').value = data.userName;
       
       const statusEl = document.getElementById('reviewStatus');
       statusEl.classList.add('d-none');
@@ -372,7 +330,7 @@
         const firstName = idToken.payload.given_name || '';
         const lastName = idToken.payload.family_name || '';
         const reviewerName = firstName && lastName ? `${firstName} ${lastName}` : 
-                            idToken.payload.email ? getDisplayNameFromEmail(idToken.payload.email) : 
+                            idToken.payload.email ? window.userUtils.getDisplayNameFromEmail(idToken.payload.email) : 
                             'Admin';
         
         console.log("Processing request with data:", {
