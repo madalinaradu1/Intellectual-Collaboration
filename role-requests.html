@@ -26,6 +26,7 @@
   <!-- AWS Amplify (load in head with defer) -->
   <script defer src="https://unpkg.com/aws-amplify@4.3.43/dist/aws-amplify.min.js"></script>
   <script defer src="fetch-user-details.js"></script>
+  <script defer src="update-user-role.js"></script>
   <script defer src="role-notifications.js"></script>
   <script defer src="navbar.js"></script>
 </head>
@@ -364,7 +365,19 @@
           throw new Error(`HTTP error! status: ${response.status}, details: ${errorText}`);
         }
         
-        statusEl.textContent = `Request ${approved ? 'approved' : 'rejected'} successfully!`;
+        // If approved, update the user's role
+        if (approved) {
+          try {
+            await window.userRoleUtils.updateUserRole(userId, requestedRole);
+            statusEl.textContent = `Request approved and user role updated to ${requestedRole} successfully!`;
+          } catch (roleError) {
+            console.error("Error updating user role:", roleError);
+            statusEl.textContent = `Request approved but failed to update user role: ${roleError.message}`;
+          }
+        } else {
+          statusEl.textContent = `Request rejected successfully!`;
+        }
+        
         statusEl.classList.add(approved ? 'alert-success' : 'alert-danger');
         statusEl.classList.remove('d-none');
         
