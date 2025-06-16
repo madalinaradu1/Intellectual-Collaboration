@@ -130,9 +130,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Handle Role Requests link visibility
             const roleRequestsNav = document.getElementById('roleRequestsNav');
-            if (userRole === 'ApplicationAdmin' || cognitoGroups.includes('ApplicationAdmin')) {
+            if (userRole === 'ApplicationAdmin' || userRole === 'GroupAdmin' || 
+                cognitoGroups.includes('ApplicationAdmin') || cognitoGroups.includes('GroupAdmin')) {
               roleRequestsNav.style.display = '';
-              console.log("Showing Role Requests link for ApplicationAdmin");
+              console.log("Showing Role Requests link for admin users");
               
               // Initialize role request notifications
               if (typeof window.roleNotifications !== 'undefined') {
