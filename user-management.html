@@ -184,6 +184,7 @@
   <script src="config.js"></script>
   <script src="amplify-config.js"></script>
   <script src="update-user-role.js"></script>
+  <script src="update-cognito-role.js"></script>
   <script src="refresh-users.js"></script>
 
   <script>
@@ -379,18 +380,32 @@
         const userId = document.getElementById('userDetailsForm').dataset.userId;
         const firstName = document.getElementById('userFirstName').value;
         const lastName = document.getElementById('userLastName').value;
+        const email = document.getElementById('userEmail').value;
         const role = document.getElementById('userRole').value;
         const oldRole = document.getElementById('userDetailsForm').dataset.oldRole;
         
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        // Always update both Cognito and DynamoDB with all fields
+        const statusEl = document.getElementById('userStatus');
+        
+        // Update DynamoDB
         try {
           await window.userRoleUtils.updateUserRole(userId, role, firstName, lastName);
           
-          const statusEl = document.getElementById('userStatus');
-          statusEl.textContent = "User updated successfully!";
+          // Also directly update Cognito role
+          if (role !== oldRole) {
+            try {
+              await window.cognitoUtils.updateCognitoRole(userId, email, role);
+              statusEl.textContent = "User and Cognito role updated successfully!";
+            } catch (cognitoErr) {
+              console.error("Error updating Cognito role:", cognitoErr);
+              statusEl.textContent = "User updated in database but Cognito role update failed. User may need to sign out and back in.";
+            }
+          } else {
+            statusEl.textContent = "User updated successfully!";
+          }
+          
           statusEl.classList.add('alert-success');
           statusEl.classList.remove('d-none', 'alert-danger');
           
@@ -403,7 +418,6 @@
           }, 1500);
         } catch (err) {
           console.error("Error saving user details:", err);
-          const statusEl = document.getElementById('userStatus');
           statusEl.textContent = `Error: ${err.message}`;
           statusEl.classList.add('alert-danger');
           statusEl.classList.remove('d-none', 'alert-success');
