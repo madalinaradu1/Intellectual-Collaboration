@@ -25,6 +25,7 @@
   
   <!-- AWS Amplify (load in head with defer) -->
   <script defer src="https://unpkg.com/aws-amplify@4.3.43/dist/aws-amplify.min.js"></script>
+  <script defer src="fetch-user-details.js"></script>
   <script defer src="role-notifications.js"></script>
   <script defer src="navbar.js"></script>
 </head>
@@ -172,20 +173,10 @@
       }
     }
     
-    // Function to get display name from email
-    function getDisplayNameFromEmail(email) {
-      if (!email) return 'Unknown User';
-      const parts = email.split('@');
-      if (parts.length < 1) return 'Unknown User';
-      
-      // Convert username part to title case (e.g., john.doe -> John Doe)
-      return parts[0]
-        .replace(/\./g, ' ')
-        .replace(/\b\w/g, l => l.toUpperCase());
-    }
+    // This function is now provided by fetch-user-details.js
     
     // Function to display pending requests
-    function displayPendingRequests(requests) {
+    async function displayPendingRequests(requests) {
       const container = document.getElementById("pendingRequests");
       
       if (!requests || requests.length === 0) {
@@ -193,9 +184,25 @@
         return;
       }
       
+      // First, fetch all user details in parallel
+      const userDetailsPromises = requests.map(req => window.userUtils.fetchUserDetails(req.userId));
+      const userDetailsArray = await Promise.all(userDetailsPromises);
+      
+      // Create a map of userId to user details
+      const userDetailsMap = {};
+      requests.forEach((req, index) => {
+        userDetailsMap[req.userId] = userDetailsArray[index];
+      });
+      
       const html = requests.map(req => {
-        // Use email username as display name if userName is undefined
-        const displayName = req.userName || getDisplayNameFromEmail(req.email);
+        // Get user details from the map
+        const userDetails = userDetailsMap[req.userId];
+        
+        // Format user name with first and last name if available
+        let displayName = req.userName || window.userUtils.getDisplayNameFromEmail(req.email);
+        if (userDetails && (userDetails.firstName || userDetails.lastName)) {
+          displayName = `${userDetails.firstName || ''} ${userDetails.lastName || ''}`.trim();
+        }
         
         return `
         <div class="request-card">
@@ -253,7 +260,7 @@
     }
     
     // Function to display processed requests
-    function displayProcessedRequests(requests) {
+    async function displayProcessedRequests(requests) {
       const container = document.getElementById("processedRequests");
       
       if (!requests || requests.length === 0) {
@@ -261,9 +268,25 @@
         return;
       }
       
+      // First, fetch all user details in parallel
+      const userDetailsPromises = requests.map(req => window.userUtils.fetchUserDetails(req.userId));
+      const userDetailsArray = await Promise.all(userDetailsPromises);
+      
+      // Create a map of userId to user details
+      const userDetailsMap = {};
+      requests.forEach((req, index) => {
+        userDetailsMap[req.userId] = userDetailsArray[index];
+      });
+      
       const html = requests.map(req => {
-        // Use email username as display name if userName is undefined
-        const displayName = req.userName || getDisplayNameFromEmail(req.email);
+        // Get user details from the map
+        const userDetails = userDetailsMap[req.userId];
+        
+        // Format user name with first and last name if available
+        let displayName = req.userName || window.userUtils.getDisplayNameFromEmail(req.email);
+        if (userDetails && (userDetails.firstName || userDetails.lastName)) {
+          displayName = `${userDetails.firstName || ''} ${userDetails.lastName || ''}`.trim();
+        }
         
         return `
         <div class="request-card">
@@ -307,17 +330,25 @@
     }
     
     // Function to show review modal
-    function showReviewModal(data) {
+    async function showReviewModal(data) {
       document.getElementById('requestId').value = data.requestId;
       document.getElementById('userId').value = data.userId;
       document.getElementById('requestedRole').value = data.requestedRole;
-      document.getElementById('userName').value = data.userName;
       document.getElementById('userEmail').value = data.email;
       document.getElementById('currentRole').value = data.currentRole;
       document.getElementById('displayRequestedRole').value = data.requestedRole;
       document.getElementById('parentGroup').value = data.parentGroup;
       document.getElementById('justification').value = data.justification;
       document.getElementById('reviewNotes').value = '';
+      
+      // Try to get full user details
+      const userDetails = await window.userUtils.fetchUserDetails(data.userId);
+      if (userDetails && (userDetails.firstName || userDetails.lastName)) {
+        const fullName = `${userDetails.firstName || ''} ${userDetails.lastName || ''}`.trim();
+        document.getElementById('userName').value = fullName;
+      } else {
+        document.getElementById('userName').value = data.userName;
+      }
       
       const statusEl = document.getElementById('reviewStatus');
       statusEl.classList.add('d-none');
