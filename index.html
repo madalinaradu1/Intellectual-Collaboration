@@ -44,8 +44,11 @@
           <li class="nav-item">
             <a class="nav-link" href="user-management.html" data-requires-role="ApplicationAdmin">Users</a>
           </li>
+          <li class="nav-item" id="roleRequestsNav">
+            <a class="nav-link" href="role-requests.html">Role Requests</a>
+          </li>
           <li class="nav-item">
-            <a class="nav-link" href="bulk-import.html" data-requires-role="ApplicationAdmin,GroupAdmin">Bulk Import</a>
+            <a class="nav-link" href="bulk-import.html" data-requires-role="ApplicationAdmin,GroupAdmin">Import Users</a>
           </li>
         </ul>
         <ul class="navbar-nav">
@@ -186,7 +189,7 @@ async function loadPosts() {
     }
     
     // Make direct request with authorization headers
-    const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list`, {
+    const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list?includeAuthorData=true`, {
       method: 'GET',
       headers: {
         'Authorization': idToken,
@@ -276,6 +279,28 @@ async function loadPosts() {
         console.log("Using current user profile picture for post by", p.Author);
       }
       
+      // Try to fetch the author's profile picture if not already available
+      if (profileImage === 'no-profile.png' && p.Author) {
+        fetch(`${_config.api.invokeUrl}/cms/users/${p.Author}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(response => response.json())
+        .then(userData => {
+          if (userData && userData.profilePicture) {
+            const imgElement = document.querySelector(`[data-author-id="${p.Author}"] img`);
+            if (imgElement) {
+              imgElement.src = userData.profilePicture;
+              console.log("Updated profile picture for", p.Author);
+            }
+          }
+        })
+        .catch(err => console.error("Error fetching user profile:", err));
+      }
+      
       return `
       <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -283,7 +308,7 @@ async function loadPosts() {
           <span class="text-muted small">${timestamp}</span>
         </div>
         <div class="card-body">
-          <div class="d-flex mb-3">
+          <div class="d-flex mb-3" data-author-id="${p.Author}">
             <div class="flex-shrink-0">
               <img src="${profileImage}" class="rounded-circle" alt="Profile" style="width: 50px; height: 50px; object-fit: cover;">
             </div>
