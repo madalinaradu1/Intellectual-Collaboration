@@ -9,7 +9,7 @@ async function updateUserRole(userId, newRole) {
     const idToken = session.getIdToken().getJwtToken();
     
     // Call API to update user role
-    const response = await fetch(`${_config.api.invokeUrl}/cms/users/${userId}/role`, {
+    const response = await fetch(`${_config.api.invokeUrl}/cms/users/${userId}`, {
       method: 'PUT',
       headers: {
         'Authorization': idToken,
