@@ -25,6 +25,7 @@
   
   <!-- AWS Amplify (load in head with defer) -->
   <script defer src="https://unpkg.com/aws-amplify@4.3.43/dist/aws-amplify.min.js"></script>
+  <script defer src="role-notifications.js"></script>
   <script defer src="navbar.js"></script>
 </head>
 <body>
@@ -129,6 +130,16 @@
       try {
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
+        
+        // Reset notification badge when viewing the page
+        if (window.roleNotifications) {
+          localStorage.setItem('lastRoleRequestCheck', new Date().toISOString());
+          const roleRequestsNav = document.getElementById('roleRequestsNav');
+          if (roleRequestsNav) {
+            const badge = roleRequestsNav.querySelector('.badge');
+            if (badge) badge.remove();
+          }
+        }
         
         const response = await fetch(`${_config.api.invokeUrl}/cms/role-requests`, {
           method: 'GET',

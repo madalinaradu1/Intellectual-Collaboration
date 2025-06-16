@@ -43,8 +43,10 @@ export const handler = async (event) => {
         requestId: requestId,
         userId: userId,
         email: email,
+        currentRole: requestBody.currentRole || "Guest",
         requestedRole: requestBody.requestedRole,
         justification: requestBody.justification,
+        parentGroup: requestBody.parentGroup || "",
         status: "Pending",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()

@@ -43,7 +43,7 @@ function addNavigationBar() {
           <li class="nav-item">
             <a class="nav-link" href="user-management.html" data-requires-role="ApplicationAdmin">Users</a>
           </li>
-          <li class="nav-item" id="roleRequestsNav">
+          <li class="nav-item" id="roleRequestsNav" style="position: relative;">
             <a class="nav-link" href="role-requests.html">Role Requests</a>
           </li>
           <li class="nav-item">
@@ -133,6 +133,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (userRole === 'ApplicationAdmin') {
               roleRequestsNav.style.display = '';
               console.log("Showing Role Requests link for ApplicationAdmin");
+              
+              // Initialize role request notifications
+              if (typeof window.roleNotifications !== 'undefined') {
+                window.roleNotifications.init();
+              }
             } else {
               roleRequestsNav.style.display = 'none';
               console.log("Hiding Role Requests link for non-admin users");

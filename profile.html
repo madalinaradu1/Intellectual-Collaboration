@@ -700,6 +700,7 @@
               body: JSON.stringify({
                 userId: user.attributes.sub,
                 email: user.attributes.email,
+                currentRole: document.getElementById('role').value,
                 requestedRole: requestedRole,
                 justification: justification,
                 timestamp: new Date().toISOString()
