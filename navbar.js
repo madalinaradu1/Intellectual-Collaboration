@@ -43,7 +43,7 @@ function addNavigationBar() {
           <li class="nav-item">
             <a class="nav-link" href="user-management.html" data-requires-role="ApplicationAdmin">Users</a>
           </li>
-          <li class="nav-item" id="roleRequestsNav" style="position: relative;">
+          <li class="nav-item" id="roleRequestsNav" style="position: relative; display: none;">
             <a class="nav-link" href="role-requests.html">Role Requests</a>
           </li>
           <li class="nav-item">
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Handle Role Requests link visibility
             const roleRequestsNav = document.getElementById('roleRequestsNav');
-            if (userRole === 'ApplicationAdmin') {
+            if (userRole === 'ApplicationAdmin' || cognitoGroups.includes('ApplicationAdmin')) {
               roleRequestsNav.style.display = '';
               console.log("Showing Role Requests link for ApplicationAdmin");
               

@@ -87,7 +87,7 @@
       </div>
       
       <div class="col-md-8">
-        <!-- Role Request Section (only visible for Guest users) -->
+        <!-- Role Request Section (visible for all users except admins) -->
         <div class="profile-section" id="roleRequestSection" style="display: none;">
           <h4 class="mb-4">Request Role Upgrade</h4>
           <form id="roleRequestForm">
@@ -183,7 +183,7 @@
   <script src="config.js"></script>
   <script src="amplify-config.js"></script>
   <script src="profile-update.js"></script>
-  <script src="update-parent-group.js"></script>ript src="amplify-config.js"></script>
+  <script src="update-parent-group.js"></script>
   <script src="profile-update.js"></script>
   
   <!-- S3 Configuration -->
@@ -196,10 +196,10 @@
   </script>
 
   <script>
-    // Show role request section only for Guest users
+    // Show role request section for all users except ApplicationAdmin and GroupAdmin
     function updateRoleRequestVisibility(userRole) {
       const roleRequestSection = document.getElementById('roleRequestSection');
-      if (userRole === 'Guest') {
+      if (userRole !== 'Application Admin' && userRole !== 'Group Admin') {
         roleRequestSection.style.display = 'block';
       } else {
         roleRequestSection.style.display = 'none';
