@@ -2,7 +2,7 @@
 // Function to update a user's role in Cognito and DynamoDB
 
 // Function to update user role
-async function updateUserRole(userId, newRole) {
+async function updateUserRole(userId, newRole, firstName, lastName) {
   try {
     // Get auth token
     const session = await Amplify.Auth.currentSession();
@@ -16,7 +16,9 @@ async function updateUserRole(userId, newRole) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        role: newRole
+        role: newRole,
+        firstName: firstName || '',
+        lastName: lastName || ''
       })
     });
     

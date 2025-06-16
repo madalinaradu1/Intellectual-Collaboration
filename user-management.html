@@ -232,7 +232,6 @@
             'Authorization': idToken,
             'Content-Type': 'application/json'
           }
-          // Removed credentials: 'include' to fix CORS issues
         });
         
         if (!response.ok) {
@@ -266,9 +265,15 @@
         return;
       }
       
-      const html = users.map(user => `
+      const html = users.map(user => {
+        // Format name, handling empty values
+        const firstName = user.firstName || '';
+        const lastName = user.lastName || '';
+        const displayName = firstName || lastName ? `${firstName} ${lastName}`.trim() : 'No name provided';
+        
+        return `
         <tr data-user-id="${user.userId}">
-          <td>${user.firstName} ${user.lastName}</td>
+          <td>${displayName}</td>
           <td>${user.email}</td>
           <td><span class="badge bg-info">${user.role}</span></td>
           <td>${user.enabled ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-warning">Inactive</span>'}</td>
@@ -277,7 +282,7 @@
             <button class="btn btn-sm btn-outline-danger ms-1 disable-user">${user.enabled ? 'Disable' : 'Enable'}</button>
           </td>
         </tr>
-      `).join("");
+      `}).join("");
       
       tableBody.innerHTML = html;
       
@@ -310,7 +315,6 @@
             'Authorization': idToken,
             'Content-Type': 'application/json'
           }
-          // Removed credentials: 'include' to fix CORS issues
         });
         
         if (!response.ok) {
@@ -365,45 +369,29 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        // Check if role has changed
-        if (role !== oldRole) {
-          // Use the updateUserRole function to update role in both Cognito and database
-          const roleUpdateSuccess = await updateUserRole(userId, role, firstName, lastName);
-          if (!roleUpdateSuccess) {
-            return; // Stop if role update failed
-          }
+        // Always update both Cognito and DynamoDB with all fields
+        try {
+          await window.userRoleUtils.updateUserRole(userId, role, firstName, lastName);
+          
+          const statusEl = document.getElementById('userStatus');
+          statusEl.textContent = "User updated successfully!";
+          statusEl.classList.add('alert-success');
+          statusEl.classList.remove('d-none', 'alert-danger');
+          
+          // Reload users after a short delay
+          setTimeout(() => {
+            loadUsers();
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('userDetailsModal'));
+            modal.hide();
+          }, 1500);
+        } catch (err) {
+          console.error("Error saving user details:", err);
+          const statusEl = document.getElementById('userStatus');
+          statusEl.textContent = `Error: ${err.message}`;
+          statusEl.classList.add('alert-danger');
+          statusEl.classList.remove('d-none', 'alert-success');
         }
-        
-        // Continue with updating other user details
-        const response = await fetch(`${_config.api.invokeUrl}/cms/users/${userId}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': idToken,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            firstName,
-            lastName
-            // Role is already updated separately if needed
-          })
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const statusEl = document.getElementById('userStatus');
-        statusEl.textContent = "User updated successfully!";
-        statusEl.classList.add('alert-success');
-        statusEl.classList.remove('d-none', 'alert-danger');
-        
-        // Reload users after a short delay
-        setTimeout(() => {
-          loadUsers();
-          // Close modal
-          const modal = bootstrap.Modal.getInstance(document.getElementById('userDetailsModal'));
-          modal.hide();
-        }, 1500);
       } catch (err) {
         console.error("Error saving user details:", err);
         const statusEl = document.getElementById('userStatus');
