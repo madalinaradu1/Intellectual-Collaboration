@@ -24,48 +24,11 @@
   
   <!-- AWS Amplify (load in head with defer) -->
   <script defer src="https://unpkg.com/aws-amplify@4.3.43/dist/aws-amplify.min.js"></script>
+  <script defer src="navbar.js"></script>
   <script defer src="role-notifications.js"></script>
 </head>
 <body class="bg-light">
-  <!-- Navigation Bar -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="index.html">IC CMS</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav me-auto">
-          <li class="nav-item">
-            <a class="nav-link active" href="index.html">Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="group-management.html" data-requires-role="ApplicationAdmin,GroupAdmin,GroupOfficer">Groups</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="user-management.html" data-requires-role="ApplicationAdmin">Users</a>
-          </li>
-          <li class="nav-item" id="roleRequestsNav" style="display: none;">
-            <a class="nav-link" href="role-requests.html">Role Requests</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="bulk-import.html" data-requires-role="ApplicationAdmin,GroupAdmin">Import Users</a>
-          </li>
-        </ul>
-        <ul class="navbar-nav">
-          <li class="nav-item">
-            <a class="nav-link" href="profile.html" id="navProfileLink">Profile</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="signin.html" id="navSignInLink">Sign In</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" id="navSignOutLink">Sign Out</a>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </nav>
+  <!-- Navigation bar is now loaded from navbar.js -->
   
   <!-- Action Navigation -->
   <div class="container-fluid action-nav">
@@ -217,513 +180,151 @@ async function loadPosts() {
       const timestamp = new Date(p.Timestamp).toLocaleString();
       
       // Use the post-author-handler utility to format the author name
-      const authorName = window.postAuthorHandler.formatAuthorName(p);ture);
-      } else if (authorName && authorName.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        // If it's a UUID and we don't have author data, try to get it from the session
-        try {
-          const session = Amplify.Auth.currentSession();
-          if (session) {
-            const idToken = session.getIdToken();
-            if (idToken && idToken.payload.sub === authorName) {
-              // If this is the current user's post
-              authorName = `${idToken.payload.given_name || ''} ${idToken.payload.family_name || ''}`.trim();
-              if (!authorName) {
-                authorName = idToken.payload.email || "Unknown User";
-              }
-            } else {
-              // For other users, just show "User" with ID prefix
-              authorName = "User " + authorName.substring(0, 4);
-            }
-          }
-        } catch (e) {
-          // If we can't get the session, just use the UUID prefix
-          authorName = "User " + authorName.substring(0, 4);
-        }
-      }
+      const authorName = window.postAuthorHandler.formatAuthorName(p);
       
-      // Check if post has an attachment
-      const attachmentHtml = p.Attachment ? `
-        <div class="mt-2">
-          <a href="${p.Attachment.FileUrl}" target="_blank" class="btn btn-sm btn-outline-secondary">
-            ${p.Attachment.FileName}
-          </a>
-        </div>
-      ` : '';
-      
-      // Check if post has an image attachment
-      let imageHtml = '';
-      if (p.Attachment && p.Attachment.FileType && p.Attachment.FileType.startsWith('image/')) {
-        imageHtml = `
-          <div class="mt-3">
-            <img src="${p.Attachment.FileUrl}" class="img-fluid rounded" alt="Attached image">
-          </div>
-        `;
-      }
-      
-      // Get profile image
-      let profileImage = 'no-profile.png';
-      
-      // If post has author data with profile picture, use it
-      if (p.AuthorData && p.AuthorData.profilePicture) {
-        profileImage = p.AuthorData.profilePicture;
-        console.log("Using author data profile picture:", profileImage);
-      } 
-      // If this is the current user's post and we have their profile picture
-      else if (window.currentUserProfilePicture && p.Author === window.currentUsername) {
-        profileImage = window.currentUserProfilePicture;
-        console.log("Using current user profile picture for post by", p.Author);
-      }
-      
-      // Try to fetch the author's profile picture if not already available
-      if (profileImage === 'no-profile.png' && p.Author) {
-        fetch(`${_config.api.invokeUrl}/cms/users/${p.Author}`, {
-          method: 'GET',
-          headers: {
-            'Authorization': idToken,
-            'Content-Type': 'application/json'
-          }
-        })
-        .then(response => response.json())
-        .then(userData => {
-          if (userData && userData.profilePicture) {
-            const imgElement = document.querySelector(`[data-author-id="${p.Author}"] img`);
-            if (imgElement) {
-              imgElement.src = userData.profilePicture;
-              console.log("Updated profile picture for", p.Author);
-            }
-          }
-        })
-        .catch(err => console.error("Error fetching user profile:", err));
-      }
-      
+      // Create post HTML
       return `
-      <div class="card mb-3">
-        <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">${p.Title}</h5>
-          <span class="text-muted small">${timestamp}</span>
-        </div>
-        <div class="card-body">
-          <div class="d-flex mb-3" data-author-id="${p.Author}">
-            <div class="flex-shrink-0">
-              <img src="${profileImage}" class="rounded-circle" alt="Profile" style="width: 50px; height: 50px; object-fit: cover;">
+        <div class="card mb-3">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+              <strong>${p.Title || 'Untitled Post'}</strong>
             </div>
-            <div class="flex-grow-1 ms-3">
-              <h6 class="mt-0">${authorName}</h6>
-              <p class="card-text">${p.Message}</p>
-              ${imageHtml}
-              ${p.Attachment && p.Attachment.FileType && !p.Attachment.FileType.startsWith('image/') ? attachmentHtml : ''}
-            </div>
+            <small class="text-muted">${timestamp}</small>
+          </div>
+          <div class="card-body">
+            <p class="card-text">${p.Message || ''}</p>
+            ${p.AttachmentURL ? `<a href="${p.AttachmentURL}" target="_blank" class="btn btn-sm btn-outline-primary">View Attachment</a>` : ''}
+          </div>
+          <div class="card-footer text-muted">
+            Posted by ${authorName}
           </div>
         </div>
-      </div>
       `;
-    }).join("");
-
-    document.getElementById("announcements").innerHTML = html || "<p>No posts found.</p>";
-
+    }).join('');
+    
+    document.getElementById('announcements').innerHTML = html || '<p class="text-center">No announcements found</p>';
+    
   } catch (err) {
     console.error("Error loading posts:", err);
-    document.getElementById("announcements").textContent = "Could not load posts. Please try again later.";
+    document.getElementById('announcements').innerHTML = `
+      <div class="alert alert-danger">
+        Error loading announcements: ${err.message}
+      </div>
+    `;
   }
 }
 
-    // Function to get a presigned URL for S3 upload
-    async function getPresignedUrl(fileName, fileType) {
-      try {
-        const session = await Amplify.Auth.currentSession();
-        const idToken = session.getIdToken().getJwtToken();
-        
-        const response = await fetch(`${_config.api.invokeUrl}/cms/posts/getUploadUrl`, {
-          method: 'POST',
-          headers: {
-            'Authorization': idToken,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            fileName: fileName,
-            fileType: fileType
-          })
-        });
-        
-        const data = await response.json();
-        
-        // Check if file exists (status code 409 Conflict)
-        if (response.status === 409 && data.fileExists) {
-          return {
-            fileExists: true,
-            fileName: data.fileName
-          };
-        }
-        
-        if (!response.ok) {
-          throw new Error('Failed to get upload URL');
-        }
-        
-        return data;
-      } catch (err) {
-        console.error("Error getting presigned URL:", err);
-        throw err;
-      }
+// Function to handle post submission
+async function submitPost() {
+  try {
+    const title = document.getElementById('postTitle').value;
+    const message = document.getElementById('postMessage').value;
+    const group = document.getElementById('postGroup').value;
+    const attachment = document.getElementById('postAttachment').files[0];
+    
+    if (!title || !message) {
+      throw new Error('Please fill in all required fields');
     }
     
-    // Function to upload file to S3 using presigned URL
-    async function uploadFileToS3(presignedUrl, file) {
-      try {
-        console.log("Uploading to URL:", presignedUrl);
-        
-        // Don't add Content-Type header - it's already in the presigned URL
-        const response = await fetch(presignedUrl, {
-          method: 'PUT',
-          body: file,
-          // Remove Content-Type header as it can interfere with the signature
-          mode: 'cors'
-        });
-        
-        console.log("S3 upload response status:", response.status);
-        
-        if (!response.ok) {
-          const errorText = await response.text().catch(() => "No error details");
-          console.error("S3 error response:", errorText);
-          throw new Error(`Failed to upload file to S3: ${response.status} ${response.statusText}`);
-        }
-        
-        return true;
-      } catch (err) {
-        console.error("Error uploading to S3:", err);
-        throw err;
-      }
-    }
+    const statusEl = document.getElementById('postStatus');
+    statusEl.textContent = 'Submitting post...';
+    statusEl.classList.add('alert-info');
+    statusEl.classList.remove('d-none', 'alert-danger', 'alert-success');
     
-    // Function to handle file upload with conflict resolution
-    async function handleFileUpload(file) {
-      const statusEl = document.getElementById('postStatus');
-      
-      try {
-        // First attempt to get presigned URL
-        let uploadData = await getPresignedUrl(file.name, file.type);
-        
-        // If we get a file exists error, prompt user for a new name
-        if (uploadData.fileExists) {
-          statusEl.textContent = `File "${file.name}" already exists. Please rename it.`;
-          statusEl.classList.add('alert-warning');
-          statusEl.classList.remove('d-none', 'alert-danger', 'alert-success', 'alert-info');
-          
-          // Create rename form
-          const renameForm = document.createElement('div');
-          renameForm.className = 'mt-2';
-          renameForm.innerHTML = `
-            <div class="input-group">
-              <input type="text" class="form-control" id="newFileName" value="${file.name}">
-              <button class="btn btn-outline-secondary" type="button" id="renameFileBtn">Rename</button>
-            </div>
-          `;
-          
-          statusEl.appendChild(renameForm);
-          
-          // Wait for user to rename file
-          return new Promise((resolve, reject) => {
-            document.getElementById('renameFileBtn').addEventListener('click', async () => {
-              const newFileName = document.getElementById('newFileName').value.trim();
-              if (!newFileName) {
-                return;
-              }
-              
-              try {
-                statusEl.textContent = `Trying with new name: ${newFileName}...`;
-                statusEl.classList.add('alert-info');
-                statusEl.classList.remove('alert-warning', 'alert-danger', 'alert-success');
-                
-                // Try upload with new name
-                uploadData = await getPresignedUrl(newFileName, file.type);
-                
-                if (uploadData.fileExists) {
-                  statusEl.textContent = `File "${newFileName}" also exists. Please try another name.`;
-                  statusEl.classList.add('alert-warning');
-                  statusEl.classList.remove('alert-info', 'alert-danger', 'alert-success');
-                  return;
-                }
-                
-                // Create a new file object with the new name
-                const newFile = new File([file], newFileName, { type: file.type });
-                
-                // Upload file with new name
-                await uploadFileToS3(uploadData.uploadUrl, newFile);
-                resolve(uploadData);
-              } catch (err) {
-                reject(err);
-              }
-            });
-          });
-        }
-        
-        // Upload file
-        await uploadFileToS3(uploadData.uploadUrl, file);
-        return uploadData;
-      } catch (err) {
-        console.error("Error handling file upload:", err);
-        throw err;
-      }
-    }
+    const session = await Amplify.Auth.currentSession();
+    const idToken = session.getIdToken().getJwtToken();
     
-    // Function to create a new post
-    async function createPost() {
-      try {
-        // Get form values
-        const title = document.getElementById('postTitle').value.trim();
-        const message = document.getElementById('postMessage').value.trim();
-        const groupId = document.getElementById('postGroup').value;
-        const fileInput = document.getElementById('postAttachment');
-        const statusEl = document.getElementById('postStatus');
-        
-        // Validate
-        if (!title || !message) {
-          statusEl.textContent = "Please fill in all required fields";
-          statusEl.classList.add('alert-danger');
-          statusEl.classList.remove('d-none', 'alert-success');
-          return;
-        }
-        
-        // Get current user and token
-        const session = await Amplify.Auth.currentSession();
-        const idToken = session.getIdToken().getJwtToken();
-        const user = await Amplify.Auth.currentAuthenticatedUser();
-        const username = user.getUsername();
-        
-        // Create post object
-        const postData = {
-          Title: title,
-          Message: message,
-          Author: username,
-          groupId: groupId,
-          Timestamp: new Date().toISOString()
-        };
-        
-        // Handle file attachment if present
-        if (fileInput.files.length > 0) {
-          const file = fileInput.files[0];
-          
-          // Check file size (5MB limit)
-          if (file.size > 5 * 1024 * 1024) {
-            statusEl.textContent = "File size exceeds 5MB limit";
-            statusEl.classList.add('alert-danger');
-            statusEl.classList.remove('d-none', 'alert-success');
-            return;
-          }
-          
-          statusEl.textContent = "Uploading attachment...";
-          statusEl.classList.add('alert-info');
-          statusEl.classList.remove('d-none', 'alert-danger', 'alert-success');
-          
-          try {
-            // Use the new handler function that checks for file existence
-            const uploadData = await handleFileUpload(file);
-            
-            // Add attachment info to post data
-            postData.Attachment = {
-              FileName: uploadData.fileKey.split('/').pop(), // Get just the filename part
-              FileType: file.type,
-              FileKey: uploadData.fileKey,
-              FileUrl: uploadData.fileUrl
-            };
-          } catch (err) {
-            console.error("Error handling attachment:", err);
-            statusEl.textContent = "Failed to upload attachment: " + err.message;
-            statusEl.classList.add('alert-danger');
-            statusEl.classList.remove('d-none', 'alert-info', 'alert-success');
-            return;
-          }
-        }
-        
-        // Log what we're sending
-        console.log("Sending post data:", JSON.stringify(postData));
-        
-        // Send to API
-        const response = await fetch(`${_config.api.invokeUrl}/cms/posts/create`, {
-          method: 'POST',
-          headers: {
-            'Authorization': idToken,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(postData),
-          credentials: 'include'
-        });
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Failed to create post: ${errorText}`);
-        }
-        
-        // Show success message
-        statusEl.textContent = "Post created successfully!";
-        statusEl.classList.add('alert-success');
-        statusEl.classList.remove('d-none', 'alert-danger');
-        
-        // Clear form
-        document.getElementById('postTitle').value = '';
-        document.getElementById('postMessage').value = '';
-        document.getElementById('postAttachment').value = '';
-        
-        // Reload posts after a short delay
-        setTimeout(() => {
-          loadPosts();
-          // Close modal after success
-          const modal = bootstrap.Modal.getInstance(document.getElementById('createPostModal'));
-          modal.hide();
-          
-          // Remove modal backdrop and restore body scrolling
-          document.querySelector('.modal-backdrop')?.remove();
-          document.body.classList.remove('modal-open');
-          document.body.style.overflow = '';
-          document.body.style.paddingRight = '';
-        }, 1500);
-        
-      } catch (err) {
-        console.error("Error creating post:", err);
-        const statusEl = document.getElementById('postStatus');
-        statusEl.textContent = `Error: ${err.message}`;
-        statusEl.classList.add('alert-danger');
-        statusEl.classList.remove('d-none', 'alert-success');
-      }
-    }
-
-    // Function to check user permissions
-    async function checkUserPermissions() {
-      try {
-        const session = await Amplify.Auth.currentSession();
-        const idToken = session.getIdToken();
-        
-        // Check for role in custom attribute
-        let userRole = idToken.payload['custom:role'] || 'Guest';
-        
-        // If user is in ApplicationAdmin group, set role to ApplicationAdmin
-        const cognitoGroups = idToken.payload['cognito:groups'] || [];
-        if (cognitoGroups.includes('ApplicationAdmin')) {
-          userRole = 'ApplicationAdmin';
-          console.log("User is in ApplicationAdmin group, setting role to ApplicationAdmin");
-        }
-        
-        console.log("Final user role:", userRole);
-        
-        // Store role in global variable
-        window.userRole = userRole;
-        
-        // Hide/show elements based on permissions
-        const elements = document.querySelectorAll('[data-requires-role]');
-        elements.forEach(el => {
-          const requiredRoles = el.dataset.requiresRole.split(',');
-          if (!requiredRoles.includes(userRole)) {
-            el.style.display = 'none';
-          } else {
-            console.log("Showing element for role:", userRole, el);
-            el.style.display = ''; // Ensure element is visible
-          }
-        });
-        
-        return userRole;
-      } catch (err) {
-        console.error("Error checking permissions:", err);
-        return 'Guest';
-      }
-    }
-    
-    // Function to handle sign out
-    async function handleSignOut() {
-      try {
-        await Amplify.Auth.signOut();
-        console.log("User signed out successfully");
-        window.location.href = "login-selection.html";
-      } catch (error) {
-        console.error("Error signing out:", error);
-        alert("Error signing out. Please try again.");
-      }
-    }
-    
-    // Function to update navigation based on authentication state
-    function updateNavigation(isAuthenticated) {
-      if (isAuthenticated) {
-        document.getElementById('navSignInLink').style.display = 'none';
-        document.getElementById('navSignOutLink').style.display = '';
-        document.getElementById('navProfileLink').style.display = '';
-      } else {
-        document.getElementById('navSignInLink').style.display = '';
-        document.getElementById('navSignOutLink').style.display = 'none';
-        document.getElementById('navProfileLink').style.display = 'none';
-      }
-    }
-    
-    // Wait for Amplify to load
-    window.onload = function() {
-      console.log("Window loaded");
-      
-      // Test if Bootstrap modal is working
-      const createButton = document.querySelector('button[data-bs-toggle="modal"]');
-      console.log("Create button found:", createButton);
-      createButton.addEventListener('click', function() {
-        console.log("Create button clicked");
-        const modal = new bootstrap.Modal(document.getElementById('createPostModal'));
-        modal.show();
-      });
-      
-      // Set up profile button
-      document.getElementById('viewProfileBtn').addEventListener('click', function() {
-        window.location.href = "profile.html";
-      });
-      
-      // Set up sign out button
-      document.getElementById('navSignOutLink').addEventListener('click', function(e) {
-        e.preventDefault();
-        handleSignOut();
-      });
-      
-      if (typeof window.aws_amplify !== 'undefined') {
-        // Use aws_amplify namespace
-        window.Amplify = window.aws_amplify.Amplify;
-        console.log("Amplify loaded via aws_amplify namespace");
-      }
-      
-      try {
-        if (typeof Amplify === 'undefined') {
-          throw new Error("AWS Amplify is not loaded");
-        }
-        
-        // Configure Amplify
-        Amplify.configure(window.awsConfig);
-        
-        // Check authentication and load user info
-        Amplify.Auth.currentAuthenticatedUser()
-          .then(async user => {
-            // No longer displaying the welcome message with username
-
-            // Update navigation
-            updateNavigation(true);
-
-            // Check permissions
-            const userRole = await checkUserPermissions();
-            console.log("User role:", userRole);
-
-            // Don't show temporary announcements, just load posts
-            setTimeout(() => {
-              loadPosts();
-            }, 500);
-            
-            // Set up event listener for post submission
-            document.getElementById('submitPost').addEventListener('click', function() {
-              console.log("Submit post button clicked");
-              createPost();
-              // Move focus to announcements section
-              document.querySelector('#announcements').focus();
-            });
-          })
-          .catch(err => {
-            console.warn("Not logged in:", err);
-            updateNavigation(false);
-            window.location.href = "login-selection.html";
-          });
-      } catch (error) {
-        console.error("Error initializing Amplify:", error);
-        document.getElementById("announcements").textContent = "Authentication system error. Please try again later.";
-      }
+    // Create post data
+    const postData = {
+      title: title,
+      message: message,
+      group: group
     };
+    
+    // If there's an attachment, upload it first
+    if (attachment) {
+      // Handle attachment upload logic here
+      // This is a placeholder - actual implementation would depend on your backend
+      console.log("Attachment would be uploaded here:", attachment);
+    }
+    
+    // Submit post
+    const response = await fetch(`${_config.api.invokeUrl}/cms/posts`, {
+      method: 'POST',
+      headers: {
+        'Authorization': idToken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(postData)
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "No error text");
+      throw new Error(`HTTP error! status: ${response.status}, details: ${errorText}`);
+    }
+    
+    // Show success message
+    statusEl.textContent = 'Post submitted successfully!';
+    statusEl.classList.add('alert-success');
+    statusEl.classList.remove('alert-info', 'alert-danger');
+    
+    // Clear form
+    document.getElementById('postTitle').value = '';
+    document.getElementById('postMessage').value = '';
+    document.getElementById('postAttachment').value = '';
+    
+    // Reload posts after a delay
+    setTimeout(() => {
+      const modal = bootstrap.Modal.getInstance(document.getElementById('createPostModal'));
+      modal.hide();
+      loadPosts();
+    }, 1500);
+    
+  } catch (err) {
+    console.error("Error submitting post:", err);
+    const statusEl = document.getElementById('postStatus');
+    statusEl.textContent = `Error: ${err.message}`;
+    statusEl.classList.add('alert-danger');
+    statusEl.classList.remove('d-none', 'alert-info', 'alert-success');
+  }
+}
+
+// Set up event listeners
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('submitPost').addEventListener('click', submitPost);
+  document.getElementById('viewProfileBtn').addEventListener('click', function() {
+    window.location.href = 'profile.html';
+  });
+});
+
+// Wait for Amplify to load
+window.onload = function() {
+  if (typeof window.aws_amplify !== 'undefined') {
+    window.Amplify = window.aws_amplify.Amplify;
+  }
+  
+  try {
+    if (typeof Amplify === 'undefined') {
+      throw new Error("AWS Amplify is not loaded");
+    }
+    
+    // Configure Amplify
+    Amplify.configure(window.awsConfig);
+    
+    // Load posts
+    setTimeout(() => {
+      loadPosts();
+    }, 500);
+    
+  } catch (error) {
+    console.error("Error initializing:", error);
+    document.getElementById('announcements').innerHTML = `
+      <div class="alert alert-danger">
+        Error initializing: ${error.message}
+      </div>
+    `;
+  }
+};
   </script>
 </body>
 </html>
