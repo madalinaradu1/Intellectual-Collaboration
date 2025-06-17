@@ -15,11 +15,8 @@ async function checkForNewRoleRequests() {
     // Only admins should check for role requests
     if (!isAdmin) return;
     
-    // Get last checked timestamp from localStorage
-    const lastChecked = localStorage.getItem('lastRoleRequestCheck') || '2000-01-01T00:00:00.000Z';
-    
-    // Fetch role requests
-    const response = await fetch(`${_config.api.invokeUrl}/cms/role-requests?since=${lastChecked}`, {
+    // Fetch all pending role requests
+    const response = await fetch(`${_config.api.invokeUrl}/cms/role-requests`, {
       method: 'GET',
       headers: {
         'Authorization': idToken,
@@ -32,20 +29,17 @@ async function checkForNewRoleRequests() {
     }
     
     const requests = await response.json();
-    const newRequests = requests.filter(req => req.status === 'Pending');
-    
-    // Update last checked timestamp
-    localStorage.setItem('lastRoleRequestCheck', new Date().toISOString());
+    const pendingRequests = requests.filter(req => req.status === 'Pending');
     
     // Update notification badge
-    updateNotificationBadge(newRequests.length);
+    updateNotificationBadge(pendingRequests.length);
     
-    // Show browser notification if there are new requests
-    if (newRequests.length > 0) {
-      showBrowserNotification(newRequests.length);
+    // Show browser notification if there are pending requests
+    if (pendingRequests.length > 0) {
+      showBrowserNotification(pendingRequests.length);
     }
     
-    return newRequests.length;
+    return pendingRequests.length;
   } catch (err) {
     console.error("Error checking for role requests:", err);
     return 0;
@@ -113,8 +107,8 @@ function initRoleRequestNotifications() {
   // Check immediately on load
   checkForNewRoleRequests();
   
-  // Then check periodically (every 5 minutes)
-  setInterval(checkForNewRoleRequests, 5 * 60 * 1000);
+  // Then check periodically (every 2 minutes)
+  setInterval(checkForNewRoleRequests, 2 * 60 * 1000);
 }
 
 // Export functions
