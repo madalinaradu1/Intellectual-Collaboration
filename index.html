@@ -232,6 +232,7 @@ async function loadPosts() {
           }
         })
         .catch(err => console.error("Error fetching user profile:", err));
+      }
       
       // Check if post has an attachment
       const attachmentHtml = p.Attachment ? `
