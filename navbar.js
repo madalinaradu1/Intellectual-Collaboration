@@ -67,7 +67,7 @@ function addNavigationBar() {
       </div>
     </div>
   </nav>
-  <div class="container-fluid mt-2 mb-3">
+  <div class="container-fluid bg-white py-2">
     <div class="row">
       <div class="col-md-3">
         <img src="IC_Logo.png" alt="IC Logo" class="img-fluid" style="max-height: 80px;">
