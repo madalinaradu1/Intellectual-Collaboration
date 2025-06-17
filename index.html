@@ -198,13 +198,16 @@ async function loadPosts() {
             <small class="text-muted">${timestamp}</small>
           </div>
           <div class="card-body">
-            <p class="card-text">${p.Message || ''}</p>
-            ${p.AttachmentURL ? `<a href="${p.AttachmentURL}" target="_blank" class="btn btn-sm btn-outline-primary">View Attachment</a>` : ''}
-          </div>
-          <div class="card-footer">
-            <div class="d-flex align-items-center">
-              <img src="${profilePicUrl}" alt="Profile" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;">
-              <span class="text-muted">Posted by ${authorName}</span>
+            <div class="row mb-3">
+              <div class="col-md-2 text-center">
+                <img src="${profilePicUrl}" alt="Profile" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
+              </div>
+              <div class="col-md-10">
+                <h6 class="mb-2">${authorName}</h6>
+                <p class="card-text">${p.Message || ''}</p>
+                ${p.ImageURL ? `<img src="${p.ImageURL}" alt="Post Image" class="img-fluid mb-2" style="max-height: 300px;">` : ''}
+                ${p.AttachmentURL ? `<div><a href="${p.AttachmentURL}" target="_blank" class="btn btn-sm btn-outline-primary">View Attachment</a></div>` : ''}
+              </div>
             </div>
           </div>
         </div>
