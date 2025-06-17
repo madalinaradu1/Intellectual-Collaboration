@@ -189,24 +189,12 @@ async function loadPosts() {
       
       // Handle UUID author names
       if (authorName && authorName.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        try {
-          const session = await Amplify.Auth.currentSession();
-          if (session) {
-            const idToken = session.getIdToken();
-            if (idToken && idToken.payload.sub === authorName) {
-              // If this is the current user's post
-              authorName = `${idToken.payload.given_name || ''} ${idToken.payload.family_name || ''}`.trim();
-              if (!authorName) {
-                authorName = idToken.payload.email || "Unknown User";
-              }
-            } else {
-              // For other users, just show "User" with ID prefix
-              authorName = "User " + authorName.substring(0, 4);
-            }
-          }
-        } catch (e) {
-          // If we can't get the session, just use the UUID prefix
-          authorName = "User " + authorName.substring(0, 4);
+        // For UUID authors, just show "User" with ID prefix
+        authorName = "User " + authorName.substring(0, 4);
+        
+        // If this is the current user's post
+        if (p.Author === window.currentUsername) {
+          authorName = "Me (Current User)";
         }
       }
       
