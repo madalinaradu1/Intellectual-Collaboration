@@ -214,17 +214,23 @@ async function loadPosts() {
       
       // Try to fetch the author's profile picture if not already available
       if (profilePicUrl === 'no-profile.png' && p.Author) {
-        fetch(`${_config.api.invokeUrl}/cms/users/${p.Author}`, {
+        // Use a special endpoint that allows fetching basic profile info for any user
+        fetch(`${_config.api.invokeUrl}/cms/users/${p.Author}/profile`, {
           method: 'GET',
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
           }
         })
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
         .then(userData => {
           if (userData && userData.profilePicture) {
-            const imgElement = document.querySelector(`[data-author-id="${p.Author}"] img`);
+            const imgElement = document.querySelector(`[data-author-id="${p.Author}"] img.profile-pic`);
             if (imgElement) {
               imgElement.src = userData.profilePicture;
               console.log("Updated profile picture for", p.Author);
@@ -265,7 +271,7 @@ async function loadPosts() {
           <div class="card-body">
             <div class="row mb-3">
               <div class="col-md-2 text-center">
-                <img src="${profilePicUrl}" alt="Profile" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
+                <img src="${profilePicUrl}" alt="Profile" class="rounded-circle profile-pic" style="width: 80px; height: 80px; object-fit: cover;">
               </div>
               <div class="col-md-10">
                 <h6 class="mb-2">${authorName}</h6>
