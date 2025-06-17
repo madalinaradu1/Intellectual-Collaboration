@@ -85,6 +85,11 @@
                 <textarea class="form-control" id="postMessage" rows="4" required></textarea>
               </div>
               <div class="mb-3">
+                <label for="postImage" class="form-label">Image (optional)</label>
+                <input type="file" class="form-control" id="postImage" accept="image/*">
+                <div class="form-text">Max file size: 5MB</div>
+              </div>
+              <div class="mb-3">
                 <label for="postAttachment" class="form-label">Attachment (optional)</label>
                 <input type="file" class="form-control" id="postAttachment">
                 <div class="form-text">Max file size: 5MB</div>
@@ -205,8 +210,8 @@ async function loadPosts() {
               <div class="col-md-10">
                 <h6 class="mb-2">${authorName}</h6>
                 <p class="card-text">${p.Message || ''}</p>
-                ${p.ImageURL ? `<img src="${p.ImageURL}" alt="Post Image" class="img-fluid mb-2" style="max-height: 300px;">` : ''}
-                ${p.AttachmentURL ? `<div><a href="${p.AttachmentURL}" target="_blank" class="btn btn-sm btn-outline-primary">View Attachment</a></div>` : ''}
+                ${p.ImageUrl || p.imageUrl ? `<img src="${p.ImageUrl || p.imageUrl}" alt="Post Image" class="img-fluid mb-2" style="max-height: 300px; cursor: pointer" onclick="window.open('${p.ImageUrl || p.imageUrl}', '_blank')">` : ''}
+                ${p.AttachmentUrl || p.attachmentUrl ? `<div><a href="${p.AttachmentUrl || p.attachmentUrl}" target="_blank" class="btn btn-sm btn-outline-primary">View Attachment</a></div>` : ''}
               </div>
             </div>
           </div>
@@ -232,6 +237,7 @@ async function submitPost() {
     const title = document.getElementById('postTitle').value;
     const message = document.getElementById('postMessage').value;
     const group = document.getElementById('postGroup').value;
+    const image = document.getElementById('postImage').files[0];
     const attachment = document.getElementById('postAttachment').files[0];
     
     if (!title || !message) {
@@ -246,28 +252,32 @@ async function submitPost() {
     const session = await Amplify.Auth.currentSession();
     const idToken = session.getIdToken().getJwtToken();
     
-    // Create post data
-    const postData = {
-      title: title,
-      message: message,
-      group: group
-    };
+    // Create FormData for file uploads
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('message', message);
+    formData.append('group', group);
     
-    // If there's an attachment, upload it first
-    if (attachment) {
-      // Handle attachment upload logic here
-      // This is a placeholder - actual implementation would depend on your backend
-      console.log("Attachment would be uploaded here:", attachment);
+    // Add image if provided
+    if (image) {
+      formData.append('image', image);
+      console.log("Image will be uploaded:", image.name);
     }
     
-    // Submit post
+    // Add attachment if provided
+    if (attachment) {
+      formData.append('attachment', attachment);
+      console.log("Attachment will be uploaded:", attachment.name);
+    }
+    
+    // Submit post with FormData to handle file upload
     const response = await fetch(`${_config.api.invokeUrl}/cms/posts`, {
       method: 'POST',
       headers: {
-        'Authorization': idToken,
-        'Content-Type': 'application/json'
+        'Authorization': idToken
+        // Don't set Content-Type when using FormData
       },
-      body: JSON.stringify(postData)
+      body: formData
     });
     
     if (!response.ok) {
@@ -283,6 +293,7 @@ async function submitPost() {
     // Clear form
     document.getElementById('postTitle').value = '';
     document.getElementById('postMessage').value = '';
+    document.getElementById('postImage').value = '';
     document.getElementById('postAttachment').value = '';
     
     // Reload posts after a delay
