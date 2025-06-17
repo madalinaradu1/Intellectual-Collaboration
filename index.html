@@ -147,6 +147,7 @@
   <!-- Configuration -->
   <script src="config.js"></script>
   <script src="amplify-config.js"></script>
+  <script src="post-author-handler.js"></script>
 
   <script>
 async function loadPosts() {
@@ -190,7 +191,7 @@ async function loadPosts() {
     }
     
     // Make direct request with authorization headers
-    const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list?includeAuthorData=true`, {
+    const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list?includeAuthorData=basic`, {
       method: 'GET',
       headers: {
         'Authorization': idToken,
@@ -215,15 +216,8 @@ async function loadPosts() {
       // Format the timestamp
       const timestamp = new Date(p.Timestamp).toLocaleString();
       
-      // Get author's full name from DynamoDB Users table
-      let authorName = p.Author;
-      
-      // If we have author data with first and last name, use it
-      if (p.AuthorData && p.AuthorData.firstName && p.AuthorData.lastName) {
-        authorName = `${p.AuthorData.firstName} ${p.AuthorData.lastName}`;
-        
-        // Store profile picture in post data for debugging
-        console.log("Author data profile picture:", p.AuthorData.profilePicture);
+      // Use the post-author-handler utility to format the author name
+      const authorName = window.postAuthorHandler.formatAuthorName(p);ture);
       } else if (authorName && authorName.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
         // If it's a UUID and we don't have author data, try to get it from the session
         try {
