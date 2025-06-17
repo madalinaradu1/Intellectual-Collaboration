@@ -182,6 +182,12 @@ async function loadPosts() {
       // Use the post-author-handler utility to format the author name
       const authorName = window.postAuthorHandler.formatAuthorName(p);
       
+      // Get profile picture URL
+      let profilePicUrl = 'no-profile.png';
+      if (p.AuthorData && p.AuthorData.profilePicture) {
+        profilePicUrl = p.AuthorData.profilePicture;
+      }
+      
       // Create post HTML
       return `
         <div class="card mb-3">
@@ -195,8 +201,11 @@ async function loadPosts() {
             <p class="card-text">${p.Message || ''}</p>
             ${p.AttachmentURL ? `<a href="${p.AttachmentURL}" target="_blank" class="btn btn-sm btn-outline-primary">View Attachment</a>` : ''}
           </div>
-          <div class="card-footer text-muted">
-            Posted by ${authorName}
+          <div class="card-footer">
+            <div class="d-flex align-items-center">
+              <img src="${profilePicUrl}" alt="Profile" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;">
+              <span class="text-muted">Posted by ${authorName}</span>
+            </div>
           </div>
         </div>
       `;
