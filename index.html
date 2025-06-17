@@ -247,8 +247,8 @@ async function loadPosts() {
       let imageHtml = '';
       if (p.Attachment && p.Attachment.FileType && p.Attachment.FileType.startsWith('image/')) {
         imageHtml = `
-          <div class="mt-3">
-            <img src="${p.Attachment.FileUrl}" class="img-fluid rounded" alt="Attached image" style="cursor: pointer; max-height: 300px;" onclick="window.open('${p.Attachment.FileUrl}', '_blank')">
+          <div class="mt-3 w-100">
+            <img src="${p.Attachment.FileUrl}" class="img-fluid rounded w-100" alt="Attached image" style="cursor: pointer; max-height: 400px; object-fit: contain;" onclick="window.open('${p.Attachment.FileUrl}', '_blank')">
           </div>
         `;
       }
