@@ -336,7 +336,7 @@ async function submitPost() {
     }
     
     // Submit post with FormData to handle file upload
-    const response = await fetch(`${_config.api.invokeUrl}/cms/posts`, {
+    const response = await fetch(`${_config.api.invokeUrl}/cms/posts/create`, {
       method: 'POST',
       headers: {
         'Authorization': idToken
@@ -383,12 +383,15 @@ async function testAdminPost() {
     const idToken = session.getIdToken().getJwtToken();
     const user = await Amplify.Auth.currentAuthenticatedUser();
     
-    // Create post data
+    // Create post data with all required fields
     const postData = {
-      Message: "Test admin post",
+      Title: "Test Admin Post",
+      Message: "This is a test post from an admin user",
       Author: user.getUsername(),
       groupId: "general",
-      Timestamp: new Date().toISOString()
+      Timestamp: new Date().toISOString(),
+      authorFirstName: user.signInUserSession.idToken.payload.given_name || "",
+      authorLastName: user.signInUserSession.idToken.payload.family_name || ""
     };
     
     console.log("Sending post data:", postData);
