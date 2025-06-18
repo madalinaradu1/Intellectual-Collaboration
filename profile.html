@@ -27,7 +27,6 @@
   <!-- AWS Amplify (load in head with defer) -->
   <script defer src="https://unpkg.com/aws-amplify@4.3.43/dist/aws-amplify.min.js"></script>
   <script defer src="navbar.js"></script>
-  <script defer src="fix-profile-picture.js"></script>
 </head>
 <body class="bg-light">
   <!-- Purple Banner -->
@@ -263,10 +262,8 @@
           
           // Load profile picture if available
           if (userData.profilePicture) {
-            console.log("Setting profile picture from userData:", userData.profilePicture);
             document.getElementById('profileImage').src = userData.profilePicture;
           } else {
-            console.log("No profile picture in userData, using default");
             document.getElementById('profileImage').src = 'no-profile.png';
           }
           
