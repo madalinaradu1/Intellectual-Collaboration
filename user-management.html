@@ -63,7 +63,6 @@
                   <th>Name</th>
                   <th>Email</th>
                   <th>Role</th>
-                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -186,6 +185,7 @@
   <script src="update-user-role.js"></script>
   <script src="update-cognito-role.js"></script>
   <script src="refresh-users.js"></script>
+  <script src="format-role.js"></script>
 
   <script>
     // Function to check user permissions
@@ -288,12 +288,14 @@
           displayName = 'Unknown User';
         }
         
+        // Format role with spaces between camel case words
+        const formattedRole = window.formatUtils.formatRoleName(user.role);
+        
         return `
         <tr data-user-id="${user.userId}">
           <td>${displayName}</td>
           <td>${user.email}</td>
-          <td><span class="badge bg-info">${user.role}</span></td>
-          <td>${user.enabled ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-warning">Inactive</span>'}</td>
+          <td><span class="badge bg-info">${formattedRole}</span></td>
           <td>
             <button class="btn btn-sm btn-outline-primary view-user">View</button>
             <button class="btn btn-sm btn-outline-danger ms-1 disable-user">${user.enabled ? 'Disable' : 'Enable'}</button>
@@ -345,6 +347,10 @@
         document.getElementById('userLastName').value = user.lastName || '';
         document.getElementById('userEmail').value = user.email || '';
         document.getElementById('userRole').value = user.role || 'Guest';
+        
+        // Update the modal title to include the formatted role
+        const formattedRole = window.formatUtils.formatRoleName(user.role);
+        document.getElementById('userDetailsModalLabel').textContent = `User Details - ${formattedRole}`;
         
         // Store the original role for comparison when saving
         document.getElementById('userDetailsForm').dataset.oldRole = user.role || 'Guest';
