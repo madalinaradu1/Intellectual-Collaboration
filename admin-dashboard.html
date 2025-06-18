@@ -66,25 +66,58 @@
       const description = document.getElementById("group-description").value;
 
       try {
-        const res = await Amplify.API.post("ICCMSRestApi", "/cms/groups/create", {
-          body: { name, description },
+        // Get current user token
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        // Use fetch API instead of Amplify.API.post
+        const response = await fetch(`${_config.api.invokeUrl}/cms/groups/create`, {
+          method: 'POST',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name, description })
         });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const res = await response.json();
         document.getElementById("group-feedback").textContent = `✅ Group '${res.Name}' created.`;
         loadGroups();
       } catch (err) {
         console.error("Group creation failed", err);
-        document.getElementById("group-feedback").textContent = `❌ Error creating group.`;
+        document.getElementById("group-feedback").textContent = `❌ Error creating group: ${err.message}`;
       }
     }
 
     async function loadGroups() {
       try {
-        const groups = await Amplify.API.get("ICCMSRestApi", "/cms/groups/list");
+        // Get current user token
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        // Use fetch API instead of Amplify.API.get
+        const response = await fetch(`${_config.api.invokeUrl}/cms/groups/list`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const groups = await response.json();
         const html = groups.map(g => `<li><strong>${g.Name}</strong>: ${g.Description}</li>`).join("");
         document.getElementById("group-list").innerHTML = `<ul>${html}</ul>`;
       } catch (err) {
         console.error("Failed to load groups", err);
-        document.getElementById("group-list").textContent = "❌ Error loading groups.";
+        document.getElementById("group-list").textContent = `❌ Error loading groups: ${err.message}`;
       }
     }
 
