@@ -326,11 +326,17 @@ async function submitPost() {
     const session = await Amplify.Auth.currentSession();
     const idToken = session.getIdToken().getJwtToken();
     
+    // Get current user info
+    const currentUser = await Amplify.Auth.currentAuthenticatedUser();
+    const { given_name, family_name } = currentUser.signInUserSession.idToken.payload;
+    
     // Create FormData for file uploads
     const formData = new FormData();
     formData.append('title', title);
     formData.append('message', message);
     formData.append('group', group);
+    formData.append('authorFirstName', given_name || '');
+    formData.append('authorLastName', family_name || '');
     
     // Add image if provided
     if (image) {
