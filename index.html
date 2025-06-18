@@ -46,7 +46,10 @@
           </div>
           <div class="modal-body">
             <form id="createPostForm">
-              <!-- Title field removed -->
+              <div class="mb-3">
+                <label for="postTitle" class="form-label">Title</label>
+                <input type="text" class="form-control" id="postTitle" required>
+              </div>
               <div class="mb-3">
                 <label for="postGroup" class="form-label">Group</label>
                 <select class="form-control" id="postGroup">
@@ -295,13 +298,14 @@ async function loadPosts() {
 // Function to handle post submission
 async function submitPost() {
   try {
+    const title = document.getElementById('postTitle').value;
     const message = document.getElementById('postMessage').value;
     const group = document.getElementById('postGroup').value;
     const image = document.getElementById('postImage').files[0];
     const attachment = document.getElementById('postAttachment').files[0];
     
-    if (!message) {
-      throw new Error('Please fill in the message field');
+    if (!title || !message) {
+      throw new Error('Please fill in all required fields');
     }
     
     const statusEl = document.getElementById('postStatus');
@@ -318,8 +322,11 @@ async function submitPost() {
     
     // Create FormData for file uploads
     const formData = new FormData();
-    formData.append('message', message);
-    formData.append('group', group);
+    formData.append('Title', title);
+    formData.append('Message', message);
+    formData.append('Author', currentUser.username);
+    formData.append('groupId', group);
+    formData.append('Timestamp', new Date().toISOString());
     formData.append('authorFirstName', given_name || '');
     formData.append('authorLastName', family_name || '');
     
@@ -356,6 +363,7 @@ async function submitPost() {
     statusEl.classList.remove('alert-info', 'alert-danger');
     
     // Clear form
+    document.getElementById('postTitle').value = '';
     document.getElementById('postMessage').value = '';
     document.getElementById('postImage').value = '';
     document.getElementById('postAttachment').value = '';
