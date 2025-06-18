@@ -309,78 +309,63 @@ async function submitPost() {
     statusEl.classList.add('alert-info');
     statusEl.classList.remove('d-none', 'alert-danger', 'alert-success');
     
+    const session = await Amplify.Auth.currentSession();
+    const idToken = session.getIdToken().getJwtToken();
+    
     // Get current user info
     const currentUser = await Amplify.Auth.currentAuthenticatedUser();
     const { given_name, family_name } = currentUser.signInUserSession.idToken.payload;
     
-    // Create post data object
-    const postData = {
-      message: message,
-      group: group,
-      authorFirstName: given_name || '',
-      authorLastName: family_name || ''
-    };
+    // Create FormData for file uploads
+    const formData = new FormData();
+    formData.append('message', message);
+    formData.append('group', group);
+    formData.append('authorFirstName', given_name || '');
+    formData.append('authorLastName', family_name || '');
     
-    // Use Amplify API to make the request with proper AWS SigV4 signing
-    try {
-      // For simple JSON data without files
-      if (!image && !attachment) {
-        const result = await Amplify.API.post('ICCMSRestApi', '/cms/posts', {
-          body: postData
-        });
-        console.log("Post created successfully:", result);
-      } else {
-        // For FormData with files, we need to use a different approach
-        // Create FormData for file uploads
-        const formData = new FormData();
-        formData.append('message', message);
-        formData.append('group', group);
-        formData.append('authorFirstName', given_name || '');
-        formData.append('authorLastName', family_name || '');
-        
-        // Add image if provided
-        if (image) {
-          formData.append('image', image);
-          console.log("Image will be uploaded:", image.name);
-        }
-        
-        // Add attachment if provided
-        if (attachment) {
-          formData.append('attachment', attachment);
-          console.log("Attachment will be uploaded:", attachment.name);
-        }
-        
-        // Use Amplify API with custom request options for FormData
-        const result = await Amplify.API.post('ICCMSRestApi', '/cms/posts', {
-          body: formData,
-          headers: {
-            // Don't set Content-Type when using FormData
-            'Content-Type': undefined
-          }
-        });
-        console.log("Post with files created successfully:", result);
-      }
-      
-      // Show success message
-      statusEl.textContent = 'Post submitted successfully!';
-      statusEl.classList.add('alert-success');
-      statusEl.classList.remove('alert-info', 'alert-danger');
-      
-      // Clear form
-      document.getElementById('postMessage').value = '';
-      document.getElementById('postImage').value = '';
-      document.getElementById('postAttachment').value = '';
-      
-      // Reload posts after a delay
-      setTimeout(() => {
-        const modal = bootstrap.Modal.getInstance(document.getElementById('createPostModal'));
-        modal.hide();
-        loadPosts();
-      }, 1500);
-    } catch (apiError) {
-      console.error("API error:", apiError);
-      throw new Error(`API error: ${apiError.message}`);
+    // Add image if provided
+    if (image) {
+      formData.append('image', image);
+      console.log("Image will be uploaded:", image.name);
     }
+    
+    // Add attachment if provided
+    if (attachment) {
+      formData.append('attachment', attachment);
+      console.log("Attachment will be uploaded:", attachment.name);
+    }
+    
+    // Submit post with FormData to handle file upload
+    const response = await fetch(`${_config.api.invokeUrl}/cms/posts`, {
+      method: 'POST',
+      headers: {
+        'Authorization': idToken
+        // Don't set Content-Type when using FormData
+      },
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "No error text");
+      throw new Error(`HTTP error! status: ${response.status}, details: ${errorText}`);
+    }
+    
+    // Show success message
+    statusEl.textContent = 'Post submitted successfully!';
+    statusEl.classList.add('alert-success');
+    statusEl.classList.remove('alert-info', 'alert-danger');
+    
+    // Clear form
+    document.getElementById('postMessage').value = '';
+    document.getElementById('postImage').value = '';
+    document.getElementById('postAttachment').value = '';
+    
+    // Reload posts after a delay
+    setTimeout(() => {
+      const modal = bootstrap.Modal.getInstance(document.getElementById('createPostModal'));
+      modal.hide();
+      loadPosts();
+    }, 1500);
     
   } catch (err) {
     console.error("Error submitting post:", err);
@@ -394,29 +379,43 @@ async function submitPost() {
 // Function to test admin post creation
 async function testAdminPost() {
   try {
+    const session = await Amplify.Auth.currentSession();
+    const idToken = session.getIdToken().getJwtToken();
     const user = await Amplify.Auth.currentAuthenticatedUser();
     
     // Create post data
     const postData = {
-      message: "Test admin post",
-      author: user.getUsername(),
-      groupId: "general"
+      Message: "Test admin post",
+      Author: user.getUsername(),
+      groupId: "general",
+      Timestamp: new Date().toISOString()
     };
     
     console.log("Sending post data:", postData);
+    console.log("Using token:", idToken.substring(0, 20) + "...");
     
-    // Use Amplify API to make the request with proper AWS SigV4 signing
-    try {
-      const result = await Amplify.API.post('ICCMSRestApi', '/cms/posts/create', {
-        body: postData
-      });
-      
-      console.log("Success:", result);
-      alert("Admin post created successfully!");
-    } catch (apiError) {
-      console.error("API error:", apiError);
-      alert(`API error: ${apiError.message}`);
+    // Send to API
+    const response = await fetch(`${_config.api.invokeUrl}/cms/posts/create`, {
+      method: 'POST',
+      headers: {
+        'Authorization': idToken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(postData)
+    });
+    
+    console.log("Response status:", response.status);
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Error response:", errorText);
+      alert(`Error: ${response.status}, details: ${errorText}`);
+      return;
     }
+    
+    const result = await response.json();
+    console.log("Success:", result);
+    alert("Admin post created successfully!");
     
   } catch (err) {
     console.error("Error in testAdminPost:", err);
