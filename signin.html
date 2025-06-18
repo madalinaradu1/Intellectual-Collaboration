@@ -81,7 +81,7 @@
               title = "GCU Student, Faculty, Staff Sign In";
               break;
             case 'external':
-              title = "External Content Expert Sign In";
+              title = "DC Network Sign In";
               break;
             case 'guest':
               title = "Guest Sign In";
@@ -206,7 +206,16 @@
           }
 
           console.log("✅ Logged in successfully");
-          window.location.href = "index.html";
+          
+          // Check if user is from DC Network to redirect to student dashboard
+          const urlParams = new URLSearchParams(window.location.search);
+          const userType = urlParams.get('type');
+          
+          if (userType === 'external') {
+            window.location.href = "student-dashboard.html";
+          } else {
+            window.location.href = "index.html";
+          }
         } catch (initialError) {
           console.error("Initial sign-in error:", initialError);
           
