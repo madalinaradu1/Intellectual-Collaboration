@@ -1,0 +1,61 @@
+/* Common styles for IC CMS */
+
+body {
+  background-color: #f8f9fa;
+}
+
+.banner {
+  background-color: #6f42c1; /* Bootstrap purple */
+  color: white;
+  padding: 2rem 1rem;
+  text-align: center;
+  border-radius: 0 0 8px 8px;
+  margin-bottom: 2rem;
+}
+
+.content-section {
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.action-nav {
+  background-color: #6f42c1;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Card styling */
+.card {
+  border-radius: 8px;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  margin-bottom: 1rem;
+}
+
+.card-header {
+  background-color: rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+/* Button styling */
+.btn-primary {
+  background-color: #6f42c1;
+  border-color: #6f42c1;
+}
+
+.btn-primary:hover {
+  background-color: #5e35b1;
+  border-color: #5e35b1;
+}
+
+.btn-outline-primary {
+  color: #6f42c1;
+  border-color: #6f42c1;
+}
+
+.btn-outline-primary:hover {
+  background-color: #6f42c1;
+  border-color: #6f42c1;
+}

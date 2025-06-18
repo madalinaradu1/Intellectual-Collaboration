@@ -6,14 +6,8 @@
   <title>IC CMS - Role Requests</title>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="common-styles.css" rel="stylesheet"/>
   <style>
-    body {
-      background: linear-gradient(180deg, rgb(117, 81, 194), rgb(255, 255, 255));
-      min-height: 100vh;
-    }
-    .content-container {
-      padding-top: 2rem;
-    }
     .request-card {
       background-color: white;
       border-radius: 8px;
@@ -31,33 +25,33 @@
   <script defer src="navbar.js"></script>
 </head>
 <body>
-  <div class="container content-container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2 class="text-white">Role Requests</h2>
-      <a href="user-management.html" class="btn btn-outline-light">Back to User Management</a>
-    </div>
+  <!-- Purple Banner -->
+  <div class="banner">
+    <h1 class="mb-2">Role Requests</h1>
+    <p class="lead mb-0">Review and manage user role requests</p>
+  </div>
+
+  <div class="container">
+    <!-- Navigation -->
+    <nav class="mb-4">
+      <div class="d-flex">
+        <a href="user-management.html" class="btn btn-outline-secondary me-2">← Back to User Management</a>
+      </div>
+    </nav>
     
     <div class="row">
       <div class="col-12">
-        <div class="card shadow mb-4">
-          <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Pending Requests</h5>
-          </div>
-          <div class="card-body">
-            <div id="pendingRequests">
-              <p class="text-center">Loading pending requests...</p>
-            </div>
+        <div class="content-section mb-4">
+          <h4 class="mb-3">Pending Requests</h4>
+          <div id="pendingRequests">
+            <p class="text-center">Loading pending requests...</p>
           </div>
         </div>
         
-        <div class="card shadow">
-          <div class="card-header bg-secondary text-white">
-            <h5 class="mb-0">Processed Requests</h5>
-          </div>
-          <div class="card-body">
-            <div id="processedRequests">
-              <p class="text-center">Loading processed requests...</p>
-            </div>
+        <div class="content-section">
+          <h4 class="mb-3">Processed Requests</h4>
+          <div id="processedRequests">
+            <p class="text-center">Loading processed requests...</p>
           </div>
         </div>
       </div>
