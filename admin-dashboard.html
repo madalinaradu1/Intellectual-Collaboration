@@ -66,7 +66,7 @@
       const description = document.getElementById("group-description").value;
 
       try {
-        const res = await Amplify.API.post("icApi", "/cms/groups/create", {
+        const res = await Amplify.API.post("ICCMSRestApi", "/cms/groups/create", {
           body: { name, description },
         });
         document.getElementById("group-feedback").textContent = `✅ Group '${res.Name}' created.`;
@@ -79,7 +79,7 @@
 
     async function loadGroups() {
       try {
-        const groups = await Amplify.API.get("icApi", "/cms/groups/list");
+        const groups = await Amplify.API.get("ICCMSRestApi", "/cms/groups/list");
         const html = groups.map(g => `<li><strong>${g.Name}</strong>: ${g.Description}</li>`).join("");
         document.getElementById("group-list").innerHTML = `<ul>${html}</ul>`;
       } catch (err) {
