@@ -184,6 +184,27 @@
             return;
           }
           
+          // Update last login date
+          const userId = user.attributes.sub;
+          try {
+            const session = await Amplify.Auth.currentSession();
+            const idToken = session.getIdToken().getJwtToken();
+            
+            await fetch(`${_config.api.invokeUrl}/cms/users/${userId}`, {
+              method: 'PUT',
+              headers: {
+                'Authorization': idToken,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                lastLoginDate: new Date().toISOString()
+              })
+            });
+            console.log("✅ Last login date updated");
+          } catch (updateError) {
+            console.error("Error updating last login date:", updateError);
+          }
+
           console.log("✅ Logged in successfully");
           window.location.href = "index.html";
         } catch (initialError) {
