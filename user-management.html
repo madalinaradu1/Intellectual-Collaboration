@@ -40,8 +40,7 @@
       </div>
     </nav>
 
-    <!-- User Greeting -->
-    <div id="user-greeting" class="alert alert-info text-center d-none"></div>
+    <!-- User Greeting Removed -->
 
     <!-- User List -->
     <section class="mb-4">
@@ -544,11 +543,7 @@
         const userRole = await checkUserPermissions();
         if (!userRole) return; // Permission check failed
         
-        // Load user info
-        const user = await Amplify.Auth.currentAuthenticatedUser();
-        const username = user.getUsername();
-        document.getElementById("user-greeting").classList.remove("d-none");
-        document.getElementById("user-greeting").textContent = `Welcome, ${username}! You are logged in as ${userRole}.`;
+        // User greeting removed
         
         // Load users
         loadUsers();
