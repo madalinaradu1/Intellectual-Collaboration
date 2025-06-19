@@ -324,17 +324,52 @@ async function submitPost() {
       authorLastName: family_name || ''
     };
     
-    // Add file info if files are selected (but don't upload yet)
-    if (image) {
-      postData.hasImage = true;
-      postData.imageName = image.name;
-      postData.imageType = image.type;
-    }
-    
+    // Handle file upload if attachment is selected
+    const attachment = document.getElementById('postAttachment').files[0];
     if (attachment) {
-      postData.hasAttachment = true;
-      postData.attachmentName = attachment.name;
-      postData.attachmentType = attachment.type;
+      statusEl.textContent = 'Uploading file...';
+      
+      // Get presigned URL
+      const uploadResponse = await fetch(`${_config.api.invokeUrl}/cms/posts/getUploadUrl`, {
+        method: 'POST',
+        headers: {
+          'Authorization': idToken,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          fileName: attachment.name,
+          fileType: attachment.type
+        })
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to get upload URL');
+      }
+      
+      const uploadData = await uploadResponse.json();
+      
+      // Upload file to S3
+      const s3Response = await fetch(uploadData.uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': attachment.type
+        },
+        body: attachment
+      });
+      
+      if (!s3Response.ok) {
+        throw new Error('Failed to upload file');
+      }
+      
+      // Add attachment info to post
+      postData.Attachment = {
+        FileName: attachment.name,
+        FileType: attachment.type,
+        FileKey: uploadData.fileKey,
+        FileUrl: uploadData.fileUrl
+      };
+      
+      statusEl.textContent = 'Creating post...';
     }
     
     // Submit post with JSON
