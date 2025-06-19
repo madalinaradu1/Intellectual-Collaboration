@@ -295,7 +295,6 @@ async function submitPost() {
     const title = document.getElementById('postTitle').value;
     const message = document.getElementById('postMessage').value;
     const group = document.getElementById('postGroup').value;
-    const image = document.getElementById('postImage').files[0];
     const attachment = document.getElementById('postAttachment').files[0];
     
     if (!title || !message) {
@@ -325,7 +324,6 @@ async function submitPost() {
     };
     
     // Handle file upload if attachment is selected
-    const attachment = document.getElementById('postAttachment').files[0];
     if (attachment) {
       statusEl.textContent = 'Uploading file...';
       
