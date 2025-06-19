@@ -64,14 +64,8 @@
                 <textarea class="form-control" id="postMessage" rows="4" required></textarea>
               </div>
               <div class="mb-3">
-                <label for="postImage" class="form-label">Image (optional)</label>
-                <input type="file" class="form-control" id="postImage" accept="image/*">
-                <div class="form-text">Max file size: 5MB</div>
-              </div>
-              <div class="mb-3">
                 <label for="postAttachment" class="form-label">Attachment (optional)</label>
                 <input type="file" class="form-control" id="postAttachment">
-                <div class="form-text">Max file size: 5MB</div>
               </div>
             </form>
             <div id="postStatus" class="alert d-none"></div>
@@ -320,11 +314,6 @@ async function submitPost() {
     const currentUser = await Amplify.Auth.currentAuthenticatedUser();
     const { given_name, family_name } = currentUser.signInUserSession.idToken.payload;
     
-    // Create JSON data (temporarily disable files)
-    if (image || attachment) {
-      throw new Error('File uploads temporarily disabled for testing');
-    }
-    
     const postData = {
       Title: title,
       Message: message,
@@ -334,6 +323,19 @@ async function submitPost() {
       authorFirstName: given_name || '',
       authorLastName: family_name || ''
     };
+    
+    // Add file info if files are selected (but don't upload yet)
+    if (image) {
+      postData.hasImage = true;
+      postData.imageName = image.name;
+      postData.imageType = image.type;
+    }
+    
+    if (attachment) {
+      postData.hasAttachment = true;
+      postData.attachmentName = attachment.name;
+      postData.attachmentType = attachment.type;
+    }
     
     // Submit post with JSON
     const response = await fetch(`${_config.api.invokeUrl}/cms/posts/create`, {
@@ -358,7 +360,6 @@ async function submitPost() {
     // Clear form
     document.getElementById('postTitle').value = '';
     document.getElementById('postMessage').value = '';
-    document.getElementById('postImage').value = '';
     document.getElementById('postAttachment').value = '';
     
     // Reload posts after a delay
