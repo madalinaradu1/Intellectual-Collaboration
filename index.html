@@ -320,7 +320,7 @@ async function submitPost() {
     const currentUser = await Amplify.Auth.currentAuthenticatedUser();
     const { given_name, family_name } = currentUser.signInUserSession.idToken.payload;
     
-    // Create FormData for file uploads
+    // Create FormData
     const formData = new FormData();
     formData.append('Title', title);
     formData.append('Message', message);
@@ -330,24 +330,19 @@ async function submitPost() {
     formData.append('authorFirstName', given_name || '');
     formData.append('authorLastName', family_name || '');
     
-    // Add image if provided
     if (image) {
       formData.append('image', image);
-      console.log("Image will be uploaded:", image.name);
     }
     
-    // Add attachment if provided
     if (attachment) {
       formData.append('attachment', attachment);
-      console.log("Attachment will be uploaded:", attachment.name);
     }
     
-    // Submit post with FormData to handle file upload
+    // Submit post with FormData
     const response = await fetch(`${_config.api.invokeUrl}/cms/posts/create`, {
       method: 'POST',
       headers: {
         'Authorization': idToken
-        // Don't set Content-Type when using FormData
       },
       body: formData
     });
