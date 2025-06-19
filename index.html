@@ -316,7 +316,7 @@ async function submitPost() {
     const postData = {
       Title: title,
       Message: message,
-      Author: currentUser.username,
+      Author: `${given_name || ''} ${family_name || ''}`.trim() || currentUser.username,
       groupId: group,
       Timestamp: new Date().toISOString(),
       authorFirstName: given_name || '',
