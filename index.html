@@ -320,31 +320,29 @@ async function submitPost() {
     const currentUser = await Amplify.Auth.currentAuthenticatedUser();
     const { given_name, family_name } = currentUser.signInUserSession.idToken.payload;
     
-    // Create FormData
-    const formData = new FormData();
-    formData.append('Title', title);
-    formData.append('Message', message);
-    formData.append('Author', currentUser.username);
-    formData.append('groupId', group);
-    formData.append('Timestamp', new Date().toISOString());
-    formData.append('authorFirstName', given_name || '');
-    formData.append('authorLastName', family_name || '');
-    
-    if (image) {
-      formData.append('image', image);
+    // Create JSON data (temporarily disable files)
+    if (image || attachment) {
+      throw new Error('File uploads temporarily disabled for testing');
     }
     
-    if (attachment) {
-      formData.append('attachment', attachment);
-    }
+    const postData = {
+      Title: title,
+      Message: message,
+      Author: currentUser.username,
+      groupId: group,
+      Timestamp: new Date().toISOString(),
+      authorFirstName: given_name || '',
+      authorLastName: family_name || ''
+    };
     
-    // Submit post with FormData
+    // Submit post with JSON
     const response = await fetch(`${_config.api.invokeUrl}/cms/posts/create`, {
       method: 'POST',
       headers: {
-        'Authorization': idToken
+        'Authorization': idToken,
+        'Content-Type': 'application/json'
       },
-      body: formData
+      body: JSON.stringify(postData)
     });
     
     if (!response.ok) {
