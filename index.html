@@ -411,67 +411,11 @@ async function submitPost() {
   }
 }
 
-// Function to test admin post creation
-async function testAdminPost() {
-  try {
-    const session = await Amplify.Auth.currentSession();
-    const idToken = session.getIdToken().getJwtToken();
-    const user = await Amplify.Auth.currentAuthenticatedUser();
-    
-    // Create post data with all required fields
-    const postData = {
-      Title: "Test Admin Post",
-      Message: "This is a test post from an admin user",
-      Author: user.getUsername(),
-      groupId: "general",
-      Timestamp: new Date().toISOString(),
-      authorFirstName: user.signInUserSession.idToken.payload.given_name || "",
-      authorLastName: user.signInUserSession.idToken.payload.family_name || ""
-    };
-    
-    console.log("Sending post data:", postData);
-    console.log("Using token:", idToken.substring(0, 20) + "...");
-    
-    // Send to API
-    const response = await fetch(`${_config.api.invokeUrl}/cms/posts/create`, {
-      method: 'POST',
-      headers: {
-        'Authorization': idToken,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(postData)
-    });
-    
-    console.log("Response status:", response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Error response:", errorText);
-      alert(`Error: ${response.status}, details: ${errorText}`);
-      return;
-    }
-    
-    const result = await response.json();
-    console.log("Success:", result);
-    alert("Admin post created successfully!");
-    
-  } catch (err) {
-    console.error("Error in testAdminPost:", err);
-    alert(`Error: ${err.message}`);
-  }
-}
+
 
 // Set up event listeners
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('submitPost').addEventListener('click', submitPost);
-  
-  // Add test button to the page
-  const announcements = document.getElementById('announcements');
-  const testButton = document.createElement('button');
-  testButton.textContent = 'Test Admin Post';
-  testButton.className = 'btn btn-warning mt-2';
-  testButton.onclick = testAdminPost;
-  announcements.appendChild(testButton);
 });
 
 // Wait for Amplify to load
