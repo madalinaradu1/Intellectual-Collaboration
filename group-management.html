@@ -509,10 +509,9 @@ function displayGroups(groups) {
         <tr data-user-id="${member.userId || member.id}">
           <td>${member.firstName || member.name || 'Unknown'} ${member.lastName || ''}</td>
           <td>${member.email || 'No email'}</td>
-          <td><span class="badge bg-info">${member.role || 'Member'}</span></td>
+          <td><span class="badge bg-info">${member.systemRole || member.role || 'Member'}</span></td>
           <td>
-            <button class="btn btn-sm btn-outline-secondary change-role">Change Role</button>
-            <button class="btn btn-sm btn-outline-danger ms-1 remove-member">Remove</button>
+            <button class="btn btn-sm btn-outline-danger remove-member">Remove</button>
           </td>
         </tr>
       `).join("");
