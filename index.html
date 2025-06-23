@@ -191,8 +191,8 @@ async function loadPosts() {
       // Get initial author name
       let authorName = window.postAuthorHandler.formatAuthorName(p);
       
-      // Handle UUID author names
-      if (authorName && authorName.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      // Handle UUID author names - but skip if we have proper author data
+      if (authorName && authorName.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) && !p.AuthorData) {
         // For UUID authors, just show "User" with ID prefix
         authorName = "User " + authorName.substring(0, 4);
         
