@@ -31,7 +31,10 @@
       </div>
     </nav>
 
-    <!-- User Greeting Removed -->
+    <!-- Status Alert -->
+    <div id="statusAlert" class="alert alert-info d-none" role="alert">
+      <span id="statusMessage"></span>
+    </div>
 
     <!-- Group List -->
     <section class="mb-4">
@@ -332,10 +335,9 @@ function displayGroups(groups) {
         <td>${group.name || 'Unnamed Group'}</td>
         <td>${group.description ? group.description.substring(0, 50) + (group.description.length > 50 ? '...' : '') : 'No description'}</td>
         <td>${isPublic ? '<span class="badge bg-success">Public</span>' : '<span class="badge bg-secondary">Private</span>'}</td>
-        <td>${group.memberCount || 0}</td>
+        <td><span id="memberCount-${group.groupId}">${group.memberCount || 0}</span></td>
         <td>
           <button class="btn btn-sm btn-outline-primary view-group">View</button>
-          <button class="btn btn-sm btn-outline-secondary ms-1 manage-members">Members</button>
         </td>
       </tr>
     `;
@@ -348,13 +350,6 @@ function displayGroups(groups) {
     button.addEventListener('click', function() {
       const groupId = this.closest('tr').dataset.groupId;
       openGroupDetails(groupId);
-    });
-  });
-  
-  document.querySelectorAll('.manage-members').forEach(button => {
-    button.addEventListener('click', function() {
-      const groupId = this.closest('tr').dataset.groupId;
-      openGroupDetails(groupId, 'members');
     });
   });
 }
@@ -418,6 +413,8 @@ function displayGroups(groups) {
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
+        console.log(`Loading members for group: ${groupId}`);
+        
         const response = await fetch(`${_config.api.invokeUrl}/cms/groups/${groupId}/members`, {
           method: 'GET',
           headers: {
@@ -427,52 +424,118 @@ function displayGroups(groups) {
           credentials: 'include'
         });
         
+        console.log(`Members API response status: ${response.status}`);
+        
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const members = await response.json();
-        
-        const tableBody = document.getElementById("memberTableBody");
-        
-        if (!members || members.length === 0) {
-          tableBody.innerHTML = `
-            <tr>
-              <td colspan="4" class="text-center py-4">No members found</td>
-            </tr>
-          `;
+          // If the specific members endpoint fails, try to get group details which might include member info
+          console.log("Members endpoint failed, trying alternative approach...");
+          await loadGroupMembersAlternative(groupId);
           return;
         }
         
-        const html = members.map(member => `
-          <tr data-user-id="${member.userId}">
-            <td>${member.firstName} ${member.lastName}</td>
-            <td>${member.email}</td>
-            <td><span class="badge bg-info">${member.role}</span></td>
-            <td>
-              <button class="btn btn-sm btn-outline-secondary change-role">Change Role</button>
-              <button class="btn btn-sm btn-outline-danger ms-1 remove-member">Remove</button>
-            </td>
-          </tr>
-        `).join("");
+        const members = await response.json();
+        console.log("Members loaded:", members);
         
-        tableBody.innerHTML = html;
+        displayGroupMembers(members, groupId);
         
-        // Add event listeners
-        document.getElementById('addMemberBtn').addEventListener('click', () => {
-          document.getElementById('addMemberForm').dataset.groupId = groupId;
-          const modal = new bootstrap.Modal(document.getElementById('addMemberModal'));
-          modal.show();
-        });
       } catch (err) {
         console.error("Error loading group members:", err);
+        // Try alternative approach
+        await loadGroupMembersAlternative(groupId);
+      }
+    }
+
+    // Alternative function to load group members when main endpoint fails
+    async function loadGroupMembersAlternative(groupId) {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        // Try to get group details which might include member information
+        const response = await fetch(`${_config.api.invokeUrl}/cms/groups/${groupId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const group = await response.json();
+          // If group has members array, use it
+          if (group.members && Array.isArray(group.members)) {
+            displayGroupMembers(group.members, groupId);
+            return;
+          }
+        }
+        
+        // If all else fails, show a message that members feature is not available
         document.getElementById("memberTableBody").innerHTML = `
           <tr>
-            <td colspan="4" class="text-center py-4 text-danger">
-              Error loading members. ${err.message}
+            <td colspan="4" class="text-center py-4 text-warning">
+              Members feature is currently unavailable. The backend API endpoint may not be implemented yet.
+              <br><small>Any user can join this group through the main interface.</small>
             </td>
           </tr>
         `;
+      } catch (err) {
+        console.error("Alternative member loading failed:", err);
+        document.getElementById("memberTableBody").innerHTML = `
+          <tr>
+            <td colspan="4" class="text-center py-4 text-danger">
+              Error loading members. HTTP error! status: 502
+              <br><small>The members API endpoint may not be configured properly.</small>
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Function to display group members
+    function displayGroupMembers(members, groupId) {
+      const tableBody = document.getElementById("memberTableBody");
+      
+      if (!members || members.length === 0) {
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="4" class="text-center py-4">No members found</td>
+          </tr>
+        `;
+        return;
+      }
+      
+      const html = members.map(member => `
+        <tr data-user-id="${member.userId || member.id}">
+          <td>${member.firstName || member.name || 'Unknown'} ${member.lastName || ''}</td>
+          <td>${member.email || 'No email'}</td>
+          <td><span class="badge bg-info">${member.role || 'Member'}</span></td>
+          <td>
+            <button class="btn btn-sm btn-outline-secondary change-role">Change Role</button>
+            <button class="btn btn-sm btn-outline-danger ms-1 remove-member">Remove</button>
+          </td>
+        </tr>
+      `).join("");
+      
+      tableBody.innerHTML = html;
+      
+      // Update member count in the main table
+      const memberCountElement = document.getElementById(`memberCount-${groupId}`);
+      if (memberCountElement) {
+        memberCountElement.textContent = members.length;
+      }
+      
+      // Add event listeners
+      const addMemberBtn = document.getElementById('addMemberBtn');
+      if (addMemberBtn) {
+        addMemberBtn.removeEventListener('click', addMemberHandler); // Remove existing listener
+        addMemberBtn.addEventListener('click', addMemberHandler);
+      }
+      
+      function addMemberHandler() {
+        document.getElementById('addMemberForm').dataset.groupId = groupId;
+        const modal = new bootstrap.Modal(document.getElementById('addMemberModal'));
+        modal.show();
       }
     }
 
@@ -660,6 +723,73 @@ async function createGroup() {
 
 
 
+    // Function to show status message
+    function showStatusMessage(message, type = 'info') {
+      const alertEl = document.getElementById('statusAlert');
+      const messageEl = document.getElementById('statusMessage');
+      
+      messageEl.textContent = message;
+      alertEl.className = `alert alert-${type}`;
+      alertEl.classList.remove('d-none');
+      
+      // Auto-hide after 5 seconds
+      setTimeout(() => {
+        alertEl.classList.add('d-none');
+      }, 5000);
+    }
+
+    // Function to refresh member counts for all groups
+    async function refreshMemberCounts() {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        let updatedCount = 0;
+        
+        // Get all group rows
+        const groupRows = document.querySelectorAll('#groupTableBody tr[data-group-id]');
+        
+        for (const row of groupRows) {
+          const groupId = row.dataset.groupId;
+          const memberCountElement = document.getElementById(`memberCount-${groupId}`);
+          
+          if (memberCountElement) {
+            try {
+              // Try to get member count from the members endpoint
+              const response = await fetch(`${_config.api.invokeUrl}/cms/groups/${groupId}/members`, {
+                method: 'GET',
+                headers: {
+                  'Authorization': idToken,
+                  'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+              });
+              
+              if (response.ok) {
+                const members = await response.json();
+                const newCount = members.length || 0;
+                const oldCount = parseInt(memberCountElement.textContent) || 0;
+                
+                if (newCount !== oldCount) {
+                  memberCountElement.textContent = newCount;
+                  updatedCount++;
+                }
+              }
+            } catch (err) {
+              console.log(`Could not update member count for group ${groupId}:`, err);
+            }
+          }
+        }
+        
+        if (updatedCount > 0) {
+          showStatusMessage(`Updated member counts for ${updatedCount} group(s)`, 'success');
+        }
+      } catch (err) {
+        console.error("Error refreshing member counts:", err);
+        showStatusMessage("Error refreshing member counts", 'warning');
+      }
+    }
+
     // Function to add a member to a group
     async function addMemberToGroup() {
       try {
@@ -699,9 +829,10 @@ async function createGroup() {
         // Clear form
         document.getElementById('memberEmail').value = '';
         
-        // Reload members after a short delay
+        // Reload members and refresh member counts
         setTimeout(() => {
           loadGroupMembers(groupId);
+          refreshMemberCounts(); // Update member counts in main table
           // Close modal
           const modal = bootstrap.Modal.getInstance(document.getElementById('addMemberModal'));
           modal.hide();
@@ -779,8 +910,14 @@ async function createGroup() {
         // Load groups
         loadGroups();
         
+        // Set up periodic refresh of member counts (every 30 seconds)
+        setInterval(refreshMemberCounts, 30000);
+        
         // Set up event listeners
-        document.getElementById('refreshGroups').addEventListener('click', loadGroups);
+        document.getElementById('refreshGroups').addEventListener('click', async () => {
+          await loadGroups();
+          await refreshMemberCounts();
+        });
         document.getElementById('saveGroupDetails').addEventListener('click', saveGroupDetails);
         document.getElementById('submitCreateGroup').addEventListener('click', createGroup);
         document.getElementById('submitAddMember').addEventListener('click', addMemberToGroup);

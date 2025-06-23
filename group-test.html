@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Group Management Test</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container mt-4">
+    <h2>Group Management Test Page</h2>
+    <p>This page helps test the group management functionality.</p>
+    
+    <div class="row">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5>Test Instructions</h5>
+          </div>
+          <div class="card-body">
+            <ol>
+              <li>Go to <a href="group-management.html" target="_blank">Group Management</a></li>
+              <li>Notice that the "Members" button has been removed from the Actions column</li>
+              <li>Click "View" on any group to see group details</li>
+              <li>Click on the "Members" tab to view members</li>
+              <li>Go to <a href="student-dashboard.html" target="_blank">Student Dashboard</a></li>
+              <li>Join a group by clicking "Join Group"</li>
+              <li>Return to Group Management and refresh to see updated member count</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5>Changes Made</h5>
+          </div>
+          <div class="card-body">
+            <ul>
+              <li>✅ Removed "Members" button from Actions column</li>
+              <li>✅ Added dynamic member count updates</li>
+              <li>✅ Improved error handling for 502 errors</li>
+              <li>✅ Added fallback for missing API endpoints</li>
+              <li>✅ Added periodic refresh of member counts</li>
+              <li>✅ Added status notifications</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="row mt-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h5>API Endpoints Expected</h5>
+          </div>
+          <div class="card-body">
+            <p>The following API endpoints should be implemented for full functionality:</p>
+            <ul>
+              <li><code>GET /cms/groups/{groupId}/members</code> - Get group members</li>
+              <li><code>POST /cms/groups/{groupId}/join</code> - Join a group</li>
+              <li><code>POST /cms/groups/{groupId}/members</code> - Add member to group</li>
+            </ul>
+            <p class="text-muted">If these endpoints return 502 errors, the frontend will show appropriate fallback messages.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
