@@ -433,12 +433,16 @@
         
         Amplify.configure(window.awsConfig);
         
+        // Check authentication
+        await Amplify.Auth.currentSession();
+        
         generateCalendar();
         loadPosts();
         
       } catch (error) {
         console.error("Error initializing:", error);
-        document.getElementById('announcements').innerHTML = '<p class="text-danger">Authentication error.</p>';
+        alert("Authentication error. Please log in again.");
+        window.location.href = "signin.html";
       }
     };
   </script>
