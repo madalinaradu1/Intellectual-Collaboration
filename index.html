@@ -191,14 +191,19 @@ async function loadPosts() {
       // Get initial author name
       let authorName = window.postAuthorHandler.formatAuthorName(p);
       
-      // Handle UUID author names - but skip if we have proper author data
-      if (authorName && authorName.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) && !p.AuthorData) {
-        // For UUID authors, just show "User" with ID prefix
-        authorName = "User " + authorName.substring(0, 4);
-        
-        // If this is the current user's post
-        if (p.Author === window.currentUsername) {
-          authorName = "Me (Current User)";
+      // Handle UUID author names - use AuthorData if available, otherwise get from current user
+      if (authorName && authorName.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        if (p.AuthorData && (p.AuthorData.firstName || p.AuthorData.lastName)) {
+          // Use author data if available
+          authorName = `${p.AuthorData.firstName || ''} ${p.AuthorData.lastName || ''}`.trim();
+        } else if (p.Author === window.currentUsername) {
+          // For current user, get name from Cognito
+          const currentUser = await Amplify.Auth.currentAuthenticatedUser();
+          const { given_name, family_name } = currentUser.signInUserSession.idToken.payload;
+          authorName = `${given_name || ''} ${family_name || ''}`.trim() || "Me (Current User)";
+        } else {
+          // Fallback for other UUID authors
+          authorName = "User " + authorName.substring(0, 4);
         }
       }
       
