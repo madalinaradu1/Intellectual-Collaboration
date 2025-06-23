@@ -28,6 +28,14 @@
   </div>
 
   <div class="container">
+    <!-- Available Groups -->
+    <section class="mb-4">
+      <h4>Available Groups</h4>
+      <div id="availableGroups" class="content-section">
+        <p>Loading groups...</p>
+      </div>
+    </section>
+
     <!-- Announcements -->
     <section class="mb-4">
       <h4>Announcements</h4>
@@ -36,6 +44,26 @@
       </div>
     </section>
     
+    <!-- Join Group Modal -->
+    <div class="modal fade" id="joinGroupModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Join Group</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to join this group?</p>
+            <p id="joinGroupName" class="fw-bold"></p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="confirmJoinGroup">Join Group</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Create Post Modal -->
     <div class="modal fade" id="createPostModal" tabindex="-1" aria-labelledby="createPostModalLabel">
       <div class="modal-dialog">
@@ -289,6 +317,137 @@ async function loadPosts() {
   }
 }
 
+// Function to load available groups
+async function loadAvailableGroups() {
+  try {
+    const session = await Amplify.Auth.currentSession();
+    const idToken = session.getIdToken().getJwtToken();
+    
+    const response = await fetch(`${_config.api.invokeUrl}/cms/groups/public`, {
+      method: 'GET',
+      headers: {
+        'Authorization': idToken,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const groups = await response.json();
+    displayAvailableGroups(groups);
+  } catch (err) {
+    console.error("Error loading available groups:", err);
+    document.getElementById("availableGroups").innerHTML = `
+      <div class="alert alert-warning">
+        <p>Groups feature is currently unavailable.</p>
+        <small>You can still access group management through the navigation menu if you have the appropriate permissions.</small>
+      </div>
+    `;
+  }
+}
+
+// Function to display available groups
+function displayAvailableGroups(groups) {
+  const container = document.getElementById("availableGroups");
+  
+  if (!groups || groups.length === 0) {
+    container.innerHTML = `<p class="text-muted">No public groups available to join.</p>`;
+    return;
+  }
+  
+  const html = groups.map(group => `
+    <div class="card mb-2">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-md-8">
+            <h6 class="card-title mb-1">${group.name}</h6>
+            <p class="card-text text-muted mb-0">${group.description.substring(0, 100)}${group.description.length > 100 ? '...' : ''}</p>
+            <small class="text-muted">${group.memberCount || 0} members</small>
+          </div>
+          <div class="col-md-4 text-end">
+            <button class="btn btn-outline-primary btn-sm join-group" data-group-id="${group.groupId}" data-group-name="${group.name}">Join Group</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join("");
+  
+  container.innerHTML = html;
+  
+  // Add event listeners to join buttons
+  document.querySelectorAll('.join-group').forEach(button => {
+    button.addEventListener('click', function() {
+      const groupId = this.dataset.groupId;
+      const groupName = this.dataset.groupName;
+      showJoinGroupModal(groupId, groupName);
+    });
+  });
+}
+
+// Function to show join group modal
+function showJoinGroupModal(groupId, groupName) {
+  document.getElementById('joinGroupName').textContent = groupName;
+  
+  const confirmButton = document.getElementById('confirmJoinGroup');
+  confirmButton.dataset.groupId = groupId;
+  
+  const modal = new bootstrap.Modal(document.getElementById('joinGroupModal'));
+  modal.show();
+  
+  confirmButton.onclick = function() {
+    joinGroup(this.dataset.groupId);
+    modal.hide();
+  };
+}
+
+// Function to join a group
+async function joinGroup(groupId) {
+  try {
+    const session = await Amplify.Auth.currentSession();
+    const idToken = session.getIdToken().getJwtToken();
+    
+    const response = await fetch(`${_config.api.invokeUrl}/cms/groups/${groupId}/join`, {
+      method: 'POST',
+      headers: {
+        'Authorization': idToken,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    // Show success message
+    const alertHtml = `
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        You have successfully joined the group!
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
+    document.getElementById('availableGroups').insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // Reload groups to update member counts
+    setTimeout(() => {
+      loadAvailableGroups();
+    }, 2000);
+    
+  } catch (err) {
+    console.error("Error joining group:", err);
+    const alertHtml = `
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        Error joining group: ${err.message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
+    document.getElementById('availableGroups').insertAdjacentHTML('afterbegin', alertHtml);
+  }
+}
+
 // Function to handle post submission
 async function submitPost() {
   try {
@@ -432,8 +591,9 @@ window.onload = function() {
     // Configure Amplify
     Amplify.configure(window.awsConfig);
     
-    // Load posts
+    // Load content
     setTimeout(() => {
+      loadAvailableGroups();
       loadPosts();
     }, 500);
     
