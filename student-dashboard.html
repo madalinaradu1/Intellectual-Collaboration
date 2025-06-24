@@ -382,20 +382,24 @@
         const idToken = session.getIdToken().getJwtToken();
         const currentUser = await Amplify.Auth.currentAuthenticatedUser();
         
+        console.log("Loading posts with user:", currentUser.username);
+        
         const response = await fetch(`${_config.api.invokeUrl}/cms/posts/list?includeAuthorData=basic`, {
           method: 'GET',
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
-          },
-          credentials: 'include'
+          }
         });
+        
+        console.log("Posts API response status:", response.status);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const posts = await response.json();
+        console.log("Posts loaded:", posts.length);
         
         const html = posts.slice(0, 3).map(p => {
           const timestamp = new Date(p.Timestamp).toLocaleString();
@@ -416,7 +420,8 @@
         
       } catch (err) {
         console.error("Error loading posts:", err);
-        document.getElementById('announcements').innerHTML = '<p class="text-danger">Error loading announcements.</p>';
+        console.error("Posts error details:", err.message);
+        document.getElementById('announcements').innerHTML = `<p class="text-warning">Unable to load announcements: ${err.message}</p>`;
       }
     }
 
