@@ -422,27 +422,49 @@
 
     // Initialize page
     window.onload = async function() {
+      console.log("Page loading...");
+      
       if (typeof window.aws_amplify !== 'undefined') {
         window.Amplify = window.aws_amplify.Amplify;
+        console.log("Amplify loaded from window.aws_amplify");
       }
       
       try {
         if (typeof Amplify === 'undefined') {
+          console.error("Amplify is undefined");
           throw new Error("AWS Amplify is not loaded");
         }
         
+        if (typeof window.awsConfig === 'undefined') {
+          console.error("awsConfig is undefined");
+          throw new Error("AWS Config is not loaded");
+        }
+        
+        console.log("Configuring Amplify...");
         Amplify.configure(window.awsConfig);
         
-        // Check authentication
+        console.log("Checking authentication...");
         await Amplify.Auth.currentSession();
+        console.log("Authentication successful");
         
+        console.log("Generating calendar...");
         generateCalendar();
+        
+        console.log("Loading posts...");
         loadPosts();
         
       } catch (error) {
         console.error("Error initializing:", error);
-        alert("Authentication error. Please log in again.");
-        window.location.href = "signin.html";
+        console.error("Error details:", error.message, error.stack);
+        
+        // Don't redirect immediately, show error in UI
+        document.getElementById('announcements').innerHTML = `
+          <div class="alert alert-danger">
+            <h5>Error Loading Dashboard</h5>
+            <p>Error: ${error.message}</p>
+            <p><a href="signin.html" class="btn btn-primary">Go to Sign In</a></p>
+          </div>
+        `;
       }
     };
   </script>
