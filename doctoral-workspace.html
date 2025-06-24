@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Doctoral Workspace - IC CMS</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="common-styles.css" rel="stylesheet"/>
+  
+  <!-- AWS Amplify -->
+  <script defer src="https://unpkg.com/aws-amplify@4.3.43/dist/aws-amplify.min.js"></script>
+</head>
+<body class="bg-light">
+  <!-- Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="student-dashboard.html">🎓 Doctoral Workspace</a>
+      <a href="student-dashboard.html" class="btn btn-outline-light">← Back to Dashboard</a>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <div class="row">
+      <!-- Main Content -->
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-header">
+            <h5>My Dissertation</h5>
+          </div>
+          <div class="card-body">
+            <!-- Upload Section -->
+            <div class="mb-4">
+              <h6>Upload New Version</h6>
+              <form id="uploadForm">
+                <div class="mb-3">
+                  <label for="dissertationFile" class="form-label">Select Dissertation File</label>
+                  <input type="file" class="form-control" id="dissertationFile" accept=".pdf,.doc,.docx" required>
+                </div>
+                <div class="mb-3">
+                  <label for="versionNotes" class="form-label">Version Notes</label>
+                  <textarea class="form-control" id="versionNotes" rows="3" placeholder="Describe changes made in this version..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Upload Dissertation</button>
+              </form>
+              <div id="uploadStatus" class="alert d-none mt-3"></div>
+            </div>
+
+            <!-- Current Version -->
+            <div id="currentVersion">
+              <h6>Current Version</h6>
+              <p class="text-muted">No dissertation uploaded yet.</p>
+            </div>
+
+            <!-- Comments Section -->
+            <div class="mt-4">
+              <h6>Committee Comments</h6>
+              <div id="commentsList">
+                <p class="text-muted">No comments yet.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Version History Sidebar -->
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header">
+            <h6>Version History</h6>
+          </div>
+          <div class="card-body">
+            <div id="versionHistory">
+              <p class="text-muted">No versions uploaded yet.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- jQuery and Bootstrap -->
+  <script src="jquery-3.1.0.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Configuration -->
+  <script src="config.js"></script>
+  <script src="amplify-config.js"></script>
+
+  <script>
+    // Upload dissertation
+    async function uploadDissertation() {
+      try {
+        const fileInput = document.getElementById('dissertationFile');
+        const versionNotes = document.getElementById('versionNotes').value;
+        const file = fileInput.files[0];
+        
+        if (!file) {
+          throw new Error('Please select a file');
+        }
+        
+        const statusEl = document.getElementById('uploadStatus');
+        statusEl.textContent = 'Uploading dissertation...';
+        statusEl.classList.add('alert-info');
+        statusEl.classList.remove('d-none', 'alert-danger', 'alert-success');
+        
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        // Get presigned URL for upload
+        const uploadResponse = await fetch(`${_config.api.invokeUrl}/cms/dissertation/getUploadUrl`, {
+          method: 'POST',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            fileName: file.name,
+            fileType: file.type,
+            versionNotes: versionNotes
+          })
+        });
+        
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to get upload URL');
+        }
+        
+        const uploadData = await uploadResponse.json();
+        
+        // Upload file to S3
+        const s3Response = await fetch(uploadData.uploadUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': file.type
+          },
+          body: file
+        });
+        
+        if (!s3Response.ok) {
+          throw new Error('Failed to upload file');
+        }
+        
+        // Save dissertation record
+        const saveResponse = await fetch(`${_config.api.invokeUrl}/cms/dissertation`, {
+          method: 'POST',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            fileName: file.name,
+            fileKey: uploadData.fileKey,
+            fileUrl: uploadData.fileUrl,
+            versionNotes: versionNotes
+          })
+        });
+        
+        if (!saveResponse.ok) {
+          throw new Error('Failed to save dissertation record');
+        }
+        
+        statusEl.textContent = 'Dissertation uploaded successfully!';
+        statusEl.classList.add('alert-success');
+        statusEl.classList.remove('alert-info', 'alert-danger');
+        
+        // Clear form
+        fileInput.value = '';
+        document.getElementById('versionNotes').value = '';
+        
+        // Reload data
+        loadDissertation();
+        loadVersionHistory();
+        
+      } catch (err) {
+        console.error('Error uploading dissertation:', err);
+        const statusEl = document.getElementById('uploadStatus');
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-info', 'alert-success');
+      }
+    }
+    
+    // Load current dissertation
+    async function loadDissertation() {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/current`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const dissertation = await response.json();
+          displayCurrentVersion(dissertation);
+          loadComments(dissertation.dissertationId);
+        }
+      } catch (err) {
+        console.error('Error loading dissertation:', err);
+      }
+    }
+    
+    // Display current version
+    function displayCurrentVersion(dissertation) {
+      const container = document.getElementById('currentVersion');
+      const uploadDate = new Date(dissertation.uploadDate).toLocaleDateString();
+      
+      container.innerHTML = `
+        <h6>Current Version</h6>
+        <div class="card">
+          <div class="card-body">
+            <h6 class="card-title">${dissertation.fileName}</h6>
+            <p class="card-text">${dissertation.versionNotes || 'No notes provided'}</p>
+            <small class="text-muted">Uploaded: ${uploadDate}</small><br>
+            <a href="${dissertation.fileUrl}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">Download</a>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Load version history
+    async function loadVersionHistory() {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/versions`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const versions = await response.json();
+          displayVersionHistory(versions);
+        }
+      } catch (err) {
+        console.error('Error loading version history:', err);
+      }
+    }
+    
+    // Display version history
+    function displayVersionHistory(versions) {
+      const container = document.getElementById('versionHistory');
+      
+      if (!versions || versions.length === 0) {
+        container.innerHTML = '<p class="text-muted">No versions uploaded yet.</p>';
+        return;
+      }
+      
+      const html = versions.map((version, index) => {
+        const uploadDate = new Date(version.uploadDate).toLocaleDateString();
+        const versionNumber = versions.length - index;
+        
+        return `
+          <div class="border-bottom pb-2 mb-2">
+            <strong>Version ${versionNumber}</strong><br>
+            <small class="text-muted">${uploadDate}</small><br>
+            <small>${version.versionNotes || 'No notes'}</small><br>
+            <a href="${version.fileUrl}" target="_blank" class="btn btn-sm btn-outline-secondary mt-1">Download</a>
+          </div>
+        `;
+      }).join('');
+      
+      container.innerHTML = html;
+    }
+    
+    // Load comments
+    async function loadComments(dissertationId) {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/${dissertationId}/comments`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const comments = await response.json();
+          displayComments(comments);
+        }
+      } catch (err) {
+        console.error('Error loading comments:', err);
+      }
+    }
+    
+    // Display comments
+    function displayComments(comments) {
+      const container = document.getElementById('commentsList');
+      
+      if (!comments || comments.length === 0) {
+        container.innerHTML = '<p class="text-muted">No comments yet.</p>';
+        return;
+      }
+      
+      const html = comments.map(comment => {
+        const commentDate = new Date(comment.createdAt).toLocaleDateString();
+        
+        return `
+          <div class="card mb-2">
+            <div class="card-body">
+              <h6 class="card-title">${comment.authorName}</h6>
+              <p class="card-text">${comment.comment}</p>
+              <small class="text-muted">${commentDate}</small>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      container.innerHTML = html;
+    }
+    
+    // Initialize page
+    window.onload = async function() {
+      if (typeof window.aws_amplify !== 'undefined') {
+        window.Amplify = window.aws_amplify.Amplify;
+      }
+      
+      try {
+        if (typeof Amplify === 'undefined') {
+          throw new Error("AWS Amplify is not loaded");
+        }
+        
+        Amplify.configure(window.awsConfig);
+        
+        // Check authentication
+        await Amplify.Auth.currentSession();
+        
+        // Load data
+        loadDissertation();
+        loadVersionHistory();
+        
+        // Set up form handler
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+          e.preventDefault();
+          uploadDissertation();
+        });
+        
+      } catch (error) {
+        console.error("Error initializing:", error);
+        alert("Authentication error. Please log in again.");
+        window.location.href = "signin.html";
+      }
+    };
+  </script>
+</body>
+</html>
