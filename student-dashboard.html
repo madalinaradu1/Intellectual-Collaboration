@@ -859,16 +859,22 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken();
         
+        console.log("User token payload:", idToken.payload);
+        
         // Check for role in custom attribute or Cognito groups
         let userRole = idToken.payload['custom:role'] || 'Guest';
         let parentGroup = idToken.payload['custom:parentGroup'] || '';
         const cognitoGroups = idToken.payload['cognito:groups'] || [];
+        
+        console.log("User role:", userRole, "Parent group:", parentGroup, "Cognito groups:", cognitoGroups);
+        
         if (cognitoGroups.includes('ApplicationAdmin')) {
           userRole = 'ApplicationAdmin';
+          console.log("User is ApplicationAdmin");
         }
         
         // Allow all authenticated users to access this page
-        // Removed role restrictions to allow all users to join groups
+        // Application Admins can access regardless of parentGroup
         
         // Show admin controls if user is ApplicationAdmin
         if (userRole === 'ApplicationAdmin') {
