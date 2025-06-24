@@ -52,13 +52,25 @@
   
   <!-- AWS Amplify (load in head with defer) -->
   <script defer src="https://unpkg.com/aws-amplify@4.3.43/dist/aws-amplify.min.js"></script>
-  <script defer src="navbar.js"></script>
 </head>
 <body>
   <!-- Student Dashboard Navigation -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
-      <a class="navbar-brand" href="#">Student Portal</a>
+      <div class="d-flex align-items-center">
+        <div class="dropdown me-3">
+          <button class="btn btn-outline-light dropdown-toggle" type="button" id="profileDropdown" data-bs-toggle="dropdown">
+            <img id="navProfilePic" src="no-profile.png" alt="Profile" class="rounded-circle me-2" style="width: 30px; height: 30px; object-fit: cover;">
+            <span id="navUserName">Profile</span>
+          </button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="profile.html">My Profile</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#" id="signOutBtn">Sign Out</a></li>
+          </ul>
+        </div>
+        <a class="navbar-brand" href="#">Student Portal</a>
+      </div>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -375,6 +387,55 @@
       grid.innerHTML = html;
     }
 
+    // Setup profile dropdown
+    async function setupProfileDropdown() {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        const currentUser = await Amplify.Auth.currentAuthenticatedUser();
+        
+        // Get user name from token
+        const { given_name, family_name } = currentUser.signInUserSession.idToken.payload;
+        const displayName = `${given_name || ''} ${family_name || ''}`.trim() || currentUser.username;
+        
+        document.getElementById('navUserName').textContent = displayName;
+        
+        // Try to get profile picture
+        try {
+          const userResponse = await fetch(`${_config.api.invokeUrl}/cms/users/me`, {
+            method: 'GET',
+            headers: {
+              'Authorization': idToken,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            if (userData.profilePicture) {
+              document.getElementById('navProfilePic').src = userData.profilePicture;
+            }
+          }
+        } catch (err) {
+          console.error("Error fetching profile picture:", err);
+        }
+        
+        // Setup sign out handler
+        document.getElementById('signOutBtn').addEventListener('click', async function(e) {
+          e.preventDefault();
+          try {
+            await Amplify.Auth.signOut();
+            window.location.href = 'signin.html';
+          } catch (error) {
+            console.error('Error signing out:', error);
+          }
+        });
+        
+      } catch (error) {
+        console.error("Error setting up profile dropdown:", error);
+      }
+    }
+
     // Load announcements (reuse existing function)
     async function loadPosts() {
       try {
@@ -547,6 +608,9 @@
         
         console.log("Loading posts...");
         loadPosts();
+        
+        // Set up profile dropdown
+        setupProfileDropdown();
         
       } catch (error) {
         console.error("Error initializing:", error);
