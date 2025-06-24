@@ -55,7 +55,7 @@
 </head>
 <body>
   <!-- Student Dashboard Navigation -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container">
       <div class="d-flex align-items-center">
         <div class="dropdown me-3">
@@ -396,7 +396,7 @@
         
         // Get user name from token
         const { given_name, family_name } = currentUser.signInUserSession.idToken.payload;
-        const displayName = `${given_name || ''} ${family_name || ''}`.trim() || currentUser.username;
+        const displayName = `${given_name || ''} ${family_name || ''}`.trim() || 'User';
         
         document.getElementById('navUserName').textContent = displayName;
         
