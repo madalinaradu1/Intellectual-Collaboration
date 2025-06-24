@@ -95,7 +95,7 @@
   </nav>
 
   <!-- Banner Image -->
-  <div class="w-100" style="height: 200px; background-image: url('banner.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>
+  <div class="w-100" style="height: 200px; background-image: url('banner.jpg'); background-size: cover; background-position: center top; background-repeat: no-repeat;"></div>
 
   <div class="container mt-4">
     <!-- Spotlight Section -->
@@ -403,7 +403,7 @@
         
         document.getElementById('navUserName').textContent = displayName;
         
-        // Try to get profile picture
+        // Try to get profile picture and name from database
         try {
           const userResponse = await fetch(`${_config.api.invokeUrl}/cms/users/me`, {
             method: 'GET',
@@ -418,9 +418,16 @@
             if (userData.profilePicture) {
               document.getElementById('navProfilePic').src = userData.profilePicture;
             }
+            // Use database firstName and lastName if available
+            if (userData.firstName || userData.lastName) {
+              const dbDisplayName = `${userData.firstName || ''} ${userData.lastName || ''}`.trim();
+              if (dbDisplayName) {
+                document.getElementById('navUserName').textContent = dbDisplayName;
+              }
+            }
           }
         } catch (err) {
-          console.error("Error fetching profile picture:", err);
+          console.error("Error fetching user data:", err);
         }
         
         // Setup sign out handler
