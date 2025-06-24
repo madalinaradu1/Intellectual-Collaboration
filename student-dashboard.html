@@ -878,21 +878,30 @@
         
         // Show admin controls if user is ApplicationAdmin
         if (userRole === 'ApplicationAdmin') {
-          document.getElementById('adminControls').classList.remove('d-none');
+          const adminControls = document.getElementById('adminControls');
+          if (adminControls) {
+            adminControls.classList.remove('d-none');
+          }
         }
         
         // Load groups
         loadAvailableGroups();
         loadMyGroups();
         
-        // Set up event listeners
-        document.getElementById('createPostBtn').addEventListener('click', function() {
-          document.getElementById('postGroupId').value = currentGroupId;
-          const modal = new bootstrap.Modal(document.getElementById('createPostModal'));
-          modal.show();
-        });
+        // Set up event listeners only if elements exist
+        const createPostBtn = document.getElementById('createPostBtn');
+        if (createPostBtn) {
+          createPostBtn.addEventListener('click', function() {
+            document.getElementById('postGroupId').value = currentGroupId;
+            const modal = new bootstrap.Modal(document.getElementById('createPostModal'));
+            modal.show();
+          });
+        }
         
-        document.getElementById('submitPost').addEventListener('click', createPost);
+        const submitPostBtn = document.getElementById('submitPost');
+        if (submitPostBtn) {
+          submitPostBtn.addEventListener('click', createPost);
+        }
         
       } catch (error) {
         console.error("Error initializing:", error);
