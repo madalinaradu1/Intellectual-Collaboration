@@ -88,6 +88,19 @@
   <script src="amplify-config.js"></script>
 
   <script>
+    // Initialize page when loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize the page
+      loadDissertation();
+      loadVersionHistory();
+      
+      // Set up form submission
+      document.querySelector('form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        uploadDissertation();
+      });
+    });
+    
     // Upload dissertation
     async function uploadDissertation() {
       try {
@@ -186,22 +199,39 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/current`, {
-          method: 'GET',
-          headers: {
-            'Authorization': idToken,
-            'Content-Type': 'application/json'
+        try {
+          const apiUrl = `${_config.api.invokeUrl}/cms/dissertation/current`;
+          console.log('Calling API:', apiUrl);
+          
+          const response = await fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': idToken,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          console.log('API response status:', response.status);
+          
+          if (response.ok) {
+            const dissertation = await response.json();
+            displayCurrentVersion(dissertation);
+            loadComments(dissertation.dissertationId);
+            return;
+          } else {
+            console.error('API error:', response.status);
+            // Try to get error details
+            try {
+              const errorText = await response.text();
+              console.error('Error details:', errorText);
+            } catch (e) {}
           }
-        });
-        
-        if (response.ok) {
-          const dissertation = await response.json();
-          displayCurrentVersion(dissertation);
-          loadComments(dissertation.dissertationId);
-        } else {
-          // Show placeholder when API doesn't exist
-          showPlaceholderContent();
+        } catch (apiError) {
+          console.warn('API endpoint not available:', apiError);
         }
+        
+        // Show placeholder when API doesn't exist or returns error
+        showPlaceholderContent();
       } catch (err) {
         console.error('Error loading dissertation:', err);
         showPlaceholderContent();
@@ -232,20 +262,25 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/versions`, {
-          method: 'GET',
-          headers: {
-            'Authorization': idToken,
-            'Content-Type': 'application/json'
+        try {
+          const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/versions`, {
+            method: 'GET',
+            headers: {
+              'Authorization': idToken,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const versions = await response.json();
+            displayVersionHistory(versions);
+            return;
           }
-        });
-        
-        if (response.ok) {
-          const versions = await response.json();
-          displayVersionHistory(versions);
-        } else {
-          showPlaceholderVersionHistory();
+        } catch (apiError) {
+          console.warn('API endpoint not available:', apiError);
         }
+        
+        showPlaceholderVersionHistory();
       } catch (err) {
         console.error('Error loading version history:', err);
         showPlaceholderVersionHistory();
@@ -280,6 +315,67 @@
       `;
     }
     
+    // Load comments for a dissertation
+    async function loadComments(dissertationId) {
+      if (!dissertationId) {
+        document.getElementById('commentsList').innerHTML = '<p class="text-muted">No comments yet.</p>';
+        return;
+      }
+      
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        try {
+          const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/${dissertationId}/comments`, {
+            method: 'GET',
+            headers: {
+              'Authorization': idToken,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const comments = await response.json();
+            displayComments(comments);
+            return;
+          }
+        } catch (apiError) {
+          console.warn('Comments API endpoint not available:', apiError);
+        }
+        
+        // Show placeholder when API doesn't exist
+        document.getElementById('commentsList').innerHTML = '<p class="text-muted">No comments yet.</p>';
+      } catch (err) {
+        console.error('Error loading comments:', err);
+        document.getElementById('commentsList').innerHTML = '<p class="text-muted">Unable to load comments.</p>';
+      }
+    }
+    
+    // Display comments
+    function displayComments(comments) {
+      const container = document.getElementById('commentsList');
+      
+      if (!comments || comments.length === 0) {
+        container.innerHTML = '<p class="text-muted">No comments yet.</p>';
+        return;
+      }
+      
+      const html = comments.map(comment => {
+        const commentDate = new Date(comment.timestamp).toLocaleDateString();
+        return `
+          <div class="card mb-2">
+            <div class="card-body">
+              <h6 class="card-subtitle mb-2 text-muted">${comment.authorName} <small>${commentDate}</small></h6>
+              <p class="card-text">${comment.content}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+      
+      container.innerHTML = html;
+    }
+    
     // Display version history
     function displayVersionHistory(versions) {
       const container = document.getElementById('versionHistory');
@@ -306,30 +402,7 @@
       container.innerHTML = html;
     }
     
-    // Load comments
-    async function loadComments(dissertationId) {
-      try {
-        const session = await Amplify.Auth.currentSession();
-        const idToken = session.getIdToken().getJwtToken();
-        
-        const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/${dissertationId}/comments`, {
-          method: 'GET',
-          headers: {
-            'Authorization': idToken,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (response.ok) {
-          const comments = await response.json();
-          displayComments(comments);
-        }
-      } catch (err) {
-        console.error('Error loading comments:', err);
-      }
-    }
-    
-    // Display comments
+    // Display comments (updated version)
     function displayComments(comments) {
       const container = document.getElementById('commentsList');
       
@@ -339,13 +412,14 @@
       }
       
       const html = comments.map(comment => {
-        const commentDate = new Date(comment.createdAt).toLocaleDateString();
+        // Support both timestamp and createdAt fields
+        const commentDate = new Date(comment.createdAt || comment.timestamp).toLocaleDateString();
         
         return `
           <div class="card mb-2">
             <div class="card-body">
               <h6 class="card-title">${comment.authorName}</h6>
-              <p class="card-text">${comment.comment}</p>
+              <p class="card-text">${comment.comment || comment.content}</p>
               <small class="text-muted">${commentDate}</small>
             </div>
           </div>
@@ -371,15 +445,15 @@
         // Check authentication
         await Amplify.Auth.currentSession();
         
-        // Load data
-        loadDissertation();
-        loadVersionHistory();
-        
-        // Set up form handler
-        document.getElementById('uploadForm').addEventListener('submit', function(e) {
-          e.preventDefault();
-          uploadDissertation();
-        });
+        // Note: loadDissertation and loadVersionHistory are already called in DOMContentLoaded
+        // Set up form handler if not already set
+        if (!document.getElementById('uploadForm').hasAttribute('listener')) {
+          document.getElementById('uploadForm').setAttribute('listener', 'true');
+          document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            uploadDissertation();
+          });
+        }
         
       } catch (error) {
         console.error("Error initializing:", error);
