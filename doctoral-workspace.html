@@ -198,9 +198,13 @@
           const dissertation = await response.json();
           displayCurrentVersion(dissertation);
           loadComments(dissertation.dissertationId);
+        } else {
+          // Show placeholder when API doesn't exist
+          showPlaceholderContent();
         }
       } catch (err) {
         console.error('Error loading dissertation:', err);
+        showPlaceholderContent();
       }
     }
     
@@ -239,10 +243,41 @@
         if (response.ok) {
           const versions = await response.json();
           displayVersionHistory(versions);
+        } else {
+          showPlaceholderVersionHistory();
         }
       } catch (err) {
         console.error('Error loading version history:', err);
+        showPlaceholderVersionHistory();
       }
+    }
+    
+    // Show placeholder content
+    function showPlaceholderContent() {
+      document.getElementById('currentVersion').innerHTML = `
+        <h6>Current Version</h6>
+        <div class="alert alert-info">
+          <p><strong>Doctoral Workspace Ready!</strong></p>
+          <p>Upload your first dissertation version using the form above. Once uploaded, it will appear here with download links and committee feedback.</p>
+        </div>
+      `;
+      
+      document.getElementById('commentsList').innerHTML = `
+        <div class="alert alert-info">
+          <p><strong>Committee Feedback</strong></p>
+          <p>Committee members can leave comments and feedback on your dissertation. Comments will appear here once your committee reviews your work.</p>
+        </div>
+      `;
+    }
+    
+    // Show placeholder version history
+    function showPlaceholderVersionHistory() {
+      document.getElementById('versionHistory').innerHTML = `
+        <div class="alert alert-info">
+          <p><strong>Version Tracking</strong></p>
+          <p>All versions of your dissertation will be tracked here, allowing you to see the progression of your work over time.</p>
+        </div>
+      `;
     }
     
     // Display version history
