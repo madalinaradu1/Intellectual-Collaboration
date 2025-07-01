@@ -186,8 +186,11 @@
     // Load current dissertation
     async function loadDissertation() {
       try {
+        console.log('Getting session...');
         const session = await Amplify.Auth.currentSession();
+        console.log('Session:', session);
         const idToken = session.getIdToken().getJwtToken();
+        console.log('Token:', idToken.substring(0, 50) + '...');
         
         const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/current`, {
           method: 'GET',
@@ -196,6 +199,9 @@
             'Content-Type': 'application/json'
           }
         });
+        
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
         
         if (response.ok) {
           const dissertation = await response.json();
