@@ -186,31 +186,35 @@
     // Load current dissertation
     async function loadDissertation() {
       try {
-        console.log('Getting session...');
         const session = await Amplify.Auth.currentSession();
-        console.log('Session:', session);
-        const idToken = session.getIdToken().getJwtToken();
-        console.log('Token:', idToken.substring(0, 50) + '...');
         
+        // Get ID token for authorization
+        const idToken = session.getIdToken().getJwtToken();
+        console.log("Using ID Token for authorization");
+        
+        // Make direct request with authorization headers
         const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/current`, {
           method: 'GET',
           headers: {
             'Authorization': idToken,
             'Content-Type': 'application/json'
-          }
+          },
+          credentials: 'include'
         });
         
-        console.log('Response status:', response.status);
-        console.log('Response ok:', response.ok);
+        console.log("Response status:", response.status);
+        console.log("Response headers:", [...response.headers.entries()]);
         
-        if (response.ok) {
-          const dissertation = await response.json();
-          displayCurrentVersion(dissertation);
-          loadComments(dissertation.dissertationId);
-        } else {
-          // Show placeholder when API doesn't exist
-          showPlaceholderContent();
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => "No error text");
+          console.error("Error response:", errorText);
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
+        const dissertation = await response.json();
+        console.log("Dissertation:", dissertation);
+        displayCurrentVersion(dissertation);
+        loadComments(dissertation.dissertationId);
       } catch (err) {
         console.error('Error loading dissertation:', err);
         showPlaceholderContent();
