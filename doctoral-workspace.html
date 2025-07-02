@@ -183,42 +183,7 @@
       }
     }
     
-    // Test function to debug API issues
-    async function testAPI() {
-      console.log('=== API TEST START ===');
-      console.log('Config API URL:', _config.api.invokeUrl);
-      
-      try {
-        const session = await Amplify.Auth.currentSession();
-        console.log('Session obtained successfully');
-        
-        const idToken = session.getIdToken().getJwtToken();
-        console.log('Token length:', idToken.length);
-        console.log('Token start:', idToken.substring(0, 20) + '...');
-        
-        const testUrl = `${_config.api.invokeUrl}/cms/dissertation/current`;
-        console.log('Full URL:', testUrl);
-        
-        // Try with minimal headers first
-        const response = await fetch(testUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': idToken
-          }
-        });
-        
-        console.log('Response status:', response.status);
-        console.log('Response statusText:', response.statusText);
-        console.log('Response URL:', response.url);
-        
-        const responseText = await response.text();
-        console.log('Response body:', responseText);
-        
-      } catch (error) {
-        console.error('Test failed:', error);
-      }
-      console.log('=== API TEST END ===');
-    }
+
     
     // Load current dissertation
     async function loadDissertation() {
