@@ -187,12 +187,8 @@
     async function loadDissertation() {
       try {
         const session = await Amplify.Auth.currentSession();
-        
-        // Get ID token for authorization
         const idToken = session.getIdToken().getJwtToken();
-        console.log("Using ID Token for authorization");
         
-        // Make direct request with authorization headers
         const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/current`, {
           method: 'GET',
           headers: {
@@ -201,22 +197,13 @@
           }
         });
         
-        console.log("Response status:", response.status);
-        console.log("Response headers:", [...response.headers.entries()]);
-        
         if (response.ok) {
           const dissertation = await response.json();
-          console.log("Dissertation:", dissertation);
           displayCurrentVersion(dissertation);
           loadComments(dissertation.dissertationId);
-        } else if (response.status === 404) {
-          // No dissertation found - this is expected for new users
-          console.log("No dissertation found for user");
-          showPlaceholderContent();
         } else {
-          const errorText = await response.text().catch(() => "No error text");
-          console.error("Error response:", errorText);
-          throw new Error(`HTTP error! status: ${response.status}`);
+          // Show placeholder when API doesn't exist
+          showPlaceholderContent();
         }
       } catch (err) {
         console.error('Error loading dissertation:', err);
