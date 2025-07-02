@@ -222,9 +222,6 @@
     
     // Load current dissertation
     async function loadDissertation() {
-      // Run test first
-      await testAPI();
-      
       try {
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
@@ -241,8 +238,13 @@
           const dissertation = await response.json();
           displayCurrentVersion(dissertation);
           loadComments(dissertation.dissertationId);
+        } else if (response.status === 404) {
+          // No dissertation found - this is expected for users who haven't uploaded yet
+          console.log('No dissertation found for current user');
+          showPlaceholderContent();
         } else {
-          // Show placeholder when API doesn't exist
+          // Other errors
+          console.error('API error:', response.status, response.statusText);
           showPlaceholderContent();
         }
       } catch (err) {
