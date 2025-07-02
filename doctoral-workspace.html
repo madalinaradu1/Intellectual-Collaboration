@@ -195,7 +195,7 @@
         const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/current`, {
           method: 'GET',
           headers: {
-            'Authorization': 'Bearer ' + idToken,
+            'Authorization': idToken,
             'Content-Type': 'application/json'
           }
         });
