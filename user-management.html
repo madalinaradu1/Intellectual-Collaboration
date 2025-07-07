@@ -274,51 +274,49 @@
     }
 
     // Load students and faculty for committee assignment
-    async function loadCommitteeOptions() {
-      try {
-        const session = await Amplify.Auth.currentSession();
-        const idToken = session.getIdToken().getJwtToken();
-        
-        // Load students
-        const studentsResponse = await fetch(`${_config.api.invokeUrl}/cms/users/students`, {
-          method: 'GET',
-          headers: {
-            'Authorization': idToken,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (studentsResponse.ok) {
-          const students = await studentsResponse.json();
-          const studentSelect = document.getElementById('studentSelect');
-          studentSelect.innerHTML = '<option value="">Select a student</option>' + 
-            students.map(student => 
-              `<option value="${student.userId}">${student.firstName} ${student.lastName} (${student.email})</option>`
-            ).join('');
-        }
-        
-        // Load faculty/committee members
-        const facultyResponse = await fetch(`${_config.api.invokeUrl}/cms/users/faculty`, {
-          method: 'GET',
-          headers: {
-            'Authorization': idToken,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (facultyResponse.ok) {
-          const faculty = await facultyResponse.json();
-          const options = faculty.map(member => 
-            `<option value="${member.userId}">${member.firstName} ${member.lastName} (${member.email})</option>`
-          ).join('');
-          
-          document.getElementById('committeeMember1').innerHTML = '<option value="">Select committee member</option>' + options;
-          document.getElementById('committeeMember2').innerHTML = '<option value="">Select committee member</option>' + options;
-        }
-      } catch (err) {
-        console.error('Error loading committee options:', err);
+async function loadCommitteeOptions() {
+  try {
+    const session = await Amplify.Auth.currentSession();
+    const idToken = session.getIdToken().getJwtToken();
+    
+    // Load all users and filter by role
+    const response = await fetch(`${_config.api.invokeUrl}/cms/users`, {
+      method: 'GET',
+      headers: {
+        'Authorization': idToken,
+        'Content-Type': 'application/json'
       }
+    });
+    
+    if (response.ok) {
+      const users = await response.json();
+      
+      // Filter students
+      const students = users.filter(user => user.role === 'Student');
+      const studentSelect = document.getElementById('studentSelect');
+      studentSelect.innerHTML = '<option value="">Select a student</option>' + 
+        students.map(student => 
+          `<option value="${student.userId}">${student.firstName || ''} ${student.lastName || ''} (${student.email})</option>`
+        ).join('');
+      
+      // Filter faculty/committee members
+      const faculty = users.filter(user => 
+        user.role === 'FacultyMember' || 
+        user.role === 'CommitteeMember' || 
+        user.role === 'ApplicationAdmin'
+      );
+      
+      const options = faculty.map(member => 
+        `<option value="${member.userId}">${member.firstName || ''} ${member.lastName || ''} (${member.email})</option>`
+      ).join('');
+      
+      document.getElementById('committeeMember1').innerHTML = '<option value="">Select committee member</option>' + options;
+      document.getElementById('committeeMember2').innerHTML = '<option value="">Select committee member</option>' + options;
     }
+  } catch (err) {
+    console.error('Error loading committee options:', err);
+  }
+}
 
     // Handle committee assignment
     async function handleCommitteeAssignment(event) {
