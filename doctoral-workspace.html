@@ -59,6 +59,36 @@
                 <p class="text-muted">No comments yet.</p>
               </div>
             </div>
+
+              <!-- Committee Section (only visible to students) -->
+            <div class="mt-4" id="committeeSection" style="display: none;">
+              <h6>My Committee</h6>
+              <div id="committeeMembers">
+                <p class="text-muted">Loading committee information...</p>
+              </div>
+            </div>
+
+              
+              <!-- Committee Assignment Form (only for students without committee) -->
+              <div id="assignCommitteeForm" style="display: none;">
+                <form id="committeeForm">
+                  <div class="mb-3">
+                    <label for="committeeMember1" class="form-label">Committee Member 1</label>
+                    <select class="form-control" id="committeeMember1" required>
+                      <option value="">Select committee member</option>
+                    </select>
+                  </div>
+                  <div class="mb-3">
+                    <label for="committeeMember2" class="form-label">Committee Member 2</label>
+                    <select class="form-control" id="committeeMember2" required>
+                      <option value="">Select committee member</option>
+                    </select>
+                  </div>
+                  <button type="submit" class="btn btn-primary">Assign Committee</button>
+                </form>
+                <div id="committeeStatus" class="alert mt-3 d-none"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -182,8 +212,6 @@
         statusEl.classList.remove('d-none', 'alert-info', 'alert-success');
       }
     }
-    
-
     
     // Load current dissertation
     async function loadDissertation() {
@@ -356,6 +384,162 @@
       container.innerHTML = html;
     }
     
+    // Load committee members for current student
+    async function loadCommittee() {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        const userId = session.getIdToken().payload.sub;
+        
+        const response = await fetch(`${_config.api.invokeUrl}/cms/committee/${userId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const committee = await response.json();
+          displayCommittee(committee);
+        } else if (response.status === 404) {
+          // No committee assigned yet
+          document.getElementById('committeeMembers').innerHTML = '<p class="text-muted">No committee assigned yet. Please contact your administrator.</p>';
+        }
+      } catch (err) {
+        console.error('Error loading committee:', err);
+        document.getElementById('committeeMembers').innerHTML = '<p class="text-muted">Unable to load committee information.</p>';
+      }
+    }
+
+    // Display committee members (read-only for students)
+    function displayCommittee(committee) {
+      const container = document.getElementById('committeeMembers');
+      
+      if (!committee.members || committee.members.length === 0) {
+        container.innerHTML = '<p class="text-muted">No committee assigned yet. Please contact your administrator.</p>';
+        return;
+      }
+      
+      const html = committee.members.map(member => `
+        <div class="card mb-2">
+          <div class="card-body">
+            <h6 class="card-title">${member.name}</h6>
+            <p class="card-text">${member.email}</p>
+            <span class="badge bg-info">Committee Member</span>
+          </div>
+        </div>
+      `).join('');
+      
+      container.innerHTML = html;
+    }
+
+    // Show committee assignment form
+    async function showAssignCommitteeForm() {
+      const formDiv = document.getElementById('assignCommitteeForm');
+      formDiv.style.display = 'block';
+      
+      // Load faculty members for selection
+      await loadFacultyMembers();
+    }
+
+    // Load faculty members for committee selection
+    async function loadFacultyMembers() {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/cms/users/faculty`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const faculty = await response.json();
+          populateFacultyDropdowns(faculty);
+        }
+      } catch (err) {
+        console.error('Error loading faculty:', err);
+      }
+    }
+
+    // Populate faculty dropdowns
+    function populateFacultyDropdowns(faculty) {
+      const dropdown1 = document.getElementById('committeeMember1');
+      const dropdown2 = document.getElementById('committeeMember2');
+      
+      const options = faculty.map(member => 
+        `<option value="${member.userId}">${member.firstName} ${member.lastName} (${member.email})</option>`
+      ).join('');
+      
+      dropdown1.innerHTML = '<option value="">Select committee member</option>' + options;
+      dropdown2.innerHTML = '<option value="">Select committee member</option>' + options;
+    }
+
+    // Assign committee
+    async function assignCommittee(event) {
+      event.preventDefault();
+      
+      const member1 = document.getElementById('committeeMember1').value;
+      const member2 = document.getElementById('committeeMember2').value;
+      const statusEl = document.getElementById('committeeStatus');
+      
+      if (!member1 || !member2) {
+        statusEl.textContent = 'Please select both committee members';
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-success');
+        return;
+      }
+      
+      if (member1 === member2) {
+        statusEl.textContent = 'Please select different committee members';
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-success');
+        return;
+      }
+      
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        const userId = session.getIdToken().payload.sub;
+        
+        const response = await fetch(`${_config.api.invokeUrl}/cms/committee`, {
+          method: 'POST',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            studentId: userId,
+            committeeMember1: member1,
+            committeeMember2: member2
+          })
+        });
+        
+        if (response.ok) {
+          statusEl.textContent = 'Committee assigned successfully!';
+          statusEl.classList.add('alert-success');
+          statusEl.classList.remove('d-none', 'alert-danger');
+          
+          // Reload committee info
+          setTimeout(() => {
+            loadCommittee();
+            document.getElementById('assignCommitteeForm').style.display = 'none';
+          }, 2000);
+        } else {
+          throw new Error('Failed to assign committee');
+        }
+      } catch (err) {
+        console.error('Error assigning committee:', err);
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-success');
+      }
+    }
+    
     // Display version history
     function displayVersionHistory(versions) {
       const container = document.getElementById('versionHistory');
@@ -396,17 +580,25 @@
         Amplify.configure(window.awsConfig);
         
         // Check authentication
-        await Amplify.Auth.currentSession();
+        const session = await Amplify.Auth.currentSession();
+        
+        // Show committee section only for students
+        const userRole = session.getIdToken().payload['custom:role'];
+        if (userRole === 'Student') {
+          document.getElementById('committeeSection').style.display = 'block';
+          loadCommittee();
+        }
         
         // Load data
         loadDissertation();
         loadVersionHistory();
         
-        // Set up form handler
+        // Set up form handlers
         document.getElementById('uploadForm').addEventListener('submit', function(e) {
           e.preventDefault();
           uploadDissertation();
         });
+        
         
       } catch (error) {
         console.error("Error initializing:", error);

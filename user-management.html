@@ -64,6 +64,35 @@
         </div>
       </div>
     </section>
+
+    <!-- Committee Assignment Section (only for admins) -->
+    <section class="mb-4">
+      <div class="content-section">
+        <h4 class="mb-4">Assign Committee Members</h4>
+        <form id="committeeAssignmentForm">
+          <div class="mb-3">
+            <label for="studentSelect" class="form-label">Student</label>
+            <select class="form-control" id="studentSelect" required>
+              <option value="">Select a student</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="committeeMember1" class="form-label">Committee Member 1</label>
+            <select class="form-control" id="committeeMember1" required>
+              <option value="">Select committee member</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="committeeMember2" class="form-label">Committee Member 2</label>
+            <select class="form-control" id="committeeMember2" required>
+              <option value="">Select committee member</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Assign Committee</button>
+        </form>
+        <div id="committeeAssignmentStatus" class="alert mt-3 d-none"></div>
+      </div>
+    </section>
   </div>
 
   <!-- User Details Modal -->
@@ -241,6 +270,113 @@
             </td>
           </tr>
         `;
+      }
+    }
+
+    // Load students and faculty for committee assignment
+    async function loadCommitteeOptions() {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        // Load students
+        const studentsResponse = await fetch(`${_config.api.invokeUrl}/cms/users/students`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (studentsResponse.ok) {
+          const students = await studentsResponse.json();
+          const studentSelect = document.getElementById('studentSelect');
+          studentSelect.innerHTML = '<option value="">Select a student</option>' + 
+            students.map(student => 
+              `<option value="${student.userId}">${student.firstName} ${student.lastName} (${student.email})</option>`
+            ).join('');
+        }
+        
+        // Load faculty/committee members
+        const facultyResponse = await fetch(`${_config.api.invokeUrl}/cms/users/faculty`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (facultyResponse.ok) {
+          const faculty = await facultyResponse.json();
+          const options = faculty.map(member => 
+            `<option value="${member.userId}">${member.firstName} ${member.lastName} (${member.email})</option>`
+          ).join('');
+          
+          document.getElementById('committeeMember1').innerHTML = '<option value="">Select committee member</option>' + options;
+          document.getElementById('committeeMember2').innerHTML = '<option value="">Select committee member</option>' + options;
+        }
+      } catch (err) {
+        console.error('Error loading committee options:', err);
+      }
+    }
+
+    // Handle committee assignment
+    async function handleCommitteeAssignment(event) {
+      event.preventDefault();
+      
+      const studentId = document.getElementById('studentSelect').value;
+      const member1 = document.getElementById('committeeMember1').value;
+      const member2 = document.getElementById('committeeMember2').value;
+      const statusEl = document.getElementById('committeeAssignmentStatus');
+      
+      if (!studentId || !member1 || !member2) {
+        statusEl.textContent = 'Please select a student and both committee members';
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-success');
+        return;
+      }
+      
+      if (member1 === member2) {
+        statusEl.textContent = 'Please select different committee members';
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-success');
+        return;
+      }
+      
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/cms/committee`, {
+          method: 'POST',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            studentId: studentId,
+            committeeMember1: member1,
+            committeeMember2: member2
+          })
+        });
+        
+        if (response.ok) {
+          statusEl.textContent = 'Committee assigned successfully!';
+          statusEl.classList.add('alert-success');
+          statusEl.classList.remove('d-none', 'alert-danger');
+          
+          // Clear form
+          document.getElementById('studentSelect').value = '';
+          document.getElementById('committeeMember1').value = '';
+          document.getElementById('committeeMember2').value = '';
+        } else {
+          throw new Error('Failed to assign committee');
+        }
+      } catch (err) {
+        console.error('Error assigning committee:', err);
+        statusEl.textContent = `Error: ${err.message}`;
+        statusEl.classList.add('alert-danger');
+        statusEl.classList.remove('d-none', 'alert-success');
       }
     }
 
@@ -539,6 +675,9 @@
         // Load users
         loadUsers();
         
+        // Load committee options
+        loadCommitteeOptions();
+        
         // Set up event listeners
         document.getElementById('refreshUsers').addEventListener('click', function() {
           // Clear any cached data
@@ -548,6 +687,7 @@
         });
         document.getElementById('saveUserDetails').addEventListener('click', saveUserDetails);
         document.getElementById('sendInvite').addEventListener('click', sendInvitation);
+        document.getElementById('committeeAssignmentForm').addEventListener('submit', handleCommitteeAssignment);
         document.getElementById('searchButton').addEventListener('click', function() {
           const searchTerm = document.getElementById('userSearch').value.toLowerCase();
           const rows = document.querySelectorAll('#userTableBody tr');
