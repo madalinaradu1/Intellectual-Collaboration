@@ -290,23 +290,23 @@ async function loadCommitteeOptions() {
     
     if (response.ok) {
       const users = await response.json();
+      console.log('All users:', users); // Debug log
       
       // Filter students
       const students = users.filter(user => user.role === 'Student');
+      console.log('Students found:', students); // Debug log
+      
       const studentSelect = document.getElementById('studentSelect');
       studentSelect.innerHTML = '<option value="">Select a student</option>' + 
         students.map(student => 
           `<option value="${student.userId}">${student.firstName || ''} ${student.lastName || ''} (${student.email})</option>`
         ).join('');
       
-      // Filter faculty/committee members
-      const faculty = users.filter(user => 
-        user.role === 'FacultyMember' || 
-        user.role === 'CommitteeMember' || 
-        user.role === 'ApplicationAdmin'
-      );
+      // Filter only CommitteeMember role
+      const committeeMembers = users.filter(user => user.role === 'CommitteeMember');
+      console.log('Committee members found:', committeeMembers); // Debug log
       
-      const options = faculty.map(member => 
+      const options = committeeMembers.map(member => 
         `<option value="${member.userId}">${member.firstName || ''} ${member.lastName || ''} (${member.email})</option>`
       ).join('');
       
@@ -317,6 +317,7 @@ async function loadCommitteeOptions() {
     console.error('Error loading committee options:', err);
   }
 }
+
 
     // Handle committee assignment
     async function handleCommitteeAssignment(event) {
