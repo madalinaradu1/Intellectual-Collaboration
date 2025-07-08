@@ -206,61 +206,25 @@ async function loadPosts() {
         }
       }
       
-      // Get profile image
+      // Get profile image - simplified approach
       let profilePicUrl = 'no-profile.png';
       
       // Check if we already have this author's profile pic in our cache
       if (window.authorProfilePics[p.Author]) {
         profilePicUrl = window.authorProfilePics[p.Author];
-        console.log("Using cached profile picture for", p.Author);
       }
       // If post has author data with profile picture, use it and cache it
       else if (p.AuthorData && p.AuthorData.profilePicture) {
         profilePicUrl = p.AuthorData.profilePicture;
         window.authorProfilePics[p.Author] = profilePicUrl;
-        console.log("Using author data profile picture:", profilePicUrl);
       } 
       // If this is the current user's post and we have their profile picture
       else if (window.currentUserProfilePicture && p.Author === window.currentUsername) {
         profilePicUrl = window.currentUserProfilePicture;
         window.authorProfilePics[p.Author] = profilePicUrl;
-        console.log("Using current user profile picture for post by", p.Author);
       }
-      
-      // Try to fetch the author's profile picture if not already available
-      if (profilePicUrl === 'no-profile.png' && p.Author) {
-        // Store the author ID for later use in the fetch callback
-        const authorId = p.Author;
-        
-        // Use a special endpoint that allows fetching basic profile info for any user
-        fetch(`${_config.api.invokeUrl}/cms/users/${authorId}/profile`, {
-          method: 'GET',
-          headers: {
-            'Authorization': idToken,
-            'Content-Type': 'application/json'
-          }
-        })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then(userData => {
-          if (userData && userData.profilePicture) {
-            // Cache the profile picture
-            window.authorProfilePics[authorId] = userData.profilePicture;
-            
-            // Update all posts by this author
-            const imgElements = document.querySelectorAll(`[data-author-id="${authorId}"] img.profile-pic`);
-            imgElements.forEach(imgElement => {
-              imgElement.src = userData.profilePicture;
-            });
-            console.log(`Updated ${imgElements.length} profile pictures for ${authorId}`);
-          }
-        })
-        .catch(err => console.error("Error fetching user profile:", err));
-      }
+      // No additional fetching needed - rely on AuthorData from posts API
+
       
       // Check if post has an attachment
       const attachmentHtml = p.Attachment ? `
