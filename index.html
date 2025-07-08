@@ -180,6 +180,7 @@ async function loadPosts() {
     
     const posts = await response.json();
     console.log("Posts:", posts);
+    console.log("First post AuthorData:", posts[0]?.AuthorData); // Debug line
     
     // Create a map to store profile pictures by author ID
     window.authorProfilePics = window.authorProfilePics || {};
@@ -217,6 +218,7 @@ async function loadPosts() {
       else if (p.AuthorData && p.AuthorData.profilePicture) {
         profilePicUrl = p.AuthorData.profilePicture;
         window.authorProfilePics[p.Author] = profilePicUrl;
+        console.log("Using author data profile picture:", profilePicUrl, "for author:", p.Author);
       } 
       // If this is the current user's post and we have their profile picture
       else if (window.currentUserProfilePicture && p.Author === window.currentUsername) {
