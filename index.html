@@ -224,10 +224,15 @@ async function loadPosts() {
         console.log("Using author data profile picture:", profilePicUrl, "for author:", p.Author);
       } 
       // If this is the current user's post and we have their profile picture
-      else if (window.currentUserProfilePicture && p.Author === window.currentUsername) {
-        profilePicUrl = window.currentUserProfilePicture;
-        window.authorProfilePics[p.Author] = profilePicUrl;
-      }
+      else if (window.currentUserProfilePicture && (
+      p.Author === window.currentUsername || 
+      p.Author === currentUser.signInUserSession.idToken.payload.sub ||
+      p.Author === `${currentUser.signInUserSession.idToken.payload.given_name || ''} ${currentUser.signInUserSession.idToken.payload.family_name || ''}`.trim()
+    )) {
+      profilePicUrl = window.currentUserProfilePicture;
+      window.authorProfilePics[p.Author] = profilePicUrl;
+    console.log("Using current user profile picture for:", p.Author);
+  }
       // No additional fetching needed - rely on AuthorData from posts API
 
       
