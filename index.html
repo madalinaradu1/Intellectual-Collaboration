@@ -193,7 +193,7 @@ async function loadPosts() {
       const timestamp = new Date(p.Timestamp).toLocaleString();
       
       // Get initial author name
-      let authorName = window.postAuthorHandler.formatAuthorName(p);
+      let authorName = p.AuthorName || window.postAuthorHandler.formatAuthorName(p);
       
       // Handle UUID author names - use AuthorData if available
       if (authorName && authorName.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
@@ -445,14 +445,15 @@ async function submitPost() {
     const currentUser = await Amplify.Auth.currentAuthenticatedUser();
     const { given_name, family_name } = currentUser.signInUserSession.idToken.payload;
     
-    const postData = {
-      Title: title,
-      Message: message,
-      Author: `${given_name || ''} ${family_name || ''}`.trim() || currentUser.username,
-      groupId: group,
-      Timestamp: new Date().toISOString(),
-      authorFirstName: given_name || '',
-      authorLastName: family_name || ''
+   const postData = {
+    Title: title,
+    Message: message,
+    Author: currentUser.signInUserSession.idToken.payload.sub, // Use UUID
+    AuthorName: `${given_name || ''} ${family_name || ''}`.trim() || currentUser.username, // Store name separately
+    groupId: group,
+    Timestamp: new Date().toISOString(),
+    authorFirstName: given_name || '',
+    authorLastName: family_name || ''
     };
     
     // Handle file upload if attachment is selected
