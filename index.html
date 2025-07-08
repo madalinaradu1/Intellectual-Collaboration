@@ -181,6 +181,9 @@ async function loadPosts() {
     const posts = await response.json();
     console.log("Posts:", posts);
     console.log("First post AuthorData:", posts[0]?.AuthorData); // Debug line
+    posts.forEach((post, index) => {
+    console.log(`Post ${index} - Author: ${post.Author}, AuthorData:`, post.AuthorData);
+    });
     
     // Create a map to store profile pictures by author ID
     window.authorProfilePics = window.authorProfilePics || {};
