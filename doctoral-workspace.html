@@ -213,13 +213,105 @@
       }
     }
     
-    // Load current dissertation
+    // Load dissertation - different logic for students vs committee members
     async function loadDissertation() {
       try {
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
+        const currentUser = await Amplify.Auth.currentAuthenticatedUser();
+        const userRole = idToken.payload['custom:role'];
+        const userId = currentUser.signInUserSession.idToken.payload.sub;
         
-        const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/current`, {
+        if (userRole === 'Student') {
+          // Students load their own dissertation
+          const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/current`, {
+            method: 'GET',
+            headers: {
+              'Authorization': idToken,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const dissertation = await response.json();
+            displayCurrentVersion(dissertation);
+            loadComments(dissertation.dissertationId);
+          } else if (response.status === 404) {
+            showPlaceholderContent();
+          }
+        } else if (userRole === 'CommitteeMember') {
+          // Committee members see list of their assigned students
+          showStudentSelector();
+        } else {
+          showPlaceholderContent();
+        }
+      } catch (err) {
+        console.error('Error loading dissertation:', err);
+        showPlaceholderContent();
+      }
+    }
+
+    // Show student selector for committee members
+    async function showStudentSelector() {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        const currentUser = await Amplify.Auth.currentAuthenticatedUser();
+        const userId = currentUser.signInUserSession.idToken.payload.sub;
+        
+        // Get all committees to find students assigned to this committee member
+        const response = await fetch(`${_config.api.invokeUrl}/cms/committee`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const committees = await response.json();
+          const myStudents = committees.filter(c => 
+            c.committeeMembers.some(m => m.userId === userId)
+          );
+          
+          if (myStudents.length > 0) {
+            displayStudentSelector(myStudents);
+          } else {
+            document.getElementById('currentVersion').innerHTML = '<p class="text-muted">No students assigned to you.</p>';
+          }
+        }
+      } catch (err) {
+        console.error('Error loading students:', err);
+        document.getElementById('currentVersion').innerHTML = '<p class="text-muted">Error loading assigned students.</p>';
+      }
+    }
+
+    // Display student selector
+    function displayStudentSelector(students) {
+      const html = `
+        <h6>Select Student</h6>
+        <div class="mb-3">
+          <select class="form-control" id="studentSelector" onchange="loadStudentDissertation()">
+            <option value="">Choose a student...</option>
+            ${students.map(s => `<option value="${s.studentId}">${s.studentName || s.studentId}</option>`).join('')}
+          </select>
+        </div>
+        <div id="selectedStudentDissertation"></div>
+      `;
+      
+      document.getElementById('currentVersion').innerHTML = html;
+    }
+
+    // Load selected student's dissertation
+    async function loadStudentDissertation() {
+      const studentId = document.getElementById('studentSelector').value;
+      if (!studentId) return;
+      
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/student/${studentId}`, {
           method: 'GET',
           headers: {
             'Authorization': idToken,
@@ -229,20 +321,20 @@
         
         if (response.ok) {
           const dissertation = await response.json();
-          displayCurrentVersion(dissertation);
+          document.getElementById('selectedStudentDissertation').innerHTML = `
+            <h6>Current Version</h6>
+            <p><strong>File:</strong> ${dissertation.fileName}</p>
+            <p><strong>Uploaded:</strong> ${new Date(dissertation.uploadedAt).toLocaleString()}</p>
+            <p><strong>Notes:</strong> ${dissertation.versionNotes || 'No notes'}</p>
+            <a href="${dissertation.fileUrl}" target="_blank" class="btn btn-primary">View Dissertation</a>
+          `;
           loadComments(dissertation.dissertationId);
-        } else if (response.status === 404) {
-          // No dissertation found - this is expected for users who haven't uploaded yet
-          console.log('No dissertation found for current user');
-          showPlaceholderContent();
         } else {
-          // Other errors
-          console.error('API error:', response.status, response.statusText);
-          showPlaceholderContent();
+          document.getElementById('selectedStudentDissertation').innerHTML = '<p class="text-muted">No dissertation uploaded yet.</p>';
         }
       } catch (err) {
-        console.error('Error loading dissertation:', err);
-        showPlaceholderContent();
+        console.error('Error loading student dissertation:', err);
+        document.getElementById('selectedStudentDissertation').innerHTML = '<p class="text-muted">Error loading dissertation.</p>';
       }
     }
     
