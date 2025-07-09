@@ -78,7 +78,7 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/cms/committees`, {
+        const response = await fetch(`${_config.api.invokeUrl}/cms/committee`, {
           method: 'GET',
           headers: {
             'Authorization': idToken,
