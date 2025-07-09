@@ -520,7 +520,7 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         
-        const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/student/${studentId}/versions`, {
+        const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/versions?studentId=${studentId}`, {
           method: 'GET',
           headers: {
             'Authorization': idToken,
