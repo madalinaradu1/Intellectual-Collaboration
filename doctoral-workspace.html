@@ -674,16 +674,22 @@
         // Check authentication
         const session = await Amplify.Auth.currentSession();
         
-        // Show committee section only for students
+        // Show/hide sections based on user role
         const userRole = session.getIdToken().payload['custom:role'];
         if (userRole === 'Student') {
           document.getElementById('committeeSection').style.display = 'block';
           loadCommittee();
+          // Students can upload and see version history
+          loadVersionHistory();
+        } else if (userRole === 'CommitteeMember') {
+          // Hide upload section for committee members
+          document.querySelector('.mb-4').style.display = 'none';
+          // Hide version history for committee members
+          document.querySelector('.col-md-4').style.display = 'none';
         }
         
-        // Load data
+        // Load dissertation data
         loadDissertation();
-        loadVersionHistory();
         
         // Set up form handlers
         document.getElementById('uploadForm').addEventListener('submit', function(e) {
