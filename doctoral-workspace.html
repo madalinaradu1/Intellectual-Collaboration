@@ -219,7 +219,7 @@
         const session = await Amplify.Auth.currentSession();
         const idToken = session.getIdToken().getJwtToken();
         const currentUser = await Amplify.Auth.currentAuthenticatedUser();
-        const userRole = idToken.payload['custom:role'];
+        const userRole = currentUser.signInUserSession.idToken.payload['custom:role'] || 'Guest';
         const userId = currentUser.signInUserSession.idToken.payload.sub;
         
         if (userRole === 'Student') {
