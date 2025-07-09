@@ -438,7 +438,7 @@
           
           if (response.ok) {
             const comments = await response.json();
-            displayComments(comments);
+            displayComments(comments, dissertationId);
             return;
           }
         } catch (apiError) {
@@ -455,28 +455,20 @@
 
     // Show comments with form for adding new comments
     function showCommentsWithForm(dissertationId) {
-      const session = Amplify.Auth.currentSession();
-      const userRole = session.then(s => s.getIdToken().payload['custom:role']);
+      const commentForm = `
+        <div class="mt-3">
+          <h6>Add Comment</h6>
+          <div class="mb-3">
+            <textarea class="form-control" id="newComment" rows="3" placeholder="Enter your feedback..."></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="addComment('${dissertationId}')">Add Comment</button>
+        </div>
+      `;
       
-      userRole.then(role => {
-        let commentForm = '';
-        if (role === 'CommitteeMember') {
-          commentForm = `
-            <div class="mt-3">
-              <h6>Add Comment</h6>
-              <div class="mb-3">
-                <textarea class="form-control" id="newComment" rows="3" placeholder="Enter your feedback..."></textarea>
-              </div>
-              <button class="btn btn-primary" onclick="addComment('${dissertationId}')">Add Comment</button>
-            </div>
-          `;
-        }
-        
-        document.getElementById('commentsList').innerHTML = `
-          <p class="text-muted">No comments yet.</p>
-          ${commentForm}
-        `;
-      });
+      document.getElementById('commentsList').innerHTML = `
+        <p class="text-muted">No comments yet.</p>
+        ${commentForm}
+      `;
     }
 
     // Add a new comment
@@ -540,28 +532,38 @@
       }
     }
     
-    // Display comments
-    function displayComments(comments) {
+    // Display comments with add comment form
+    function displayComments(comments, dissertationId) {
       const container = document.getElementById('commentsList');
       
-      if (!comments || comments.length === 0) {
-        container.innerHTML = '<p class="text-muted">No comments yet.</p>';
-        return;
+      let commentsHtml = '';
+      if (comments && comments.length > 0) {
+        commentsHtml = comments.map(comment => {
+          const commentDate = new Date(comment.timestamp).toLocaleDateString();
+          return `
+            <div class="card mb-2">
+              <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">${comment.authorName} <small>${commentDate}</small></h6>
+                <p class="card-text">${comment.content}</p>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        commentsHtml = '<p class="text-muted">No comments yet.</p>';
       }
       
-      const html = comments.map(comment => {
-        const commentDate = new Date(comment.timestamp).toLocaleDateString();
-        return `
-          <div class="card mb-2">
-            <div class="card-body">
-              <h6 class="card-subtitle mb-2 text-muted">${comment.authorName} <small>${commentDate}</small></h6>
-              <p class="card-text">${comment.content}</p>
-            </div>
+      const commentForm = `
+        <div class="mt-3">
+          <h6>Add Comment</h6>
+          <div class="mb-3">
+            <textarea class="form-control" id="newComment" rows="3" placeholder="Enter your feedback..."></textarea>
           </div>
-        `;
-      }).join('');
+          <button class="btn btn-primary" onclick="addComment('${dissertationId}')">Add Comment</button>
+        </div>
+      `;
       
-      container.innerHTML = html;
+      container.innerHTML = commentsHtml + commentForm;
     }
     
     // Load committee members for current student
