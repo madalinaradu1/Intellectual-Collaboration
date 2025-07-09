@@ -329,6 +329,7 @@
             <a href="${dissertation.fileUrl}" target="_blank" class="btn btn-primary">View Dissertation</a>
           `;
           loadComments(dissertation.dissertationId);
+          loadStudentVersionHistory(studentId);
         } else {
           document.getElementById('selectedStudentDissertation').innerHTML = '<p class="text-muted">No dissertation uploaded yet.</p>';
         }
@@ -445,10 +446,97 @@
         }
         
         // Show placeholder when API doesn't exist
-        document.getElementById('commentsList').innerHTML = '<p class="text-muted">No comments yet.</p>';
+        showCommentsWithForm(dissertationId);
       } catch (err) {
         console.error('Error loading comments:', err);
-        document.getElementById('commentsList').innerHTML = '<p class="text-muted">Unable to load comments.</p>';
+        showCommentsWithForm(dissertationId);
+      }
+    }
+
+    // Show comments with form for adding new comments
+    function showCommentsWithForm(dissertationId) {
+      const session = Amplify.Auth.currentSession();
+      const userRole = session.then(s => s.getIdToken().payload['custom:role']);
+      
+      userRole.then(role => {
+        let commentForm = '';
+        if (role === 'CommitteeMember') {
+          commentForm = `
+            <div class="mt-3">
+              <h6>Add Comment</h6>
+              <div class="mb-3">
+                <textarea class="form-control" id="newComment" rows="3" placeholder="Enter your feedback..."></textarea>
+              </div>
+              <button class="btn btn-primary" onclick="addComment('${dissertationId}')">Add Comment</button>
+            </div>
+          `;
+        }
+        
+        document.getElementById('commentsList').innerHTML = `
+          <p class="text-muted">No comments yet.</p>
+          ${commentForm}
+        `;
+      });
+    }
+
+    // Add a new comment
+    async function addComment(dissertationId) {
+      try {
+        const commentText = document.getElementById('newComment').value.trim();
+        if (!commentText) {
+          alert('Please enter a comment');
+          return;
+        }
+
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/${dissertationId}/comments`, {
+          method: 'POST',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            comment: commentText
+          })
+        });
+        
+        if (response.ok) {
+          document.getElementById('newComment').value = '';
+          loadComments(dissertationId); // Reload comments
+        } else {
+          throw new Error('Failed to add comment');
+        }
+      } catch (err) {
+        console.error('Error adding comment:', err);
+        alert('Error adding comment: ' + err.message);
+      }
+    }
+
+    // Load version history for selected student
+    async function loadStudentVersionHistory(studentId) {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/cms/dissertation/student/${studentId}/versions`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const versions = await response.json();
+          displayVersionHistory(versions);
+        } else {
+          document.getElementById('versionHistory').innerHTML = '<p class="text-muted">No version history available.</p>';
+        }
+      } catch (err) {
+        console.error('Error loading student version history:', err);
+        document.getElementById('versionHistory').innerHTML = '<p class="text-muted">Unable to load version history.</p>';
       }
     }
     
@@ -684,8 +772,8 @@
         } else if (userRole === 'CommitteeMember') {
           // Hide upload section for committee members
           document.querySelector('.mb-4').style.display = 'none';
-          // Hide version history for committee members
-          document.querySelector('.col-md-4').style.display = 'none';
+          // Show version history for committee members (they can see student's versions)
+          document.querySelector('.col-md-4').style.display = 'block';
         }
         
         // Load dissertation data
