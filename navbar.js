@@ -52,7 +52,10 @@ function addNavigationBar() {
           <li class="nav-item">
             <a class="nav-link" href="student-dashboard.html" data-requires-role="Student,ApplicationAdmin" data-requires-parent-group="DC Network">Student Dashboard</a>
           </li>
-        </ul>
+          <li class="nav-item">
+          <a class="nav-link" href="committee-management.html" data-requires-role="ApplicationAdmin">Committee Management</a>
+          </li>
+          </ul>
         <ul class="navbar-nav">
           <li class="nav-item">
             <a class="nav-link" href="profile.html" id="navProfileLink">Profile</a>

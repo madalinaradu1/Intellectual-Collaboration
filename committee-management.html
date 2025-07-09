@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Committee Management - IC CMS</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="common-styles.css" rel="stylesheet"/>
+  
+  <!-- AWS Amplify -->
+  <script defer src="https://unpkg.com/aws-amplify@4.3.43/dist/aws-amplify.min.js"></script>
+  <script defer src="navbar.js"></script>
+</head>
+<body class="bg-light">
+  <!-- Navigation bar loaded from navbar.js -->
+  
+  <!-- Purple Banner -->
+  <div class="banner">
+    <h1 class="mb-2">Committee Management</h1>
+    <p class="lead mb-0">View and manage student committee assignments</p>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Student Committee Assignments</h5>
+        <button class="btn btn-primary" onclick="loadCommittees()">Refresh</button>
+      </div>
+      <div class="card-body">
+        <div id="committeesList">
+          <p>Loading committee assignments...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- jQuery and Bootstrap -->
+  <script src="jquery-3.1.0.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Configuration -->
+  <script src="config.js"></script>
+  <script src="amplify-config.js"></script>
+
+  <script>
+    // Check user permissions
+    async function checkUserPermissions() {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken();
+        
+        let userRole = idToken.payload['custom:role'] || 'Guest';
+        const cognitoGroups = idToken.payload['cognito:groups'] || [];
+        
+        if (cognitoGroups.includes('ApplicationAdmin')) {
+          userRole = 'ApplicationAdmin';
+        }
+        
+        if (userRole !== 'ApplicationAdmin') {
+          alert('You do not have permission to access this page.');
+          window.location.href = 'index.html';
+          return null;
+        }
+        
+        return userRole;
+      } catch (err) {
+        console.error("Error checking permissions:", err);
+        alert('Authentication error. Please log in again.');
+        window.location.href = 'signin.html';
+        return null;
+      }
+    }
+
+    // Load all committee assignments
+    async function loadCommittees() {
+      try {
+        const session = await Amplify.Auth.currentSession();
+        const idToken = session.getIdToken().getJwtToken();
+        
+        const response = await fetch(`${_config.api.invokeUrl}/cms/committees`, {
+          method: 'GET',
+          headers: {
+            'Authorization': idToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const committees = await response.json();
+          displayCommittees(committees);
+        } else {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+      } catch (err) {
+        console.error("Error loading committees:", err);
+        document.getElementById('committeesList').innerHTML = `
+          <div class="alert alert-danger">
+            Error loading committee assignments: ${err.message}
+          </div>
+        `;
+      }
+    }
+
+    // Display committee assignments
+    function displayCommittees(committees) {
+      const container = document.getElementById('committeesList');
+      
+      if (!committees || committees.length === 0) {
+        container.innerHTML = '<p class="text-muted">No committee assignments found.</p>';
+        return;
+      }
+      
+      const html = committees.map(committee => `
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-4">
+                <h6>Student</h6>
+                <p>${committee.studentName || committee.studentId}</p>
+              </div>
+              <div class="col-md-8">
+                <h6>Committee Members</h6>
+                <div class="row">
+                  ${committee.committeeMembers.map((member, index) => `
+                    <div class="col-md-6">
+                      <div class="border rounded p-2 mb-2">
+                        <strong>Member ${index + 1}</strong><br>
+                        ${member.name || member.userId}
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            </div>
+            <small class="text-muted">Assigned: ${new Date(committee.createdAt).toLocaleString()}</small>
+          </div>
+        </div>
+      `).join('');
+      
+      container.innerHTML = html;
+    }
+
+    // Initialize page
+    window.onload = async function() {
+      if (typeof window.aws_amplify !== 'undefined') {
+        window.Amplify = window.aws_amplify.Amplify;
+      }
+      
+      try {
+        if (typeof Amplify === 'undefined') {
+          throw new Error("AWS Amplify is not loaded");
+        }
+        
+        Amplify.configure(window.awsConfig);
+        
+        const userRole = await checkUserPermissions();
+        if (!userRole) return;
+        
+        loadCommittees();
+        
+      } catch (error) {
+        console.error("Error initializing:", error);
+        alert("Authentication error. Please log in again.");
+        window.location.href = "signin.html";
+      }
+    };
+  </script>
+</body>
+</html>
