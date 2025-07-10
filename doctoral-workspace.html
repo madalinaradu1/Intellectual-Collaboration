@@ -8,33 +8,32 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="common-styles.css" rel="stylesheet"/>
   <style>
-    /* Force version history to stay on right side - override everything */
-    .container .row {
-      display: flex !important;
-      flex-direction: row !important;
-      flex-wrap: wrap !important;
+    /* Force horizontal layout - override Bootstrap responsive behavior */
+    @media (min-width: 1px) {
+      .container .row {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+      }
+      .container .row .col-md-8 {
+        flex: 0 0 66.66666667% !important;
+        max-width: 66.66666667% !important;
+        width: 66.66666667% !important;
+        display: inline-block !important;
+        vertical-align: top !important;
+      }
+      .container .row .col-md-4 {
+        flex: 0 0 33.33333333% !important;
+        max-width: 33.33333333% !important;
+        width: 33.33333333% !important;
+        display: inline-block !important;
+        vertical-align: top !important;
+      }
     }
-    .container .row .col-md-8 {
-      flex: 0 0 66.66666667% !important;
-      max-width: 66.66666667% !important;
-      width: 66.66666667% !important;
-      float: left !important;
-      display: block !important;
-      visibility: visible !important;
-    }
-    .container .row .col-md-4 {
-      flex: 0 0 33.33333333% !important;
-      max-width: 33.33333333% !important;
-      width: 33.33333333% !important;
-      float: right !important;
-      display: block !important;
-      visibility: visible !important;
-      position: relative !important;
-    }
-    /* Debug - make version history visible with background */
+    /* Remove debug styling */
     .col-md-4 {
       background-color: #f8f9fa !important;
-      border: 2px solid red !important;
+      border: 1px solid #dee2e6 !important;
       min-height: 300px !important;
     }
   </style>
