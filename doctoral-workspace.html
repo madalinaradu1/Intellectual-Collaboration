@@ -438,8 +438,6 @@
           
           if (response.ok) {
             const comments = await response.json();
-            console.log('Comments received:', comments);
-            console.log('First comment:', comments[0]);
             displayComments(comments, dissertationId);
             return;
           }
@@ -537,16 +535,10 @@
     // Display comments with add comment form
     function displayComments(comments, dissertationId) {
       const container = document.getElementById('commentsList');
-      console.log('displayComments called with:', comments);
       
       let commentsHtml = '';
       if (comments && comments.length > 0) {
-        commentsHtml = comments.map((comment, index) => {
-          console.log(`Comment ${index}:`, comment);
-          console.log(`Comment text: "${comment.comment}"`);
-          console.log(`Author: "${comment.authorName}"`);
-          console.log(`Timestamp: "${comment.timestamp}"`);
-          
+        commentsHtml = comments.map(comment => {
           const commentDate = new Date(comment.timestamp).toLocaleDateString();
           return `
             <div class="card mb-2">
