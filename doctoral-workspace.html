@@ -722,7 +722,7 @@
       }
     }
     
-    // Display version history
+    // Display version history with clickable items
     function displayVersionHistory(versions) {
       const container = document.getElementById('versionHistory');
       
@@ -731,21 +731,42 @@
         return;
       }
       
-      const html = versions.map((version, index) => {
+      // Sort versions by upload date (oldest first) to maintain chronological order
+      const sortedVersions = [...versions].sort((a, b) => new Date(a.uploadDate) - new Date(b.uploadDate));
+      
+      const html = sortedVersions.map((version, index) => {
         const uploadDate = new Date(version.uploadDate).toLocaleDateString();
-        const versionNumber = versions.length - index;
+        const versionNumber = index + 1; // Start from 1 for first version
         
         return `
-          <div class="border-bottom pb-2 mb-2">
+          <div class="border rounded p-2 mb-2 version-item" style="cursor: pointer;" onclick="loadVersionComments('${version.dissertationId}', ${versionNumber})" data-version="${versionNumber}">
             <strong>Version ${versionNumber}</strong><br>
             <small class="text-muted">${uploadDate}</small><br>
             <small>${version.versionNotes || 'No notes'}</small><br>
-            <a href="${version.fileUrl}" target="_blank" class="btn btn-sm btn-outline-secondary mt-1">Download</a>
+            <a href="${version.fileUrl}" target="_blank" class="btn btn-sm btn-outline-secondary mt-1" onclick="event.stopPropagation()">Download</a>
           </div>
         `;
       }).join('');
       
       container.innerHTML = html;
+    }
+
+    // Load comments for a specific version
+    async function loadVersionComments(dissertationId, versionNumber) {
+      // Highlight selected version
+      document.querySelectorAll('.version-item').forEach(item => {
+        item.classList.remove('bg-light');
+      });
+      document.querySelector(`[data-version="${versionNumber}"]`).classList.add('bg-light');
+      
+      // Load comments for this version
+      loadComments(dissertationId);
+      
+      // Update the comments header to show which version is selected
+      const commentsHeader = document.querySelector('#commentsList').previousElementSibling;
+      if (commentsHeader && commentsHeader.tagName === 'H6') {
+        commentsHeader.textContent = `Committee Comments - Version ${versionNumber}`;
+      }
     }
     
     // Initialize page
