@@ -42,95 +42,91 @@
     </div>
   </nav>
 
-  <div class="container mt-4">
-    <table style="width: 100%; border-collapse: collapse;">
-      <tr>
-        <!-- Main Content -->
-        <td style="width: 70%; vertical-align: top; padding-right: 15px;">
-          <div class="card">
-            <div class="card-header">
-              <h5>My Dissertation</h5>
-            </div>
-            <div class="card-body">
-              <!-- Upload Section -->
-              <div class="mb-4">
-                <h6>Upload New Version</h6>
-                <form id="uploadForm">
-                  <div class="mb-3">
-                    <label for="dissertationFile" class="form-label">Select Dissertation File</label>
-                    <input type="file" class="form-control" id="dissertationFile" accept=".pdf,.doc,.docx" required>
-                  </div>
-                  <div class="mb-3">
-                    <label for="versionNotes" class="form-label">Version Notes</label>
-                    <textarea class="form-control" id="versionNotes" rows="3" placeholder="Describe changes made in this version..."></textarea>
-                  </div>
-                  <button type="submit" class="btn btn-primary">Upload Dissertation</button>
-                </form>
-                <div id="uploadStatus" class="alert d-none mt-3"></div>
+  <div class="container mt-4" style="position: relative;">
+    <!-- Main Content -->
+    <div style="margin-right: 320px;">
+      <div class="card">
+        <div class="card-header">
+          <h5>My Dissertation</h5>
+        </div>
+        <div class="card-body">
+          <!-- Upload Section -->
+          <div class="mb-4">
+            <h6>Upload New Version</h6>
+            <form id="uploadForm">
+              <div class="mb-3">
+                <label for="dissertationFile" class="form-label">Select Dissertation File</label>
+                <input type="file" class="form-control" id="dissertationFile" accept=".pdf,.doc,.docx" required>
               </div>
+              <div class="mb-3">
+                <label for="versionNotes" class="form-label">Version Notes</label>
+                <textarea class="form-control" id="versionNotes" rows="3" placeholder="Describe changes made in this version..."></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary">Upload Dissertation</button>
+            </form>
+            <div id="uploadStatus" class="alert d-none mt-3"></div>
+          </div>
 
-              <!-- Current Version -->
-              <div id="currentVersion">
-                <h6>Current Version</h6>
-                <p class="text-muted">No dissertation uploaded yet.</p>
-              </div>
+          <!-- Current Version -->
+          <div id="currentVersion">
+            <h6>Current Version</h6>
+            <p class="text-muted">No dissertation uploaded yet.</p>
+          </div>
 
-              <!-- Comments Section -->
-              <div class="mt-4">
-                <h6>Committee Comments</h6>
-                <div id="commentsList">
-                  <p class="text-muted">No comments yet.</p>
-                </div>
-              </div>
-
-                <!-- Committee Section (only visible to students) -->
-              <div class="mt-4" id="committeeSection" style="display: none;">
-                <h6>My Committee</h6>
-                <div id="committeeMembers">
-                  <p class="text-muted">Loading committee information...</p>
-                </div>
-              </div>
-
-                
-                <!-- Committee Assignment Form (only for students without committee) -->
-                <div id="assignCommitteeForm" style="display: none;">
-                  <form id="committeeForm">
-                    <div class="mb-3">
-                      <label for="committeeMember1" class="form-label">Committee Member 1</label>
-                      <select class="form-control" id="committeeMember1" required>
-                        <option value="">Select committee member</option>
-                      </select>
-                    </div>
-                    <div class="mb-3">
-                      <label for="committeeMember2" class="form-label">Committee Member 2</label>
-                      <select class="form-control" id="committeeMember2" required>
-                        <option value="">Select committee member</option>
-                      </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Assign Committee</button>
-                  </form>
-                  <div id="committeeStatus" class="alert mt-3 d-none"></div>
-                </div>
-              </div>
+          <!-- Comments Section -->
+          <div class="mt-4">
+            <h6>Committee Comments</h6>
+            <div id="commentsList">
+              <p class="text-muted">No comments yet.</p>
             </div>
           </div>
-        </td>
 
-        <!-- Version History Sidebar -->
-        <td style="width: 30%; vertical-align: top;">
-          <div class="card">
-            <div class="card-header">
-              <h6>Version History</h6>
-            </div>
-            <div class="card-body">
-              <div id="versionHistory">
-                <p class="text-muted">No versions uploaded yet.</p>
-              </div>
+            <!-- Committee Section (only visible to students) -->
+          <div class="mt-4" id="committeeSection" style="display: none;">
+            <h6>My Committee</h6>
+            <div id="committeeMembers">
+              <p class="text-muted">Loading committee information...</p>
             </div>
           </div>
-        </td>
-      </tr>
-    </table>
+
+            
+            <!-- Committee Assignment Form (only for students without committee) -->
+            <div id="assignCommitteeForm" style="display: none;">
+              <form id="committeeForm">
+                <div class="mb-3">
+                  <label for="committeeMember1" class="form-label">Committee Member 1</label>
+                  <select class="form-control" id="committeeMember1" required>
+                    <option value="">Select committee member</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label for="committeeMember2" class="form-label">Committee Member 2</label>
+                  <select class="form-control" id="committeeMember2" required>
+                    <option value="">Select committee member</option>
+                  </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Assign Committee</button>
+              </form>
+              <div id="committeeStatus" class="alert mt-3 d-none"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Version History Sidebar -->
+    <div style="position: absolute; top: 0; right: 0; width: 300px;">
+      <div class="card">
+        <div class="card-header">
+          <h6>Version History</h6>
+        </div>
+        <div class="card-body">
+          <div id="versionHistory">
+            <p class="text-muted">No versions uploaded yet.</p>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- jQuery and Bootstrap -->
