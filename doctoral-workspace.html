@@ -31,11 +31,25 @@
     /* Keep Version History on right side always */
     .main-content {
       margin-right: 350px !important;
-      min-width: 400px !important;
+      min-width: 550px !important;
     }
     .version-history {
-      width: 320px !important;
+      width: 300px !important;
       min-width: 250px !important;
+    }
+    
+    /* Move Version History to bottom on very small screens */
+    @media (max-width: 600px) {
+      .main-content {
+        margin-right: 0 !important;
+      }
+      .version-history {
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        width: 100% !important;
+        margin-top: 20px !important;
+      }
     }
   </style>
 
