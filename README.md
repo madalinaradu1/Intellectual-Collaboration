@@ -125,3 +125,6 @@ React Native or Flutter consuming the same AWS backend. Push via SNS to APNs and
 - SSO provided by University IT as needed
 - Timely stakeholder feedback
 - AWS backend and accounts provisioned
+
+## Update
+Minor edit from feature/madalina branch.
