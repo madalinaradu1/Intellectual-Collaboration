@@ -1,0 +1,26 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-intellectualcollab-dev-e2e03-authRole",
+      "UnauthRoleArn": "arn:aws:iam::971864224314:role/amplify-intellectualcollab-dev-e2e03-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::971864224314:role/amplify-intellectualcollab-dev-e2e03-authRole",
+      "Region": "us-west-2",
+      "DeploymentBucketName": "amplify-intellectualcollab-dev-e2e03-deployment",
+      "UnauthRoleName": "amplify-intellectualcollab-dev-e2e03-unauthRole",
+      "StackName": "amplify-intellectualcollab-dev-e2e03",
+      "StackId": "arn:aws:cloudformation:us-west-2:971864224314:stack/amplify-intellectualcollab-dev-e2e03/480fd700-be89-11f0-87be-02ba17d52efd",
+      "AmplifyAppId": "d2v4pxx3okmja5"
+    },
+    "categories": {
+      "auth": {
+        "intellectualcollab045744e4": {}
+      },
+      "api": {
+        "intellectualcollab": {}
+      },
+      "storage": {
+        "intellectualcollaborationstorage": {}
+      }
+    }
+  }
+}
