@@ -1,0 +1,435 @@
+/* Admin Dashboard Styles */
+.admin-dashboard {
+  padding: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.admin-header {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 2rem;
+}
+
+.admin-header h1 {
+  color: #522398;
+  margin: 0 0 1.5rem 0;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.admin-tabs button {
+  background: #f0f0f0;
+  color: #522398;
+  border: 1px solid #ddd;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 500;
+}
+
+.admin-tabs button:hover,
+.admin-tabs button.active {
+  background: #522398;
+  color: white;
+  border-color: #522398;
+}
+
+.admin-content {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.stat-card h3 {
+  color: #522398;
+  margin: 0 0 1rem 0;
+}
+
+.stat-number {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #522398;
+  margin-bottom: 1rem;
+}
+
+.stat-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stat-breakdown span {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Recent Activity */
+.recent-activity h2 {
+  color: #522398;
+  margin-bottom: 1rem;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.activity-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 6px;
+  border-left: 3px solid #522398;
+}
+
+.activity-time {
+  font-size: 0.8rem;
+  color: #666;
+  min-width: 80px;
+  font-weight: bold;
+}
+
+/* User Management */
+.user-management h2 {
+  color: #522398;
+  margin-bottom: 1.5rem;
+}
+
+.user-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.add-user-btn {
+  background: #522398;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.add-user-btn:hover {
+  background: #6b2c91;
+}
+
+.search-input,
+.role-filter {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* User Table */
+.user-table {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-header,
+.table-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr 1fr 120px;
+  gap: 1rem;
+  padding: 1rem;
+  align-items: center;
+}
+
+.table-header {
+  background: #522398;
+  color: white;
+  font-weight: bold;
+}
+
+.table-row {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.table-row:hover {
+  background: #f9f9f9;
+}
+
+.role {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.role.student {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.role.faculty {
+  background: #e8f5e8;
+  color: #2e7d32;
+}
+
+.role.committee {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.status.active {
+  background: #e8f5e8;
+  color: #2e7d32;
+}
+
+.status.pending {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actions button {
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.actions button:hover {
+  background: #522398;
+  color: white;
+}
+
+/* Committee Management */
+.committee-management h2 {
+  color: #522398;
+  margin-bottom: 1.5rem;
+}
+
+.committee-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.committee-item {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  background: #f9f9f9;
+}
+
+.committee-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.committee-header h3 {
+  color: #522398;
+  margin: 0;
+}
+
+.committee-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+.committee-status.proposal {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.committee-members {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.member {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.member-role {
+  min-width: 120px;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.member-role.chair {
+  color: #2e7d32;
+}
+
+.member-role.methodologist {
+  color: #1976d2;
+}
+
+.member-role.content {
+  color: #f57c00;
+}
+
+.member-role.consultant {
+  color: #7b1fa2;
+}
+
+.committee-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.committee-actions button {
+  background: #522398;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s;
+}
+
+.committee-actions button:hover {
+  background: #6b2c91;
+}
+
+/* Reports Section */
+.reports-section h2 {
+  color: #522398;
+  margin-bottom: 1.5rem;
+}
+
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.report-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  background: #f9f9f9;
+  text-align: center;
+}
+
+.report-card h3 {
+  color: #522398;
+  margin: 0 0 1rem 0;
+}
+
+.report-card p {
+  color: #666;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.5;
+}
+
+.report-card button {
+  background: #522398;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.report-card button:hover {
+  background: #6b2c91;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .admin-dashboard {
+    padding: 0.5rem;
+  }
+  
+  .admin-header,
+  .admin-content {
+    padding: 1rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .user-controls {
+    flex-direction: column;
+  }
+  
+  .table-header,
+  .table-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .committee-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .member {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+}

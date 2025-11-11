@@ -6,8 +6,8 @@ import Dashboard from './components/Dashboard';
 import './App.css';
 
 interface AppProps {
-  signOut: () => void;
-  user: any;
+  signOut?: () => void;
+  user?: any;
 }
 
 function App({ signOut, user }: AppProps) {
@@ -16,7 +16,7 @@ function App({ signOut, user }: AppProps) {
       <div className="App">
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard/*" element={<Dashboard signOut={signOut} user={user} />} />
+          <Route path="/dashboard/*" element={<Dashboard signOut={signOut!} user={user} />} />
         </Routes>
       </div>
     </Router>
@@ -32,8 +32,7 @@ export default withAuthenticator(App, {
       email: {
         order: 1,
         placeholder: 'Enter your GCU email address',
-        label: 'Email Address *',
-        inputProps: { required: true, type: 'email' }
+        label: 'Email Address *'
       },
       password: {
         order: 2,
@@ -57,8 +56,7 @@ export default withAuthenticator(App, {
     Header() {
       return (
         <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-          <h1 style={{ color: '#522398', margin: 0, fontSize: '2.5rem' }}>IGLOO</h1>
-          <p style={{ color: '#666', margin: '0.5rem 0 0 0' }}>Intellectual Collaboration Platform</p>
+          <h1 style={{ color: '#522398', margin: 0, fontSize: '2.5rem' }}>Intellectual Collaboration Platform</h1>
         </div>
       );
     }

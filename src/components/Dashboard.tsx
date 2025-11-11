@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import LDPPage from './LDPPage';
 import StudentDashboard from './StudentDashboard';
+import FacultyDashboard from './FacultyDashboard';
+import CommitteeDashboard from './CommitteeDashboard';
+import AdminDashboard from './AdminDashboard';
 import MediaResources from './MediaResources';
 import './Dashboard.css';
 
@@ -12,6 +15,29 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ signOut, user }) => {
   const location = useLocation();
+  const [userRole, setUserRole] = useState<'student' | 'faculty' | 'committee' | 'admin'>('student');
+
+  // Role detection based on email domain and patterns
+  useEffect(() => {
+    const email = user?.username?.toLowerCase() || '';
+    
+    // Admin users (specific admin emails)
+    if (email.includes('admin') || email.includes('administrator')) {
+      setUserRole('admin');
+    }
+    // Faculty users (@gcu.edu)
+    else if (email.endsWith('@gcu.edu')) {
+      setUserRole('faculty');
+    }
+    // Students (@my.gcu.edu)
+    else if (email.endsWith('@my.gcu.edu')) {
+      setUserRole('student');
+    }
+    // Committee members (external emails or specific roles)
+    else {
+      setUserRole('committee');
+    }
+  }, [user]);
 
   return (
     <div className="dashboard">
@@ -46,8 +72,18 @@ const Dashboard: React.FC<DashboardProps> = ({ signOut, user }) => {
       {/* Main Content */}
       <div className="main-content">
         <Routes>
-          <Route path="/" element={<StudentDashboard />} />
-          <Route path="/my-dashboard" element={<StudentDashboard />} />
+          <Route path="/" element={
+            userRole === 'admin' ? <AdminDashboard /> :
+            userRole === 'faculty' ? <FacultyDashboard /> :
+            userRole === 'committee' ? <CommitteeDashboard /> :
+            <StudentDashboard />
+          } />
+          <Route path="/my-dashboard" element={
+            userRole === 'admin' ? <AdminDashboard /> :
+            userRole === 'faculty' ? <FacultyDashboard /> :
+            userRole === 'committee' ? <CommitteeDashboard /> :
+            <StudentDashboard />
+          } />
           <Route path="/ldp" element={<LDPPage />} />
           <Route path="/media" element={<MediaResources />} />
         </Routes>
