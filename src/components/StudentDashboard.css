@@ -1,0 +1,242 @@
+/* Student Dashboard Styles */
+.student-dashboard {
+  padding: 1rem;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 250px 1fr 300px;
+  gap: 2rem;
+  min-height: 80vh;
+}
+
+/* Left Sidebar */
+.left-column {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  height: fit-content;
+}
+
+.sidebar h3 {
+  margin-top: 0;
+  color: #522398;
+  border-bottom: 2px solid #522398;
+  padding-bottom: 0.5rem;
+}
+
+.sidebar-menu {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.sidebar-menu li {
+  margin: 0.5rem 0;
+}
+
+.sidebar-menu a {
+  color: #333;
+  text-decoration: none;
+  padding: 0.5rem;
+  display: block;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+}
+
+.sidebar-menu a:hover {
+  background-color: #f0f0f0;
+  color: #522398;
+}
+
+/* Main Dashboard */
+.main-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.main-dashboard h2 {
+  color: #522398;
+  margin: 0 0 1rem 0;
+}
+
+/* Widgets */
+.widget {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.widget h3 {
+  margin-top: 0;
+  color: #522398;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+}
+
+/* Announcements Widget */
+.announcement-item {
+  display: flex;
+  flex-direction: column;
+  margin: 1rem 0;
+  padding: 0.5rem;
+  border-left: 3px solid #522398;
+  background-color: #f9f9f9;
+}
+
+.announcement-date {
+  font-size: 0.8rem;
+  color: #666;
+  font-weight: bold;
+}
+
+.announcement-text {
+  margin-top: 0.25rem;
+}
+
+/* Progress Widget */
+.progress-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.progress-item span:first-child {
+  min-width: 120px;
+  font-size: 0.9rem;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #522398, #6b2c91);
+  transition: width 0.3s ease;
+}
+
+.progress-item span:last-child {
+  min-width: 40px;
+  text-align: right;
+  font-weight: bold;
+  color: #522398;
+}
+
+/* Activity Widget */
+.activity-item {
+  display: flex;
+  gap: 1rem;
+  margin: 0.75rem 0;
+  padding: 0.5rem;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.activity-time {
+  font-size: 0.8rem;
+  color: #666;
+  min-width: 80px;
+}
+
+.activity-text {
+  flex: 1;
+}
+
+/* Right Column */
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Program of Study Widget */
+.pos-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  margin: 0.5rem 0;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.pos-item.completed {
+  background-color: #e8f5e8;
+  border-left: 3px solid #4caf50;
+}
+
+.pos-item.in-progress {
+  background-color: #fff3e0;
+  border-left: 3px solid #ff9800;
+}
+
+.status {
+  font-size: 1.2rem;
+}
+
+/* Calendar Widget */
+.calendar-event {
+  display: flex;
+  gap: 1rem;
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  border-left: 3px solid #522398;
+}
+
+.event-date {
+  font-weight: bold;
+  color: #522398;
+  min-width: 50px;
+}
+
+.event-title {
+  flex: 1;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .left-column,
+  .right-column {
+    order: 2;
+  }
+  
+  .main-dashboard {
+    order: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .student-dashboard {
+    padding: 0.5rem;
+  }
+  
+  .widget {
+    padding: 1rem;
+  }
+  
+  .progress-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .progress-item span:first-child {
+    min-width: auto;
+  }
+}

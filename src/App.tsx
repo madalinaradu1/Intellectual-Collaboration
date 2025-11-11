@@ -1,26 +1,66 @@
 import React from 'react';
-import logo from './logo.svg';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { withAuthenticator } from '@aws-amplify/ui-react';
+import '@aws-amplify/ui-react/styles.css';
+import Dashboard from './components/Dashboard';
 import './App.css';
 
-function App() {
+interface AppProps {
+  signOut: () => void;
+  user: any;
+}
+
+function App({ signOut, user }: AppProps) {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <div className="App">
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard/*" element={<Dashboard signOut={signOut} user={user} />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
-export default App;
+export default withAuthenticator(App, {
+  socialProviders: [],
+  signUpAttributes: ['email'],
+  loginMechanisms: ['email'],
+  formFields: {
+    signUp: {
+      email: {
+        order: 1,
+        placeholder: 'Enter your GCU email address',
+        label: 'Email Address *',
+        inputProps: { required: true, type: 'email' }
+      },
+      password: {
+        order: 2,
+        placeholder: 'Enter your password',
+        label: 'Password *'
+      },
+      confirm_password: {
+        order: 3,
+        placeholder: 'Confirm your password',
+        label: 'Confirm Password *'
+      }
+    },
+    signIn: {
+      username: {
+        placeholder: 'Enter your email address',
+        label: 'Email Address'
+      }
+    }
+  },
+  components: {
+    Header() {
+      return (
+        <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+          <h1 style={{ color: '#522398', margin: 0, fontSize: '2.5rem' }}>IGLOO</h1>
+          <p style={{ color: '#666', margin: '0.5rem 0 0 0' }}>Intellectual Collaboration Platform</p>
+        </div>
+      );
+    }
+  }
+});
