@@ -1,8 +1,12 @@
 import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Amplify } from 'aws-amplify';
 import { Authenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import awsExports from './aws-exports';
+import Navbar from './components/Navbar';
+import HomePage from './components/HomePage';
+import ProfilePage from './components/ProfilePage';
 import './App.css';
 
 Amplify.configure(awsExports);
@@ -11,12 +15,15 @@ function App() {
   return (
     <Authenticator>
       {({ signOut, user }) => (
-        <div className="App">
-          <header className="App-header">
-            <h1>Welcome, {user.username}!</h1>
-            <button onClick={signOut}>Sign out</button>
-          </header>
-        </div>
+        <Router>
+          <div className="App">
+            <Navbar user={user} signOut={signOut} />
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/profile" element={<ProfilePage user={user} />} />
+            </Routes>
+          </div>
+        </Router>
       )}
     </Authenticator>
   );

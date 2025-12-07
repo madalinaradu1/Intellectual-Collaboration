@@ -1,0 +1,14 @@
+.home-page {
+  padding: 2rem;
+  text-align: center;
+}
+
+.home-content h1 {
+  color: #282c34;
+  margin-bottom: 1rem;
+}
+
+.home-content p {
+  color: #666;
+  font-size: 1.1rem;
+}
