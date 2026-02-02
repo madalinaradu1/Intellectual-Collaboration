@@ -1,14 +1,250 @@
-.home-page {
-  padding: 2rem;
-  text-align: center;
+/* ── Hero banner ── */
+.home-hero {
+  background: linear-gradient(135deg, #552B9A 0%, #3d1f73 100%);
+  border-radius: 10px;
+  padding: 2rem 2.25rem;
+  margin-bottom: 2rem;
+  color: #fff;
 }
 
-.home-content h1 {
-  color: #282c34;
-  margin-bottom: 1rem;
+.hero-text h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
 }
 
-.home-content p {
-  color: #666;
+.hero-text p {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  opacity: 0.9;
+  max-width: 680px;
+}
+
+/* ── 3-column grid ── */
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr 0.9fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .home-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Announcement list ── */
+.announcement-list {
+  list-style: none;
+}
+
+.announcement-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.announcement-item:last-child {
+  border-bottom: none;
+}
+
+.ann-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.ann-event   { background: #552B9A; }
+.ann-resource { background: #28a745; }
+.ann-deadline { background: #dc3545; }
+.ann-update   { background: #007bff; }
+
+.ann-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.ann-title {
+  font-size: 0.87rem;
+  color: #222;
+  font-weight: 500;
+}
+
+.ann-date {
+  font-size: 0.76rem;
+  color: #999;
+  margin-top: 1px;
+}
+
+/* ── Quick links grid ── */
+.quick-links-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.quick-link-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: #f7f3fa;
+  border-radius: 7px;
+  padding: 0.6rem 0.75rem;
+  text-decoration: none;
+  transition: background-color 0.15s;
+}
+
+.quick-link-item:hover {
+  background: #ede0f5;
+}
+
+.ql-icon {
   font-size: 1.1rem;
+}
+
+.ql-label {
+  font-size: 0.82rem;
+  color: #333;
+  font-weight: 500;
+}
+
+/* ── Activity list ── */
+.activity-list {
+  list-style: none;
+}
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #552B9A;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.activity-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-main {
+  font-size: 0.84rem;
+  color: #333;
+  line-height: 1.45;
+}
+
+.activity-main em {
+  color: #552B9A;
+  font-style: normal;
+  font-weight: 500;
+}
+
+.activity-time {
+  font-size: 0.74rem;
+  color: #999;
+  margin-top: 2px;
+}
+
+/* ── Event list ── */
+.event-list {
+  list-style: none;
+}
+
+.event-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.event-item:last-child {
+  border-bottom: none;
+}
+
+.event-date-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f7f3fa;
+  border-radius: 6px;
+  padding: 0.35rem 0.55rem;
+  min-width: 44px;
+  flex-shrink: 0;
+}
+
+.event-month {
+  font-size: 0.7rem;
+  color: #552B9A;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.event-day {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  line-height: 1.2;
+}
+
+.event-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.event-title {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #222;
+}
+
+.event-meta {
+  font-size: 0.76rem;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 2px;
+}
+
+.event-scope {
+  padding: 0.15rem 0.45rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.scope-committee { background: #e8d5f5; color: #552B9A; }
+.scope-system    { background: #cce5ff; color: #004085; }
+.scope-group     { background: #d4edda; color: #155724; }
+.scope-deadline  { background: #f8d7da; color: #721c24; }
+
+/* ── Good News ── */
+.good-news-text {
+  font-size: 0.88rem;
+  color: #444;
+  line-height: 1.55;
 }

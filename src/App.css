@@ -1,3 +1,208 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  color: #1a1a1a;
+  background-color: #f4f6f8;
+}
+
 .App {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* Shared page header style */
+.page-header {
+  margin-bottom: 1.75rem;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid #552B9A;
+}
+
+.page-header h1 {
+  font-size: 1.85rem;
+  color: #552B9A;
+  font-weight: 700;
+}
+
+.page-header p {
+  color: #555;
+  margin-top: 0.35rem;
+  font-size: 0.95rem;
+}
+
+/* Shared card style */
+.ic-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.ic-card h2 {
+  font-size: 1.1rem;
+  color: #552B9A;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #eee;
+}
+
+/* Purple button */
+.btn-purple {
+  display: inline-block;
+  background-color: #552B9A;
+  color: #fff;
+  border: none;
+  padding: 0.55rem 1.25rem;
+  border-radius: 5px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  letter-spacing: 0.5px;
+  transition: background-color 0.2s;
+}
+
+.btn-purple:hover {
+  background-color: #3d1f73;
+}
+
+/* Outline button */
+.btn-outline {
+  display: inline-block;
+  background: transparent;
+  color: #552B9A;
+  border: 2px solid #552B9A;
+  padding: 0.5rem 1.1rem;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.btn-outline:hover {
+  background-color: #552B9A;
+  color: #fff;
+}
+
+/* Status badges */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.badge-pending { background: #fff3cd; color: #856404; }
+.badge-review  { background: #cce5ff; color: #004085; }
+.badge-approved { background: #d4edda; color: #155724; }
+.badge-active  { background: #d4edda; color: #155724; }
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 1.25rem 1rem;
+  }
+}
+
+/* ── Footer ── */
+.ic-footer {
+  background-color: #798490;
+  color: #fff;
+  margin-top: 3rem;
+  padding: 2rem 1.5rem 1.25rem;
+}
+
+.ic-footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 2rem;
+}
+
+.ic-footer h3 {
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin-bottom: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #fff;
+}
+
+.ic-footer ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ic-footer ul li {
+  margin-bottom: 0.4rem;
+}
+
+.ic-footer a {
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+  font-size: 0.82rem;
+  transition: color 0.15s;
+}
+
+.ic-footer a:hover {
+  color: #fff;
+}
+
+.ic-footer-brand {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.ic-footer-desc {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.55;
+  max-width: 260px;
+}
+
+.ic-footer-bottom {
+  max-width: 1200px;
+  margin: 1.5rem auto 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+@media (max-width: 768px) {
+  .ic-footer-inner {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .ic-footer-inner {
+    grid-template-columns: 1fr;
+  }
 }
