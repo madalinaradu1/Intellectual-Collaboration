@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './Navbar.css';
+import logo from '../logo.png';
 
 const navItems = [
   {
@@ -64,6 +65,9 @@ const navItems = [
       { label: 'My Profile', path: '/profile' },
     ],
   },
+  {
+    label: 'WordPress', path: 'https://sites.gcu.edu/ic/'
+  },
 ];
 
 /* Single dropdown used on desktop */
@@ -106,7 +110,8 @@ export default function Navbar({ user, signOut }) {
     <header className="ic-header">
       {/* GCU top bar */}
       <div className="gcu-topbar">
-        <span className="gcu-logo">GCU</span>
+        <span className="gcu-logo"><a href="https://www.gcu.edu/"><img src={logo}/></a> </span>
+        
       </div>
 
       {/* Main nav */}

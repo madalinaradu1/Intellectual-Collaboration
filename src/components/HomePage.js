@@ -59,7 +59,7 @@ export default function HomePage({ user }) {
       {/* Hero / welcome banner */}
       <div className="home-hero">
         <div className="hero-text">
-          <h1>Welcome back{user?.username ? `, ${user.username.split('@')[0]}` : ''}</h1>
+          <h1>Welcome back{user?.attributes?.name ? `, ${user.attributes.name.split('@')[0]}` : ''}</h1>
           <p>{missionText}</p>
         </div>
       </div>

@@ -18,10 +18,10 @@ export default function ProfilePage({ user }) {
         <div className="ic-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
             <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#552B9A', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 700, flexShrink: 0 }}>
-              {(user?.username || 'U').charAt(0).toUpperCase()}
+              {(user?.attributes?.name || 'U').charAt(0).toUpperCase()}
             </div>
             <div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#222' }}>{user?.username || 'User'}</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#222' }}>{user?.attributes?.name || 'User'}</div>
               <div style={{ fontSize: '0.82rem', color: '#888' }}>Doctoral Student</div>
             </div>
           </div>
@@ -29,7 +29,7 @@ export default function ProfilePage({ user }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #f0f0f0' }}>
               <span style={{ fontSize: '0.82rem', color: '#888' }}>Email</span>
-              <span style={{ fontSize: '0.82rem', color: '#333' }}>{user?.attributes?.email || 'Not provided'}</span>
+              <span style={{ fontSize: '0.82rem', color: '#333' }}> {user?.attributes?.email || 'Not provided'}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #f0f0f0' }}>
               <span style={{ fontSize: '0.82rem', color: '#888' }}>Program</span>
@@ -38,10 +38,6 @@ export default function ProfilePage({ user }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #f0f0f0' }}>
               <span style={{ fontSize: '0.82rem', color: '#888' }}>Committee Chair</span>
               <span style={{ fontSize: '0.82rem', color: '#552B9A' }}>Dr. Sarah Martinez</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0' }}>
-              <span style={{ fontSize: '0.82rem', color: '#888' }}>Member Since</span>
-              <span style={{ fontSize: '0.82rem', color: '#333' }}>Sep 2023</span>
             </div>
           </div>
           <button className="btn-outline" style={{ marginTop: '1rem' }}>Edit Profile</button>
