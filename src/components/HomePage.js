@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import './HomePage.css';
 
-/* ── Mock data (replace with GraphQL queries when backend is ready) ── */
+// Mock data - replace with GraphQL queries when backend is ready
 const announcements = [
   { id: 1, title: 'Spring 2025 Dissertation Webinars Now Scheduled', date: 'Jan 28, 2025', type: 'event' },
   { id: 2, title: 'New AI Skills Lab Resources Available', date: 'Jan 22, 2025', type: 'resource' },
@@ -34,116 +34,178 @@ const calendarEvents = [
   { id: 4, title: 'EDD Community Meeting', date: 'Feb 18', time: '10:00 AM', scope: 'Group' },
 ];
 
-/* ── Mission statement ── */
-const missionText =
+// Mission statement
+const MISSION_TEXT = 
   'The Intellectual Collaboration platform is dedicated to fostering a supportive, ' +
   'connected community for doctoral students, faculty, and staff at Grand Canyon University. ' +
   'Our mission is to provide the tools, resources, and connections necessary for academic excellence ' +
   'and professional growth throughout your doctoral journey.';
 
-/* ── Scope badge colors ── */
-function scopeClass(scope) {
-  switch (scope) {
-    case 'Committee': return 'scope-committee';
-    case 'System':    return 'scope-system';
-    case 'Group':     return 'scope-group';
-    case 'Deadline':  return 'scope-deadline';
-    default:          return '';
-  }
+/**
+ * Returns CSS class name for event scope badges
+ * @param {string} scope - Event scope type
+ * @returns {string} CSS class name
+ */
+function getScopeClass(scope) {
+  const scopeMap = {
+    'Committee': 'scope-committee',
+    'System': 'scope-system',
+    'Group': 'scope-group',
+    'Deadline': 'scope-deadline',
+  };
+  return scopeMap[scope] || '';
 }
 
+/**
+ * AnnouncementItem component for rendering individual announcements
+ */
+function AnnouncementItem({ announcement }) {
+  return (
+    <li className="announcement-item">
+      <span className={`ann-dot ann-${announcement.type}`} aria-hidden="true" />
+      <div className="ann-content">
+        <span className="ann-title">{announcement.title}</span>
+        <span className="ann-date">{announcement.date}</span>
+      </div>
+    </li>
+  );
+}
+
+/**
+ * ActivityItem component for rendering recent activity items
+ */
+function ActivityItem({ activity }) {
+  return (
+    <li className="activity-item">
+      <span className="activity-avatar" aria-hidden="true">
+        {activity.user.charAt(0)}
+      </span>
+      <div className="activity-text">
+        <span className="activity-main">
+          <strong>{activity.user}</strong> {activity.action}{' '}
+          <em>{activity.target}</em>
+        </span>
+        <span className="activity-time">{activity.time}</span>
+      </div>
+    </li>
+  );
+}
+
+/**
+ * EventItem component for rendering calendar events
+ */
+function EventItem({ event }) {
+  const [month, day] = event.date.split(' ');
+  
+  return (
+    <li className="event-item">
+      <div className="event-date-box">
+        <span className="event-month">{month}</span>
+        <span className="event-day">{day}</span>
+      </div>
+      <div className="event-details">
+        <span className="event-title">{event.title}</span>
+        <span className="event-meta">
+          {event.time}
+          <span className={`event-scope ${getScopeClass(event.scope)}`}>
+            {event.scope}
+          </span>
+        </span>
+      </div>
+    </li>
+  );
+}
+
+/**
+ * HomePage component - Main dashboard for authenticated users
+ * Displays announcements, quick links, recent activity, and upcoming events
+ * @param {Object} user - Current authenticated user object
+ */
 export default function HomePage({ user }) {
+  // Memoize user display name for performance
+  const userDisplayName = useMemo(() => {
+    if (!user?.attributes?.name) return '';
+    const name = user.attributes.name.split('@')[0];
+    return name ? `, ${name}` : '';
+  }, [user?.attributes?.name]);
+
   return (
     <div className="home-page">
-
-      {/* Hero / welcome banner */}
-      <div className="home-hero">
+      {/* Hero welcome section */}
+      <section className="home-hero">
         <div className="hero-text">
-          <h1>Welcome back{user?.attributes?.name ? `, ${user.attributes.name.split('@')[0]}` : ''}</h1>
-          <p>{missionText}</p>
+          <h1>Welcome back{userDisplayName}</h1>
+          <p>{MISSION_TEXT}</p>
         </div>
-      </div>
+      </section>
 
-      {/* Three-column layout */}
+      {/* Main dashboard grid */}
       <div className="home-grid">
-
-        {/* LEFT – Announcements + Quick Links */}
-        <div className="home-col home-col-left">
-
+        {/* Left column - Announcements and Quick Links */}
+        <aside className="home-col home-col-left">
           <div className="ic-card">
             <h2>📢 Announcements</h2>
-            <ul className="announcement-list">
-              {announcements.map((a) => (
-                <li key={a.id} className="announcement-item">
-                  <span className={`ann-dot ann-${a.type}`} />
-                  <div className="ann-content">
-                    <span className="ann-title">{a.title}</span>
-                    <span className="ann-date">{a.date}</span>
-                  </div>
-                </li>
+            <ul className="announcement-list" role="list">
+              {announcements.map((announcement) => (
+                <AnnouncementItem 
+                  key={announcement.id} 
+                  announcement={announcement} 
+                />
               ))}
             </ul>
           </div>
 
           <div className="ic-card">
             <h2>⚡ Quick Links</h2>
-            <div className="quick-links-grid">
-              {quickLinks.map((ql) => (
-                <Link key={ql.label} to={ql.path} className="quick-link-item">
-                  <span className="ql-icon">{ql.icon}</span>
-                  <span className="ql-label">{ql.label}</span>
+            <div className="quick-links-grid" role="list">
+              {quickLinks.map((link) => (
+                <Link 
+                  key={link.label} 
+                  to={link.path} 
+                  className="quick-link-item"
+                  role="listitem"
+                >
+                  <span className="ql-icon" aria-hidden="true">{link.icon}</span>
+                  <span className="ql-label">{link.label}</span>
                 </Link>
               ))}
             </div>
           </div>
-        </div>
+        </aside>
 
-        {/* CENTER – Recent Activity */}
-        <div className="home-col home-col-center">
+        {/* Center column - Recent Activity */}
+        <main className="home-col home-col-center">
           <div className="ic-card">
             <h2>🕐 Recent Activity</h2>
-            <ul className="activity-list">
-              {recentActivity.map((item) => (
-                <li key={item.id} className="activity-item">
-                  <span className="activity-avatar">{item.user.charAt(0)}</span>
-                  <div className="activity-text">
-                    <span className="activity-main">
-                      <strong>{item.user}</strong> {item.action}{' '}
-                      <em>{item.target}</em>
-                    </span>
-                    <span className="activity-time">{item.time}</span>
-                  </div>
-                </li>
+            <ul className="activity-list" role="list">
+              {recentActivity.map((activity) => (
+                <ActivityItem key={activity.id} activity={activity} />
               ))}
             </ul>
-            <Link to="/forums" className="btn-outline" style={{ marginTop: '0.75rem', display: 'inline-block' }}>
+            <Link 
+              to="/forums" 
+              className="btn-outline" 
+              style={{ marginTop: '0.75rem', display: 'inline-block' }}
+            >
               View All Activity
             </Link>
           </div>
-        </div>
+        </main>
 
-        {/* RIGHT – Calendar + Good News */}
-        <div className="home-col home-col-right">
+        {/* Right column - Calendar and Good News */}
+        <aside className="home-col home-col-right">
           <div className="ic-card">
             <h2>📅 Upcoming Events</h2>
-            <ul className="event-list">
-              {calendarEvents.map((ev) => (
-                <li key={ev.id} className="event-item">
-                  <div className="event-date-box">
-                    <span className="event-month">{ev.date.split(' ')[0]}</span>
-                    <span className="event-day">{ev.date.split(' ')[1]}</span>
-                  </div>
-                  <div className="event-details">
-                    <span className="event-title">{ev.title}</span>
-                    <span className="event-meta">
-                      {ev.time}
-                      <span className={`event-scope ${scopeClass(ev.scope)}`}>{ev.scope}</span>
-                    </span>
-                  </div>
-                </li>
+            <ul className="event-list" role="list">
+              {calendarEvents.map((event) => (
+                <EventItem key={event.id} event={event} />
               ))}
             </ul>
-            <Link to="/calendar" className="btn-outline" style={{ marginTop: '0.75rem', display: 'inline-block' }}>
+            <Link 
+              to="/calendar" 
+              className="btn-outline" 
+              style={{ marginTop: '0.75rem', display: 'inline-block' }}
+            >
               Full Calendar
             </Link>
           </div>
@@ -154,11 +216,15 @@ export default function HomePage({ user }) {
               Congratulations to the EDD Class of 2024 on achieving a 94% dissertation completion rate —
               the highest in department history!
             </p>
-            <Link to="/media" className="btn-purple" style={{ marginTop: '0.75rem', display: 'inline-block' }}>
+            <Link 
+              to="/media" 
+              className="btn-purple" 
+              style={{ marginTop: '0.75rem', display: 'inline-block' }}
+            >
               Watch Alumni Stories
             </Link>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   );

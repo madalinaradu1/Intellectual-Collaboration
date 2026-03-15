@@ -1,9 +1,10 @@
-/* ── GCU top bar ── */
+/* GCU top bar */
 .gcu-topbar {
   background-color: #3d1f73;
   padding: 0.45rem 1.5rem;
   display: flex;
   align-items: center;
+  justify-content: space-between;
 }
 
 .gcu-logo {
@@ -14,7 +15,23 @@
   font-style: italic;
 }
 
-/* ── Main navbar ── */
+.gcu-logo a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.gcu-logo img {
+  height: 24px;
+  width: auto;
+}
+
+.user-welcome {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* Main navbar */
 .ic-navbar {
   display: flex;
   align-items: center;
@@ -35,13 +52,14 @@
   white-space: nowrap;
   margin-right: 1.5rem;
   flex-shrink: 0;
+  transition: color 0.2s ease;
 }
 
 .ic-brand:hover {
   color: #552B9A;
 }
 
-/* ── Desktop nav items ── */
+/* Desktop nav items */
 .ic-nav-items {
   display: flex;
   align-items: center;
@@ -69,7 +87,7 @@
   border-radius: 4px;
   cursor: pointer;
   white-space: nowrap;
-  transition: background-color 0.15s, color 0.15s;
+  transition: all 0.15s ease;
   font-family: inherit;
 }
 
@@ -77,14 +95,25 @@
 .nav-link.active {
   background-color: #f0e6f6;
   color: #552B9A;
+  transform: translateY(-1px);
+}
+
+.nav-link:focus {
+  outline: 2px solid #552B9A;
+  outline-offset: 2px;
 }
 
 .dropdown-arrow {
   font-size: 0.65rem;
   color: #888;
+  transition: transform 0.2s ease;
 }
 
-/* ── Desktop dropdown ── */
+.nav-link.active .dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+/* Desktop dropdown */
 .dropdown {
   position: absolute;
   top: 100%;
@@ -96,11 +125,18 @@
   z-index: 200;
   padding: 0.4rem 0;
   animation: dropIn 0.12s ease;
+  border: 1px solid rgba(0,0,0,0.05);
 }
 
 @keyframes dropIn {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { 
+    opacity: 0; 
+    transform: translateY(-6px) scale(0.95); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
 }
 
 .dropdown-link {
@@ -109,15 +145,16 @@
   text-decoration: none;
   font-size: 0.82rem;
   padding: 0.5rem 1rem;
-  transition: background-color 0.12s, color 0.12s;
+  transition: all 0.12s ease;
 }
 
 .dropdown-link:hover {
   background-color: #f0e6f6;
   color: #552B9A;
+  padding-left: 1.2rem;
 }
 
-/* ── Right icons ── */
+/* Right side controls */
 .ic-nav-right {
   display: flex;
   align-items: center;
@@ -126,23 +163,7 @@
   flex-shrink: 0;
 }
 
-.icon-btn {
-  background: none;
-  border: none;
-  color: #552B9A;
-  cursor: pointer;
-  padding: 0.35rem;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.15s;
-}
-
-.icon-btn:hover {
-  background-color: #f0e6f6;
-}
-
+.icon-btn,
 .hamburger-btn {
   background: none;
   border: none;
@@ -153,19 +174,33 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.15s;
+  transition: all 0.15s ease;
 }
 
+.icon-btn:hover,
 .hamburger-btn:hover {
   background-color: #f0e6f6;
+  transform: scale(1.05);
 }
 
-/* ── Mobile overlay & slide menu ── */
+.icon-btn:focus,
+.hamburger-btn:focus {
+  outline: 2px solid #552B9A;
+  outline-offset: 2px;
+}
+
+/* Mobile overlay & slide menu */
 .mobile-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.4);
   z-index: 300;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .mobile-menu {
@@ -178,29 +213,56 @@
   background: #fff;
   z-index: 301;
   overflow-y: auto;
-  padding: 1.5rem 1.25rem 2rem;
   animation: slideIn 0.22s ease;
+  box-shadow: -4px 0 20px rgba(0,0,0,0.15);
 }
 
 @keyframes slideIn {
   from { transform: translateX(100%); }
-  to   { transform: translateX(0); }
+  to { transform: translateX(0); }
+}
+
+.mobile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 1.25rem 1rem;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 1rem;
+}
+
+.mobile-header h3 {
+  color: #552B9A;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .mobile-close {
-  display: flex;
-  justify-content: flex-end;
   background: none;
   border: none;
   font-size: 1.4rem;
-  color: #333;
+  color: #666;
   cursor: pointer;
-  margin-bottom: 1rem;
-  width: 100%;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.mobile-close:hover {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.mobile-content {
+  padding: 0 1.25rem 2rem;
 }
 
 .mobile-item {
   border-bottom: 1px solid #eee;
+}
+
+.mobile-item:last-child {
+  border-bottom: none;
 }
 
 .mobile-link {
@@ -218,10 +280,16 @@
   cursor: pointer;
   font-family: inherit;
   text-align: left;
+  transition: color 0.15s ease;
 }
 
 .mobile-link:hover {
   color: #552B9A;
+}
+
+.mobile-link:focus {
+  outline: 2px solid #552B9A;
+  outline-offset: 2px;
 }
 
 .mobile-toggle {
@@ -234,7 +302,7 @@
   height: 24px;
   border-radius: 4px;
   font-size: 0.7rem;
-  transition: transform 0.2s;
+  transition: transform 0.2s ease;
 }
 
 .mobile-toggle.open {
@@ -243,6 +311,10 @@
 
 .mobile-children {
   padding: 0.2rem 0 0.7rem 1rem;
+  background-color: #f8f9fa;
+  margin: 0.5rem -1.25rem;
+  padding-left: 2rem;
+  padding-right: 1.25rem;
 }
 
 .mobile-child-link {
@@ -251,11 +323,12 @@
   text-decoration: none;
   font-size: 0.88rem;
   padding: 0.4rem 0;
-  transition: color 0.12s;
+  transition: all 0.12s ease;
 }
 
 .mobile-child-link:hover {
   color: #552B9A;
+  padding-left: 0.5rem;
 }
 
 .mobile-divider {
@@ -276,15 +349,60 @@
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .mobile-signout:hover {
   background: #3d1f73;
+  transform: translateY(-1px);
 }
 
-/* ── Hide desktop nav on small screens, always show hamburger ── */
+.mobile-signout:focus {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Responsive design */
 @media (max-width: 900px) {
   .ic-nav-items {
     display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .gcu-topbar {
+    padding: 0.35rem 1rem;
+  }
+  
+  .ic-navbar {
+    padding: 0.75rem 1rem;
+  }
+  
+  .ic-brand {
+    font-size: 1.2rem;
+    margin-right: 1rem;
+  }
+  
+  .user-welcome {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .gcu-topbar {
+    padding: 0.25rem 0.75rem;
+  }
+  
+  .ic-navbar {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .ic-brand {
+    font-size: 1.1rem;
+  }
+  
+  .mobile-menu {
+    width: 100%;
+    max-width: 100%;
   }
 }

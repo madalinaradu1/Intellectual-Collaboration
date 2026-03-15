@@ -20,13 +20,26 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "test:coverage": "react-scripts test --coverage --watchAll=false",
+    "eject": "react-scripts eject",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
+    "format": "prettier --write src/**/*.{js,jsx,ts,tsx,css,md}",
+    "analyze": "npm run build && npx serve -s build",
+    "clean": "rm -rf build node_modules/.cache"
   },
   "eslintConfig": {
     "extends": [
       "react-app",
       "react-app/jest"
-    ]
+    ],
+    "rules": {
+      "no-console": ["warn", { "allow": ["warn", "error"] }],
+      "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+      "prefer-const": "error",
+      "react/prop-types": "off",
+      "react-hooks/exhaustive-deps": "warn"
+    }
   },
   "browserslist": {
     "production": [
@@ -39,5 +52,23 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx}",
+      "!src/index.js",
+      "!src/reportWebVitals.js",
+      "!src/setupTests.js",
+      "!src/aws-exports.js",
+      "!src/amplifyconfiguration.json"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 70,
+        "functions": 70,
+        "lines": 70,
+        "statements": 70
+      }
+    }
   }
 }

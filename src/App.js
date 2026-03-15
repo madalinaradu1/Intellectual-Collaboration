@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Amplify } from 'aws-amplify';
 import { getCurrentUser, signOut as amplifySignOut, fetchUserAttributes } from 'aws-amplify/auth';
 import awsExports from './aws-exports';
+
+// Component imports
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HomePage from './components/HomePage';
@@ -19,44 +21,88 @@ import HelpPage from './components/HelpPage';
 import LoginPage from './components/LoginPage';
 import './App.css';
 
+// Configure AWS Amplify
 Amplify.configure(awsExports);
 
+/**
+ * Main App component that handles authentication and routing
+ * Manages user state and provides authentication context to child components
+ */
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    checkAuthState();
-  }, []);
-
-  const checkAuthState = async () => {
+  /**
+ * Checks the current authentication state and fetches user data
+ * Called on app initialization and after successful sign-in
+ */
+  const checkAuthState = useCallback(async () => {
     try {
+      setError(null);
       const currentUser = await getCurrentUser();
       const attributes = await fetchUserAttributes();
       setUser({ ...currentUser, attributes });
     } catch (error) {
+      // User is not authenticated - this is expected behavior
       setUser(null);
+      if (error.name !== 'UserUnAuthenticatedException') {
+        console.warn('Auth check failed:', error);
+        setError('Authentication check failed. Please try refreshing the page.');
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  };
+  }, []);
 
-  const signOut = async () => {
+  /**
+   * Handles user sign out and cleans up user state
+   */
+  const signOut = useCallback(async () => {
     try {
       await amplifySignOut();
       setUser(null);
+      setError(null);
     } catch (error) {
       console.error('Error signing out:', error);
+      setError('Sign out failed. Please try again.');
     }
-  };
+  }, []);
 
+  // Initialize authentication state on app load
+  useEffect(() => {
+    checkAuthState();
+  }, [checkAuthState]);
+
+  // Loading state
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading Intellectual Collaboration...</p>
+      </div>
+    );
   }
 
+  // Error state
+  if (error) {
+    return (
+      <div className="error-container">
+        <h2>Something went wrong</h2>
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()} className="btn-purple">
+          Refresh Page
+        </button>
+      </div>
+    );
+  }
+
+  // Unauthenticated state
   if (!user) {
     return <LoginPage onSignIn={checkAuthState} />;
   }
 
+  // Main authenticated app
   return (
     <Router>
       <div className="App">
@@ -68,7 +114,7 @@ function App() {
             <Route path="/review" element={<ReviewPortalPage user={user} />} />
             <Route path="/groups" element={<GroupsPage />} />
             <Route path="/content" element={<ContentPage />} />
-            <Route path="/forums" element={<ForumsPage />} />
+            <Route path="/forums" element={<ForumsPage user={user} />} />
             <Route path="/media" element={<MediaPage />} />
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/admin" element={<AdminPage />} />

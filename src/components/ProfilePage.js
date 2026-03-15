@@ -1,99 +1,174 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import './ProfilePage.css';
 
+/**
+ * ProfilePage component for managing user profile and settings
+ * Displays user information, notification preferences, and linked identities
+ * @param {Object} user - Current authenticated user object
+ */
 export default function ProfilePage({ user }) {
-  const [notifPrefs, setNotifPrefs] = useState({ email: true, push: false, mentions: true });
+  // Notification preferences state
+  const [notifPrefs, setNotifPrefs] = useState({ 
+    email: true, 
+    push: false, 
+    mentions: true 
+  });
+  
+  // Loading state for async operations
+  const [loading, setLoading] = useState(false);
 
-  const toggle = (key) => setNotifPrefs((prev) => ({ ...prev, [key]: !prev[key] }));
+  /**
+   * Toggles notification preference
+   * @param {string} key - Preference key to toggle
+   */
+  const toggleNotification = useCallback((key) => {
+    setNotifPrefs((prev) => ({ ...prev, [key]: !prev[key] }));
+    // TODO: Save to backend when API is ready
+  }, []);
+
+  /**
+   * Handles profile edit action
+   */
+  const handleEditProfile = useCallback(async () => {
+    setLoading(true);
+    try {
+      // TODO: Implement profile editing functionality
+      console.log('Edit profile clicked');
+    } catch (error) {
+      console.error('Failed to edit profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /**
+   * Handles linking Microsoft Teams
+   */
+  const handleLinkTeams = useCallback(async () => {
+    setLoading(true);
+    try {
+      // TODO: Implement Teams linking functionality
+      console.log('Link Teams clicked');
+    } catch (error) {
+      console.error('Failed to link Teams:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Extract user information with fallbacks
+  const userName = user?.attributes?.name || 'User';
+  const userEmail = user?.attributes?.email || 'Not provided';
+  const userInitial = userName.charAt(0).toUpperCase();
+
+  // Notification preferences configuration
+  const notificationOptions = [
+    { 
+      key: 'email', 
+      label: 'Email Notifications', 
+      desc: 'Receive updates via email' 
+    },
+    { 
+      key: 'push', 
+      label: 'Push Notifications', 
+      desc: 'Browser push notifications (opt-in)' 
+    },
+    { 
+      key: 'mentions', 
+      label: 'Mentions & Replies', 
+      desc: 'Notified when someone replies or @mentions you' 
+    },
+  ];
 
   return (
-    <div>
+    <div className="profile-page">
       <div className="page-header">
         <h1>My Profile</h1>
         <p>Manage your account, notifications, and linked identities</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', alignItems: 'start' }}>
-        {/* Profile card */}
-        <div className="ic-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#552B9A', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 700, flexShrink: 0 }}>
-              {(user?.attributes?.name || 'U').charAt(0).toUpperCase()}
+      <div className="profile-grid">
+        {/* Profile Information Card */}
+        <div className="ic-card profile-info-card">
+          <h2>Profile Information</h2>
+          
+          <div className="profile-header">
+            <div className="profile-avatar" aria-hidden="true">
+              {userInitial}
             </div>
-            <div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#222' }}>{user?.attributes?.name || 'User'}</div>
-              <div style={{ fontSize: '0.82rem', color: '#888' }}>Doctoral Student</div>
+            <div className="profile-details">
+              <div className="profile-name">{userName}</div>
+              <div className="profile-role">Doctoral Student</div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #f0f0f0' }}>
-              <span style={{ fontSize: '0.82rem', color: '#888' }}>Email</span>
-              <span style={{ fontSize: '0.82rem', color: '#333' }}> {user?.attributes?.email || 'Not provided'}</span>
+          <div className="profile-fields">
+            <div className="profile-field">
+              <span className="field-label">Email</span>
+              <span className="field-value">{userEmail}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #f0f0f0' }}>
-              <span style={{ fontSize: '0.82rem', color: '#888' }}>Program</span>
-              <span style={{ fontSize: '0.82rem', color: '#333' }}>EDD – Organizational Leadership</span>
+            <div className="profile-field">
+              <span className="field-label">Program</span>
+              <span className="field-value">EDD – Organizational Leadership</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderBottom: '1px solid #f0f0f0' }}>
-              <span style={{ fontSize: '0.82rem', color: '#888' }}>Committee Chair</span>
-              <span style={{ fontSize: '0.82rem', color: '#552B9A' }}>Dr. Sarah Martinez</span>
+            <div className="profile-field">
+              <span className="field-label">Committee Chair</span>
+              <span className="field-value field-value-link">Dr. Sarah Martinez</span>
             </div>
           </div>
-          <button className="btn-outline" style={{ marginTop: '1rem' }}>Edit Profile</button>
+          
+          <button 
+            className="btn-outline" 
+            onClick={handleEditProfile}
+            disabled={loading}
+          >
+            {loading ? 'Updating...' : 'Edit Profile'}
+          </button>
         </div>
 
-        {/* Notifications */}
-        <div className="ic-card">
+        {/* Notification Preferences Card */}
+        <div className="ic-card notifications-card">
           <h2>Notification Preferences</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-            {[
-              { key: 'email', label: 'Email Notifications', desc: 'Receive updates via email' },
-              { key: 'push', label: 'Push Notifications', desc: 'Browser push notifications (opt-in)' },
-              { key: 'mentions', label: 'Mentions & Replies', desc: 'Notified when someone replies or @mentions you' },
-            ].map((pref) => (
-              <div key={pref.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 0', borderBottom: '1px solid #f0f0f0' }}>
-                <div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#222' }}>{pref.label}</div>
-                  <div style={{ fontSize: '0.76rem', color: '#888' }}>{pref.desc}</div>
+          
+          <div className="notification-options">
+            {notificationOptions.map((option) => (
+              <div key={option.key} className="notification-option">
+                <div className="option-info">
+                  <div className="option-label">{option.label}</div>
+                  <div className="option-desc">{option.desc}</div>
                 </div>
-                <div
-                  onClick={() => toggle(pref.key)}
-                  style={{
-                    width: 44,
-                    height: 24,
-                    borderRadius: 12,
-                    background: notifPrefs[pref.key] ? '#552B9A' : '#ccc',
-                    position: 'relative',
-                    cursor: 'pointer',
-                    transition: 'background 0.2s',
-                    flexShrink: 0,
-                  }}
+                
+                <button
+                  className={`toggle-switch ${notifPrefs[option.key] ? 'active' : ''}`}
+                  onClick={() => toggleNotification(option.key)}
+                  aria-pressed={notifPrefs[option.key]}
+                  aria-label={`Toggle ${option.label}`}
                 >
-                  <div style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: '50%',
-                    background: '#fff',
-                    position: 'absolute',
-                    top: 2,
-                    left: notifPrefs[pref.key] ? 22 : 2,
-                    transition: 'left 0.2s',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                  }} />
-                </div>
+                  <span className="toggle-slider" aria-hidden="true" />
+                </button>
               </div>
             ))}
           </div>
 
-          <div style={{ marginTop: '1.25rem' }}>
-            <h2 style={{ fontSize: '1rem' }}>Linked Identities</h2>
-            <div style={{ fontSize: '0.85rem', color: '#555', padding: '0.5rem 0', borderBottom: '1px solid #f0f0f0' }}>
-              GCU SSO &nbsp;— <span style={{ color: '#28a745', fontWeight: 600 }}>Connected</span>
+          {/* Linked Identities Section */}
+          <div className="linked-identities">
+            <h3>Linked Identities</h3>
+            
+            <div className="identity-item">
+              <span className="identity-name">GCU SSO</span>
+              <span className="identity-status connected">Connected</span>
             </div>
-            <div style={{ fontSize: '0.85rem', color: '#555', padding: '0.5rem 0' }}>
-              Microsoft Teams &nbsp;— <span style={{ color: '#888' }}>Not linked</span>
-              <button className="btn-outline" style={{ fontSize: '0.72rem', padding: '0.2rem 0.55rem', marginLeft: '0.5rem' }}>Link</button>
+            
+            <div className="identity-item">
+              <span className="identity-name">Microsoft Teams</span>
+              <span className="identity-status not-linked">Not linked</span>
+              <button 
+                className="btn-outline btn-small" 
+                onClick={handleLinkTeams}
+                disabled={loading}
+              >
+                {loading ? 'Linking...' : 'Link'}
+              </button>
             </div>
           </div>
         </div>

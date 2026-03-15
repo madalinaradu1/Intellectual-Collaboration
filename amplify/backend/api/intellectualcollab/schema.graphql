@@ -7,3 +7,25 @@ type Todo @model {
   name: String!
   description: String
 }
+
+type Forum @model {
+  id: ID!
+  title: String!
+  groupName: String!
+  description: String
+  createdBy: String
+  posts: [Post] @hasMany(indexName: "byForum", fields: ["id"])
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Post @model {
+  id: ID!
+  body: String!
+  author: String!
+  createdBy: String
+  forumID: ID! @index(name: "byForum")
+  forum: Forum @belongsTo(fields: ["forumID"])
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}

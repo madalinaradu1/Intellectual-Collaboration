@@ -1,143 +1,426 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { generateClient } from 'aws-amplify/api';
+import { listForums } from '../graphql/queries';
+import { createForum, updateForum, deleteForum } from '../graphql/mutations';
+import ForumPostsPage from './ForumPostsPage';
+import ConfirmModal from './ConfirmModal';
 
-const forums = [
-  { id: 1, groupName: 'EDD Community', title: 'General Discussion', threads: 24, lastPost: '2 hours ago' },
-  { id: 2, groupName: 'EDD Community', title: 'Dissertation Tips & Tricks', threads: 18, lastPost: '5 hours ago' },
-  { id: 3, groupName: 'DBA Community', title: 'Research Methods', threads: 31, lastPost: '1 day ago' },
-  { id: 4, groupName: 'PHD Community', title: 'Writing & Publishing', threads: 42, lastPost: '3 hours ago' },
-  { id: 5, groupName: 'DNP Community', title: 'Clinical Practicum', threads: 11, lastPost: '2 days ago' },
-];
+const client = generateClient();
 
-const threads = [
-  { id: 1, title: 'Best approach for mixed-methods research design?', author: 'Sarah K.', posts: 8, lastPost: '2 hours ago', pinned: true },
-  { id: 2, title: 'How to structure Chapter 2 – Literature Review', author: 'James L.', posts: 12, lastPost: '4 hours ago', pinned: true },
-  { id: 3, title: 'APA 7th Edition formatting tips', author: 'Maria G.', posts: 5, lastPost: '1 day ago', pinned: false },
-  { id: 4, title: 'Balancing work and dissertation – anyone else struggling?', author: 'Emily T.', posts: 19, lastPost: '6 hours ago', pinned: false },
-  { id: 5, title: 'IRB submission timeline – what to expect', author: 'David R.', posts: 7, lastPost: '2 days ago', pinned: false },
-];
-
-const posts = [
-  { id: 1, author: 'Sarah K.', avatar: 'SK', body: 'I\'ve been going back and forth on this. My advisor suggested a sequential explanatory design, but I\'m wondering if an exploratory sequential might fit better given my research questions. Has anyone navigated this decision?', time: 'Jan 29, 2025 – 10:15 AM' },
-  { id: 2, author: 'Dr. Martinez', avatar: 'SM', body: 'Great question, Sarah. The key differentiator is whether you want your qualitative findings to inform your quantitative instrument design. If so, exploratory sequential is the way to go. Happy to discuss in office hours.', time: 'Jan 29, 2025 – 11:02 AM' },
-  { id: 3, author: 'James L.', avatar: 'JL', body: 'I went with sequential explanatory for my dissertation and it worked well. The important thing is being able to defend your choice in Chapter 3. Make sure your research questions clearly align with your design.', time: 'Jan 29, 2025 – 2:30 PM' },
-  { id: 4, author: 'Chris M.', avatar: 'CM', body: 'One thing that helped me was creating a design matrix mapping each research question to the method and data source. Made the justification much easier to write.', time: 'Jan 30, 2025 – 9:45 AM' },
-];
-
-export default function ForumsPage() {
-  const [view, setView] = useState('forums'); // forums | threads | posts
+/**
+ * Forums page component for managing forum discussions
+ * Allows users to create, edit, delete, and view forums
+ */
+export default function ForumsPage({ user }) {
+  // UI state management
+  const [showCreateForum, setShowCreateForum] = useState(false);
   const [selectedForum, setSelectedForum] = useState(null);
-  const [selectedThread, setSelectedThread] = useState(null);
-  const [newPost, setNewPost] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [forumToDelete, setForumToDelete] = useState(null);
+  
+  // Form data states
+  const [newForumTitle, setNewForumTitle] = useState('');
+  const [newForumGroup, setNewForumGroup] = useState('');
+  const [newForumDescription, setNewForumDescription] = useState('');
+  const [editingForum, setEditingForum] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [formErrors, setFormErrors] = useState({});
+  
+  // Data and loading states
+  const [forums, setForums] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
 
-  // Navigation helpers
-  const goToForum = (forum) => { setSelectedForum(forum); setView('threads'); setSelectedThread(null); };
-  const goToThread = (thread) => { setSelectedThread(thread); setView('posts'); };
-  const goBack = () => {
-    if (view === 'posts') { setView('threads'); setSelectedThread(null); }
-    else { setView('forums'); setSelectedForum(null); }
+  // Load forums on component mount
+  useEffect(() => {
+    fetchForums();
+  }, []);
+
+  // === API FUNCTIONS ===
+  
+  /** Fetch all forums from the database */
+  const fetchForums = async () => {
+    setLoading(true);
+    try {
+      const result = await client.graphql({ query: listForums });
+      setForums(result.data.listForums.items);
+    } catch (error) {
+      console.error('Error fetching forums:', error);
+    }
+    setLoading(false);
   };
+
+  /** Validate form inputs and return errors object */
+  const validateForm = () => {
+    const errors = {};
+    if (!newForumTitle.trim()) errors.title = 'Forum title is required';
+    if (!newForumGroup.trim()) errors.group = 'Group name is required';
+    return errors;
+  };
+
+  /** Get current user identifier */
+  const getCurrentUserId = () => {
+    return user?.attributes?.name || user?.name || user?.username || user?.email || 'Anonymous';
+  };
+
+  /** Reset form to initial state */
+  const resetForm = () => {
+    setNewForumTitle('');
+    setNewForumGroup('');
+    setNewForumDescription('');
+    setFormErrors({});
+    setShowCreateForum(false);
+  };
+
+  /** Create a new forum */
+  const handleCreateForum = async () => {
+    const errors = validateForm();
+    setFormErrors(errors);
+    
+    if (Object.keys(errors).length > 0) return;
+    
+    setCreating(true);
+    try {
+      await client.graphql({
+        query: createForum,
+        variables: {
+          input: {
+            title: newForumTitle.trim(),
+            groupName: newForumGroup.trim(),
+            description: newForumDescription.trim() || null,
+            createdBy: getCurrentUserId()
+          }
+        }
+      });
+      
+      resetForm();
+      fetchForums();
+    } catch (error) {
+      console.error('Error creating forum:', error);
+      const errorMessage = error.errors?.[0]?.message || error.message || 'Unknown error';
+      alert(`Failed to create forum: ${errorMessage}`);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  /** Start editing a forum */
+  const handleEditForum = (forum) => {
+    setEditingForum(forum.id);
+    setEditTitle(forum.title);
+    setEditDescription(forum.description || '');
+  };
+
+  /** Update forum with new data */
+  const handleUpdateForum = async () => {
+    if (!editTitle.trim()) {
+      alert('Forum title cannot be empty');
+      return;
+    }
+    
+    try {
+      await client.graphql({
+        query: updateForum,
+        variables: {
+          input: {
+            id: editingForum,
+            title: editTitle.trim(),
+            description: editDescription.trim() || null
+          }
+        }
+      });
+      
+      // Reset edit state
+      setEditingForum(null);
+      setEditTitle('');
+      setEditDescription('');
+      fetchForums();
+    } catch (error) {
+      console.error('Error updating forum:', error);
+      alert('Failed to update forum');
+    }
+  };
+
+  /** Initiate forum deletion with confirmation */
+  const handleDeleteForum = (forum) => {
+    setForumToDelete(forum);
+    setShowDeleteConfirm(true);
+  };
+
+  /** Confirm and execute forum deletion */
+  const confirmDelete = async () => {
+    try {
+      await client.graphql({
+        query: deleteForum,
+        variables: { input: { id: forumToDelete.id } }
+      });
+      fetchForums();
+    } catch (error) {
+      console.error('Error deleting forum:', error);
+      alert('Failed to delete forum');
+    }
+    
+    // Reset delete state
+    setShowDeleteConfirm(false);
+    setForumToDelete(null);
+  };
+
+  /** Cancel forum deletion */
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setForumToDelete(null);
+  };
+
+  // === PERMISSION CHECKS ===
+  
+  /** Check if user can edit forum (creator or admin) */
+  const canEditForum = (forum) => {
+    if (!user) return false;
+    const currentUserId = getCurrentUserId();
+    const isAdmin = user.isAdmin || user?.attributes?.['custom:role'] === 'admin';
+    return currentUserId === forum.createdBy || isAdmin;
+  };
+
+  /** Check if user can delete forum (creator or admin) */
+  const canDeleteForum = (forum) => {
+    if (!user) return false;
+    const currentUserId = getCurrentUserId();
+    const isAdmin = user.isAdmin || user?.attributes?.['custom:role'] === 'admin';
+    return currentUserId === forum.createdBy || isAdmin;
+  };
+
+  // === UTILITY FUNCTIONS ===
+  
+  /** Format timestamp to relative time */
+  const formatTime = (timestamp) => {
+    if (!timestamp) return 'Unknown';
+    
+    const now = new Date();
+    const postTime = new Date(timestamp);
+    const diff = now - postTime;
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    return `${days} day${days > 1 ? 's' : ''} ago`;
+  };
+
+  // === STYLES ===
+  const inputStyle = {
+    width: '100%',
+    padding: '0.5rem',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    marginBottom: '0.5rem'
+  };
+
+  const cardStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    transition: 'box-shadow 0.15s'
+  };
+
+  // If a forum is selected, show the posts page
+  if (selectedForum) {
+    return (
+      <ForumPostsPage 
+        forum={selectedForum} 
+        user={user} 
+        onBack={() => setSelectedForum(null)} 
+      />
+    );
+  }
 
   return (
     <div>
+      {/* Page Header */}
       <div className="page-header">
         <h1>Forums & Messaging</h1>
         <p>Discuss, collaborate, and connect with your communities</p>
       </div>
 
-      {/* Breadcrumb */}
-      {view !== 'forums' && (
-        <div style={{ fontSize: '0.8rem', color: '#888', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          <button className="btn-outline" onClick={goBack} style={{ fontSize: '0.75rem', padding: '0.25rem 0.6rem' }}>← Back</button>
-          <span>{selectedForum?.groupName} &rsaquo; {selectedForum?.title}{view === 'posts' ? ` › ${selectedThread?.title}` : ''}</span>
+      {/* Header with Create Button */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <span style={{ fontSize: '0.85rem', color: '#666' }}>{forums.length} forums</span>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button className="btn-outline" onClick={fetchForums} style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>Refresh</button>
+          <button className="btn-purple" onClick={() => setShowCreateForum(true)}>+ Create Forum</button>
+        </div>
+      </div>
+
+      {/* Create Forum Form */}
+      {showCreateForum && (
+        <div className="ic-card" style={{ marginBottom: '1rem' }}>
+          <h3 style={{ margin: '0 0 1rem 0' }}>Create New Forum</h3>
+          <input
+            type="text"
+            placeholder="Forum title"
+            value={newForumTitle}
+            onChange={(e) => {
+              setNewForumTitle(e.target.value);
+              if (formErrors.title) {
+                setFormErrors(prev => ({ ...prev, title: '' }));
+              }
+            }}
+            style={{
+              ...inputStyle,
+              borderColor: formErrors.title ? '#dc3545' : '#ccc'
+            }}
+          />
+          {formErrors.title && (
+            <div style={{ color: '#dc3545', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+              {formErrors.title}
+            </div>
+          )}
+          <input
+            type="text"
+            placeholder="Group name (e.g., EDD Community)"
+            value={newForumGroup}
+            onChange={(e) => {
+              setNewForumGroup(e.target.value);
+              if (formErrors.group) {
+                setFormErrors(prev => ({ ...prev, group: '' }));
+              }
+            }}
+            style={{
+              ...inputStyle,
+              borderColor: formErrors.group ? '#dc3545' : '#ccc'
+            }}
+          />
+          {formErrors.group && (
+            <div style={{ color: '#dc3545', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
+              {formErrors.group}
+            </div>
+          )}
+          <textarea
+            placeholder="Description (optional)"
+            value={newForumDescription}
+            onChange={(e) => setNewForumDescription(e.target.value)}
+            rows={3}
+            style={{
+              ...inputStyle,
+              marginBottom: '1rem',
+              resize: 'vertical'
+            }}
+          />
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button 
+              className="btn-purple" 
+              onClick={handleCreateForum}
+              disabled={creating}
+            >
+              {creating ? 'Creating...' : 'Create'}
+            </button>
+            <button 
+              className="btn-outline" 
+              onClick={resetForm}
+              disabled={creating}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
 
-      {/* FORUMS LIST */}
-      {view === 'forums' && (
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <span style={{ fontSize: '0.85rem', color: '#666' }}>{forums.length} forums</span>
-            <button className="btn-purple">+ Create Forum</button>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-            {forums.map((f) => (
-              <div key={f.id} className="ic-card" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '1rem', transition: 'box-shadow 0.15s' }}
-                onClick={() => goToForum(f)}
-                onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(107,45,139,0.18)')}
-                onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)')}
-              >
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#552B9A', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>💬</div>
+      {/* Forums List */}
+      {loading ? (
+        <div>Loading...</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+          {forums.length === 0 ? (
+            <div className="ic-card" style={{ textAlign: 'center', color: '#666' }}>
+              No forums yet. Create the first one!
+            </div>
+          ) : (
+            forums.map((forum) => (
+              <div key={forum.id} className="ic-card" style={cardStyle}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#552B9A', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>
+                  💬
+                </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, color: '#222', fontSize: '0.9rem' }}>{f.title}</div>
-                  <div style={{ fontSize: '0.78rem', color: '#888' }}>{f.groupName} &nbsp;|&nbsp; {f.threads} threads &nbsp;|&nbsp; Last post: {f.lastPost}</div>
+                  {editingForum === forum.id ? (
+                    <div>
+                      <input
+                        type="text"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        style={{ ...inputStyle, marginBottom: '0.5rem' }}
+                        placeholder="Forum title"
+                      />
+                      <textarea
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        style={{ ...inputStyle, marginBottom: '0.5rem', resize: 'vertical' }}
+                        placeholder="Description (optional)"
+                        rows={2}
+                      />
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button className="btn-purple" onClick={handleUpdateForum} style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>Save</button>
+                        <button className="btn-outline" onClick={() => setEditingForum(null)} style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ fontWeight: 600, color: '#222', fontSize: '0.9rem' }}>{forum.title}</div>
+                      <div style={{ fontSize: '0.78rem', color: '#888', marginBottom: '0.25rem' }}>
+                        {forum.groupName} | Created: {formatTime(forum.createdAt)}
+                      </div>
+                      {forum.description && (
+                        <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '0.5rem' }}>
+                          {forum.description}
+                        </div>
+                      )}
+                      <button 
+                        className="btn-outline" 
+                        onClick={() => setSelectedForum(forum)}
+                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                      >
+                        View Posts
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* THREADS LIST */}
-      {view === 'threads' && (
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h2 style={{ fontSize: '1.1rem', color: '#552B9A', margin: 0 }}>{selectedForum?.title}</h2>
-            <button className="btn-purple">+ New Thread</button>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {threads.map((t) => (
-              <div key={t.id} className="ic-card" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.85rem', transition: 'box-shadow 0.15s' }}
-                onClick={() => goToThread(t)}
-                onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(107,45,139,0.18)')}
-                onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)')}
-              >
-                {t.pinned && <span style={{ fontSize: '0.68rem', background: '#fff3cd', color: '#856404', padding: '0.2rem 0.5rem', borderRadius: '10px', fontWeight: 600, whiteSpace: 'nowrap' }}>📌 Pinned</span>}
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, color: '#222', fontSize: '0.88rem' }}>{t.title}</div>
-                  <div style={{ fontSize: '0.76rem', color: '#888' }}>by {t.author} &nbsp;|&nbsp; {t.posts} posts &nbsp;|&nbsp; {t.lastPost}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* POSTS VIEW */}
-      {view === 'posts' && (
-        <div>
-          <h2 style={{ fontSize: '1.05rem', color: '#222', marginBottom: '1rem' }}>{selectedThread?.title}</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {posts.map((p) => (
-              <div key={p.id} className="ic-card">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
-                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#552B9A', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, flexShrink: 0 }}>
-                    {p.avatar}
+                {editingForum !== forum.id && (
+                  <div style={{ display: 'flex', gap: '0.25rem' }}>
+                    {canEditForum(forum) && (
+                      <button 
+                        onClick={() => handleEditForum(forum)} 
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}
+                        title="Edit forum"
+                      >
+                        ✏️
+                      </button>
+                    )}
+                    {canDeleteForum(forum) && (
+                      <button 
+                        onClick={() => handleDeleteForum(forum)} 
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#dc3545' }}
+                        title="Delete forum"
+                      >
+                        🗑️
+                      </button>
+                    )}
                   </div>
-                  <div>
-                    <span style={{ fontWeight: 600, fontSize: '0.85rem', color: '#222' }}>{p.author}</span>
-                    <span style={{ fontSize: '0.72rem', color: '#999', marginLeft: '0.5rem' }}>{p.time}</span>
-                  </div>
-                </div>
-                <p style={{ fontSize: '0.87rem', color: '#444', lineHeight: 1.6, paddingLeft: '2.6rem' }}>{p.body}</p>
+                )}
               </div>
-            ))}
-          </div>
-
-          {/* New post box */}
-          <div className="ic-card" style={{ marginTop: '1rem' }}>
-            <textarea
-              placeholder="Write a reply..."
-              value={newPost}
-              onChange={(e) => setNewPost(e.target.value)}
-              rows={3}
-              style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '6px', border: '1px solid #ccc', fontSize: '0.87rem', resize: 'vertical', outline: 'none', fontFamily: 'inherit' }}
-              onFocus={(e) => (e.target.style.borderColor = '#552B9A')}
-              onBlur={(e) => (e.target.style.borderColor = '#ccc')}
-            />
-            <button className="btn-purple" style={{ marginTop: '0.6rem' }} onClick={() => setNewPost('')}>Post Reply</button>
-          </div>
+            ))
+          )}
         </div>
       )}
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title="Delete Forum"
+        message={`Are you sure you want to delete "${forumToDelete?.title}"? This will also delete all posts in this forum. This action cannot be undone.`}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </div>
   );
 }
