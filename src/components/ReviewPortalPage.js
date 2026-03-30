@@ -48,7 +48,7 @@ function stageBadge(stage) {
   return 'badge badge-pending';
 }
 
-export default function ReviewPortalPage({ user }) {
+export default function ReviewPortalPage() {
   return (
     <div>
       <div className="page-header">
