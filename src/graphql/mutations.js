@@ -190,3 +190,117 @@ export const deletePost = /* GraphQL */ `
     }
   }
 `;
+export const createPersonalEvent = /* GraphQL */ `
+  mutation CreatePersonalEvent(
+    $input: CreatePersonalEventInput!
+    $condition: ModelPersonalEventConditionInput
+  ) {
+    createPersonalEvent(input: $input, condition: $condition) {
+      id
+      title
+      date
+      time
+      location
+      notes
+      owner
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const updatePersonalEvent = /* GraphQL */ `
+  mutation UpdatePersonalEvent(
+    $input: UpdatePersonalEventInput!
+    $condition: ModelPersonalEventConditionInput
+  ) {
+    updatePersonalEvent(input: $input, condition: $condition) {
+      id
+      title
+      date
+      time
+      location
+      notes
+      owner
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const deletePersonalEvent = /* GraphQL */ `
+  mutation DeletePersonalEvent(
+    $input: DeletePersonalEventInput!
+    $condition: ModelPersonalEventConditionInput
+  ) {
+    deletePersonalEvent(input: $input, condition: $condition) {
+      id
+      title
+      date
+      time
+      location
+      notes
+      owner
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const createGlobalEvent = /* GraphQL */ `
+  mutation CreateGlobalEvent(
+    $input: CreateGlobalEventInput!
+    $condition: ModelGlobalEventConditionInput
+  ) {
+    createGlobalEvent(input: $input, condition: $condition) {
+      id
+      title
+      date
+      time
+      location
+      notes
+      createdBy
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const updateGlobalEvent = /* GraphQL */ `
+  mutation UpdateGlobalEvent(
+    $input: UpdateGlobalEventInput!
+    $condition: ModelGlobalEventConditionInput
+  ) {
+    updateGlobalEvent(input: $input, condition: $condition) {
+      id
+      title
+      date
+      time
+      location
+      notes
+      createdBy
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const deleteGlobalEvent = /* GraphQL */ `
+  mutation DeleteGlobalEvent(
+    $input: DeleteGlobalEventInput!
+    $condition: ModelGlobalEventConditionInput
+  ) {
+    deleteGlobalEvent(input: $input, condition: $condition) {
+      id
+      title
+      date
+      time
+      location
+      notes
+      createdBy
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;

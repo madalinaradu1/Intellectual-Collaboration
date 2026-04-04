@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { generateClient } from 'aws-amplify/api';
 import { listPosts } from '../graphql/queries';
 import { createPost, updatePost, deletePost } from '../graphql/mutations';
@@ -49,11 +49,7 @@ export default function ForumPostsPage({ forum, user, onBack }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
 
-  useEffect(() => {
-    if (forum) fetchPosts();
-  }, [forum]);
-
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     setLoading(true);
     try {
       const result = await client.graphql({
@@ -66,7 +62,11 @@ export default function ForumPostsPage({ forum, user, onBack }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [forum]);
+
+  useEffect(() => {
+    if (forum) fetchPosts();
+  }, [forum, fetchPosts]);
 
   const getCurrentUserName = () =>
     user?.attributes?.name || user?.name || user?.username || user?.email || 'Anonymous';

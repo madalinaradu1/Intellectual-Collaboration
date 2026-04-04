@@ -163,3 +163,111 @@ export const onDeletePost = /* GraphQL */ `
     }
   }
 `;
+export const onCreatePersonalEvent = /* GraphQL */ `
+  subscription OnCreatePersonalEvent(
+    $filter: ModelSubscriptionPersonalEventFilterInput
+  ) {
+    onCreatePersonalEvent(filter: $filter) {
+      id
+      title
+      date
+      time
+      location
+      notes
+      owner
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onUpdatePersonalEvent = /* GraphQL */ `
+  subscription OnUpdatePersonalEvent(
+    $filter: ModelSubscriptionPersonalEventFilterInput
+  ) {
+    onUpdatePersonalEvent(filter: $filter) {
+      id
+      title
+      date
+      time
+      location
+      notes
+      owner
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onDeletePersonalEvent = /* GraphQL */ `
+  subscription OnDeletePersonalEvent(
+    $filter: ModelSubscriptionPersonalEventFilterInput
+  ) {
+    onDeletePersonalEvent(filter: $filter) {
+      id
+      title
+      date
+      time
+      location
+      notes
+      owner
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onCreateGlobalEvent = /* GraphQL */ `
+  subscription OnCreateGlobalEvent(
+    $filter: ModelSubscriptionGlobalEventFilterInput
+  ) {
+    onCreateGlobalEvent(filter: $filter) {
+      id
+      title
+      date
+      time
+      location
+      notes
+      createdBy
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onUpdateGlobalEvent = /* GraphQL */ `
+  subscription OnUpdateGlobalEvent(
+    $filter: ModelSubscriptionGlobalEventFilterInput
+  ) {
+    onUpdateGlobalEvent(filter: $filter) {
+      id
+      title
+      date
+      time
+      location
+      notes
+      createdBy
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onDeleteGlobalEvent = /* GraphQL */ `
+  subscription OnDeleteGlobalEvent(
+    $filter: ModelSubscriptionGlobalEventFilterInput
+  ) {
+    onDeleteGlobalEvent(filter: $filter) {
+      id
+      title
+      date
+      time
+      location
+      notes
+      createdBy
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;

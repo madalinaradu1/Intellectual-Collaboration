@@ -54,7 +54,7 @@ function App() {
     }
   }, []);
 
-  useEffect(() => { checkAuthState(); }, []);
+  useEffect(() => { checkAuthState(); }, [checkAuthState]);
 
   if (loading) {
     return (
@@ -95,7 +95,7 @@ function App() {
             <Route path="/forums" element={<ForumsPage user={user} />} />
             <Route path="/media" element={<MediaPage />} />
             <Route path="/calendar" element={<CalendarPage user={user} />} />
-            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin" element={<AdminPage user={user} />} />
             <Route path="/profile" element={<ProfilePage user={user} />} />
             <Route path="/help" element={<HelpPage />} />
           </Routes>

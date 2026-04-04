@@ -117,7 +117,7 @@ export default function HomePage({ user }) {
         <aside className="home-col home-col-left">
           <div className="ic-card">
             <h2>📢 Announcements</h2>
-            <ul className="announcement-list" role="list">
+            <ul className="announcement-list">
               {announcements.map((announcement) => (
                 <AnnouncementItem 
                   key={announcement.id} 
@@ -148,7 +148,7 @@ export default function HomePage({ user }) {
         <main className="home-col home-col-center">
           <div className="ic-card">
             <h2>🕐 Recent Activity</h2>
-            <ul className="activity-list" role="list">
+            <ul className="activity-list">
               {recentActivity.map((activity) => (
                 <ActivityItem key={activity.id} activity={activity} />
               ))}
@@ -166,7 +166,7 @@ export default function HomePage({ user }) {
         <aside className="home-col home-col-right">
           <div className="ic-card">
             <h2>📅 Upcoming Events</h2>
-            <ul className="event-list" role="list">
+            <ul className="event-list">
               {calendarEvents.map((event) => (
                 <EventItem key={event.id} event={event} />
               ))}

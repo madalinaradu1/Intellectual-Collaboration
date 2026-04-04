@@ -119,6 +119,86 @@ export const listPosts = /* GraphQL */ `
     }
   }
 `;
+export const getPersonalEvent = /* GraphQL */ `
+  query GetPersonalEvent($id: ID!) {
+    getPersonalEvent(id: $id) {
+      id
+      title
+      date
+      time
+      location
+      notes
+      owner
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const listPersonalEvents = /* GraphQL */ `
+  query ListPersonalEvents(
+    $filter: ModelPersonalEventFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    listPersonalEvents(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        title
+        date
+        time
+        location
+        notes
+        owner
+        createdAt
+        updatedAt
+        __typename
+      }
+      nextToken
+      __typename
+    }
+  }
+`;
+export const getGlobalEvent = /* GraphQL */ `
+  query GetGlobalEvent($id: ID!) {
+    getGlobalEvent(id: $id) {
+      id
+      title
+      date
+      time
+      location
+      notes
+      createdBy
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const listGlobalEvents = /* GraphQL */ `
+  query ListGlobalEvents(
+    $filter: ModelGlobalEventFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    listGlobalEvents(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        title
+        date
+        time
+        location
+        notes
+        createdBy
+        createdAt
+        updatedAt
+        __typename
+      }
+      nextToken
+      __typename
+    }
+  }
+`;
 export const postsByForumID = /* GraphQL */ `
   query PostsByForumID(
     $forumID: ID!
@@ -140,6 +220,38 @@ export const postsByForumID = /* GraphQL */ `
         author
         createdBy
         forumID
+        createdAt
+        updatedAt
+        __typename
+      }
+      nextToken
+      __typename
+    }
+  }
+`;
+export const personalEventsByOwner = /* GraphQL */ `
+  query PersonalEventsByOwner(
+    $owner: String!
+    $sortDirection: ModelSortDirection
+    $filter: ModelPersonalEventFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    personalEventsByOwner(
+      owner: $owner
+      sortDirection: $sortDirection
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+    ) {
+      items {
+        id
+        title
+        date
+        time
+        location
+        notes
+        owner
         createdAt
         updatedAt
         __typename

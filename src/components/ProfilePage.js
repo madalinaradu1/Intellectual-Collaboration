@@ -18,7 +18,6 @@ export default function ProfilePage({ user }) {
     setLoading(true);
     try {
       // TODO: Implement profile editing
-      console.log('Edit profile clicked');
     } finally {
       setLoading(false);
     }
@@ -28,7 +27,6 @@ export default function ProfilePage({ user }) {
     setLoading(true);
     try {
       // TODO: Implement Teams linking
-      console.log('Link Teams clicked');
     } finally {
       setLoading(false);
     }

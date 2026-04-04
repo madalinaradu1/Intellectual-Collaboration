@@ -29,3 +29,23 @@ type Post @model {
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
 }
+
+type PersonalEvent @model {
+  id: ID!
+  title: String!
+  date: String!
+  time: String
+  location: String
+  notes: String
+  owner: String! @index(name: "byOwner")
+}
+
+type GlobalEvent @model {
+  id: ID!
+  title: String!
+  date: String!
+  time: String
+  location: String
+  notes: String
+  createdBy: String!
+}
