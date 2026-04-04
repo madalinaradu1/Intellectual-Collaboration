@@ -42,11 +42,11 @@ function WorkflowTracker({ stage }) {
   );
 }
 
-function stageBadge(stage) {
-  if (stage === 'Approved') return 'badge badge-approved';
-  if (stage === 'In Review') return 'badge badge-review';
-  return 'badge badge-pending';
-}
+const STAGE_BADGE = {
+  'Approved': 'badge badge-approved',
+  'In Review': 'badge badge-review',
+};
+function stageBadge(stage) { return STAGE_BADGE[stage] ?? 'badge badge-pending'; }
 
 export default function ReviewPortalPage() {
   return (

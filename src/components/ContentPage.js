@@ -30,7 +30,6 @@ export default function ContentPage() {
         <p>Browse articles, templates, and uploaded resources</p>
       </div>
 
-      {/* Search + filters */}
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap', alignItems: 'center' }}>
         <input
           type="text"

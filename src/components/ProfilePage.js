@@ -1,67 +1,43 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import './ProfilePage.css';
 
-/**
- * ProfilePage component for managing user profile and settings
- * Displays user information, notification preferences, and linked identities
- * @param {Object} user - Current authenticated user object
- */
 export default function ProfilePage({ user }) {
-  // Notification preferences state
   const [notifPrefs, setNotifPrefs] = useState({ 
     email: true, 
     push: false, 
     mentions: true 
   });
-  
-  // Loading state for async operations
   const [loading, setLoading] = useState(false);
 
-  /**
-   * Toggles notification preference
-   * @param {string} key - Preference key to toggle
-   */
-  const toggleNotification = useCallback((key) => {
+  const toggleNotification = (key) => {
     setNotifPrefs((prev) => ({ ...prev, [key]: !prev[key] }));
-    // TODO: Save to backend when API is ready
-  }, []);
+    // TODO: Save to backend
+  };
 
-  /**
-   * Handles profile edit action
-   */
-  const handleEditProfile = useCallback(async () => {
+  const handleEditProfile = async () => {
     setLoading(true);
     try {
-      // TODO: Implement profile editing functionality
+      // TODO: Implement profile editing
       console.log('Edit profile clicked');
-    } catch (error) {
-      console.error('Failed to edit profile:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  /**
-   * Handles linking Microsoft Teams
-   */
-  const handleLinkTeams = useCallback(async () => {
+  const handleLinkTeams = async () => {
     setLoading(true);
     try {
-      // TODO: Implement Teams linking functionality
+      // TODO: Implement Teams linking
       console.log('Link Teams clicked');
-    } catch (error) {
-      console.error('Failed to link Teams:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  // Extract user information with fallbacks
   const userName = user?.attributes?.name || 'User';
   const userEmail = user?.attributes?.email || 'Not provided';
   const userInitial = userName.charAt(0).toUpperCase();
 
-  // Notification preferences configuration
   const notificationOptions = [
     { 
       key: 'email', 
@@ -88,7 +64,6 @@ export default function ProfilePage({ user }) {
       </div>
 
       <div className="profile-grid">
-        {/* Profile Information Card */}
         <div className="ic-card profile-info-card">
           <h2>Profile Information</h2>
           
@@ -126,7 +101,6 @@ export default function ProfilePage({ user }) {
           </button>
         </div>
 
-        {/* Notification Preferences Card */}
         <div className="ic-card notifications-card">
           <h2>Notification Preferences</h2>
           

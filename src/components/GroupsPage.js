@@ -29,8 +29,7 @@ export default function GroupsPage() {
           <p>{g.description} &nbsp;|&nbsp; {g.members} members</p>
         </div>
 
-        {/* Group tabs */}
-        <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.25rem', borderBottom: '2px solid #eee', paddingBottom: '0.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.25rem', borderBottom: '2px solid #eee', paddingBottom: '0.5rem' }}>
           {['About', 'Members', 'Resources', 'Files', 'Calendar'].map((tab) => (
             <button key={tab} style={{ background: tab === 'About' ? '#552B9A' : 'transparent', color: tab === 'About' ? '#fff' : '#555', border: 'none', padding: '0.45rem 0.9rem', borderRadius: '5px', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem' }}>
               {tab}

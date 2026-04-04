@@ -4,7 +4,6 @@ import { Amplify } from 'aws-amplify';
 import { getCurrentUser, signOut as amplifySignOut, fetchUserAttributes } from 'aws-amplify/auth';
 import awsExports from './aws-exports';
 
-// Component imports
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import HomePage from './components/HomePage';
@@ -21,33 +20,22 @@ import HelpPage from './components/HelpPage';
 import LoginPage from './components/LoginPage';
 import './App.css';
 
-// Configure AWS Amplify
 Amplify.configure(awsExports);
 
-/**
- * Main App component that handles authentication and routing
- * Manages user state and provides authentication context to child components
- */
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  /**
- * Checks the current authentication state and fetches user data
- * Called on app initialization and after successful sign-in
- */
   const checkAuthState = useCallback(async () => {
     try {
       setError(null);
-      const currentUser = await getCurrentUser();
-      const attributes = await fetchUserAttributes();
+      const [currentUser, attributes] = await Promise.all([getCurrentUser(), fetchUserAttributes()]);
       setUser({ ...currentUser, attributes });
-    } catch (error) {
-      // User is not authenticated - this is expected behavior
+    } catch (err) {
       setUser(null);
-      if (error.name !== 'UserUnAuthenticatedException') {
-        console.warn('Auth check failed:', error);
+      if (err.name !== 'UserUnAuthenticatedException') {
+        console.warn('Auth check failed:', err);
         setError('Authentication check failed. Please try refreshing the page.');
       }
     } finally {
@@ -55,26 +43,19 @@ function App() {
     }
   }, []);
 
-  /**
-   * Handles user sign out and cleans up user state
-   */
   const signOut = useCallback(async () => {
     try {
       await amplifySignOut();
       setUser(null);
       setError(null);
-    } catch (error) {
-      console.error('Error signing out:', error);
+    } catch (err) {
+      console.error('Error signing out:', err);
       setError('Sign out failed. Please try again.');
     }
   }, []);
 
-  // Initialize authentication state on app load
-  useEffect(() => {
-    checkAuthState();
-  }, [checkAuthState]);
+  useEffect(() => { checkAuthState(); }, []);
 
-  // Loading state
   if (loading) {
     return (
       <div className="loading-container">
@@ -84,7 +65,6 @@ function App() {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="error-container">
@@ -97,12 +77,10 @@ function App() {
     );
   }
 
-  // Unauthenticated state
   if (!user) {
     return <LoginPage onSignIn={checkAuthState} />;
   }
 
-  // Main authenticated app
   return (
     <Router>
       <div className="App">
@@ -116,7 +94,7 @@ function App() {
             <Route path="/content" element={<ContentPage />} />
             <Route path="/forums" element={<ForumsPage user={user} />} />
             <Route path="/media" element={<MediaPage />} />
-            <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/calendar" element={<CalendarPage user={user} />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/profile" element={<ProfilePage user={user} />} />
             <Route path="/help" element={<HelpPage />} />

@@ -25,11 +25,11 @@ const dissertationFolders = [
   { name: 'Chapter 5 – Discussion', status: 'Not Started', files: 0 },
 ];
 
-function statusClass(s) {
-  if (s === 'Approved') return 'badge badge-approved';
-  if (s === 'In Review') return 'badge badge-review';
-  return 'badge badge-pending';
-}
+const STATUS_CLASS = {
+  'Approved': 'badge badge-approved',
+  'In Review': 'badge badge-review',
+};
+function statusClass(s) { return STATUS_CLASS[s] ?? 'badge badge-pending'; }
 
 export default function LDPPage() {
   const [tab, setTab] = useState('overview');
@@ -41,7 +41,6 @@ export default function LDPPage() {
         <p>Manage your dissertation journey, committee, and submissions</p>
       </div>
 
-      {/* Tab navigation */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '2px solid #eee', paddingBottom: '0.5rem' }}>
         {['overview', 'committees', 'folders', 'calendar'].map((t) => (
           <button

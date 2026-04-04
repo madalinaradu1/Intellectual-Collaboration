@@ -7,18 +7,11 @@ import ConfirmModal from './ConfirmModal';
 
 const client = generateClient();
 
-/**
- * Forums page component for managing forum discussions
- * Allows users to create, edit, delete, and view forums
- */
 export default function ForumsPage({ user }) {
-  // UI state management
   const [showCreateForum, setShowCreateForum] = useState(false);
   const [selectedForum, setSelectedForum] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [forumToDelete, setForumToDelete] = useState(null);
-  
-  // Form data states
   const [newForumTitle, setNewForumTitle] = useState('');
   const [newForumGroup, setNewForumGroup] = useState('');
   const [newForumDescription, setNewForumDescription] = useState('');
@@ -26,32 +19,26 @@ export default function ForumsPage({ user }) {
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [formErrors, setFormErrors] = useState({});
-  
-  // Data and loading states
   const [forums, setForums] = useState([]);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  // Load forums on component mount
   useEffect(() => {
     fetchForums();
   }, []);
 
-  // === API FUNCTIONS ===
-  
-  /** Fetch all forums from the database */
   const fetchForums = async () => {
     setLoading(true);
     try {
       const result = await client.graphql({ query: listForums });
       setForums(result.data.listForums.items);
-    } catch (error) {
-      console.error('Error fetching forums:', error);
+    } catch (err) {
+      console.error('Error fetching forums:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  /** Validate form inputs and return errors object */
   const validateForm = () => {
     const errors = {};
     if (!newForumTitle.trim()) errors.title = 'Forum title is required';
@@ -59,12 +46,10 @@ export default function ForumsPage({ user }) {
     return errors;
   };
 
-  /** Get current user identifier */
   const getCurrentUserId = () => {
     return user?.attributes?.name || user?.name || user?.username || user?.email || 'Anonymous';
   };
 
-  /** Reset form to initial state */
   const resetForm = () => {
     setNewForumTitle('');
     setNewForumGroup('');
@@ -73,7 +58,6 @@ export default function ForumsPage({ user }) {
     setShowCreateForum(false);
   };
 
-  /** Create a new forum */
   const handleCreateForum = async () => {
     const errors = validateForm();
     setFormErrors(errors);
@@ -105,14 +89,12 @@ export default function ForumsPage({ user }) {
     }
   };
 
-  /** Start editing a forum */
   const handleEditForum = (forum) => {
     setEditingForum(forum.id);
     setEditTitle(forum.title);
     setEditDescription(forum.description || '');
   };
 
-  /** Update forum with new data */
   const handleUpdateForum = async () => {
     if (!editTitle.trim()) {
       alert('Forum title cannot be empty');
@@ -131,7 +113,6 @@ export default function ForumsPage({ user }) {
         }
       });
       
-      // Reset edit state
       setEditingForum(null);
       setEditTitle('');
       setEditDescription('');
@@ -142,13 +123,11 @@ export default function ForumsPage({ user }) {
     }
   };
 
-  /** Initiate forum deletion with confirmation */
   const handleDeleteForum = (forum) => {
     setForumToDelete(forum);
     setShowDeleteConfirm(true);
   };
 
-  /** Confirm and execute forum deletion */
   const confirmDelete = async () => {
     try {
       await client.graphql({
@@ -161,55 +140,33 @@ export default function ForumsPage({ user }) {
       alert('Failed to delete forum');
     }
     
-    // Reset delete state
     setShowDeleteConfirm(false);
     setForumToDelete(null);
   };
 
-  /** Cancel forum deletion */
   const cancelDelete = () => {
     setShowDeleteConfirm(false);
     setForumToDelete(null);
   };
 
-  // === PERMISSION CHECKS ===
-  
-  /** Check if user can edit forum (creator or admin) */
-  const canEditForum = (forum) => {
+  const canManageForum = (forum) => {
     if (!user) return false;
-    const currentUserId = getCurrentUserId();
-    const isAdmin = user.isAdmin || user?.attributes?.['custom:role'] === 'admin';
-    return currentUserId === forum.createdBy || isAdmin;
+    return getCurrentUserId() === forum.createdBy ||
+      user.isAdmin || user?.attributes?.['custom:role'] === 'admin';
   };
 
-  /** Check if user can delete forum (creator or admin) */
-  const canDeleteForum = (forum) => {
-    if (!user) return false;
-    const currentUserId = getCurrentUserId();
-    const isAdmin = user.isAdmin || user?.attributes?.['custom:role'] === 'admin';
-    return currentUserId === forum.createdBy || isAdmin;
-  };
-
-  // === UTILITY FUNCTIONS ===
-  
-  /** Format timestamp to relative time */
   const formatTime = (timestamp) => {
     if (!timestamp) return 'Unknown';
-    
-    const now = new Date();
-    const postTime = new Date(timestamp);
-    const diff = now - postTime;
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-    if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    const diff = Date.now() - new Date(timestamp);
+    const mins = Math.floor(diff / 60000);
+    const hrs = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins} minute${mins > 1 ? 's' : ''} ago`;
+    if (hrs < 24) return `${hrs} hour${hrs > 1 ? 's' : ''} ago`;
     return `${days} day${days > 1 ? 's' : ''} ago`;
   };
 
-  // === STYLES ===
   const inputStyle = {
     width: '100%',
     padding: '0.5rem',
@@ -225,7 +182,6 @@ export default function ForumsPage({ user }) {
     transition: 'box-shadow 0.15s'
   };
 
-  // If a forum is selected, show the posts page
   if (selectedForum) {
     return (
       <ForumPostsPage 
@@ -238,13 +194,11 @@ export default function ForumsPage({ user }) {
 
   return (
     <div>
-      {/* Page Header */}
       <div className="page-header">
         <h1>Forums & Messaging</h1>
         <p>Discuss, collaborate, and connect with your communities</p>
       </div>
 
-      {/* Header with Create Button */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <span style={{ fontSize: '0.85rem', color: '#666' }}>{forums.length} forums</span>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -387,7 +341,7 @@ export default function ForumsPage({ user }) {
                 </div>
                 {editingForum !== forum.id && (
                   <div style={{ display: 'flex', gap: '0.25rem' }}>
-                    {canEditForum(forum) && (
+                    {canManageForum(forum) && (
                       <button 
                         onClick={() => handleEditForum(forum)} 
                         style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}
@@ -396,7 +350,7 @@ export default function ForumsPage({ user }) {
                         ✏️
                       </button>
                     )}
-                    {canDeleteForum(forum) && (
+                    {canManageForum(forum) && (
                       <button 
                         onClick={() => handleDeleteForum(forum)} 
                         style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#dc3545' }}

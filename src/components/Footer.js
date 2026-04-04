@@ -5,7 +5,6 @@ export default function Footer() {
   return (
     <footer className="ic-footer">
       <div className="ic-footer-inner">
-        {/* Brand column */}
         <div>
           <div className="ic-footer-brand">Intellectual Collaboration</div>
           <p className="ic-footer-desc">

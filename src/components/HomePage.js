@@ -1,8 +1,7 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import './HomePage.css';
 
-// Mock data - replace with GraphQL queries when backend is ready
 const announcements = [
   { id: 1, title: 'Spring 2025 Dissertation Webinars Now Scheduled', date: 'Jan 28, 2025', type: 'event' },
   { id: 2, title: 'New AI Skills Lab Resources Available', date: 'Jan 22, 2025', type: 'resource' },
@@ -34,18 +33,12 @@ const calendarEvents = [
   { id: 4, title: 'EDD Community Meeting', date: 'Feb 18', time: '10:00 AM', scope: 'Group' },
 ];
 
-// Mission statement
 const MISSION_TEXT = 
   'The Intellectual Collaboration platform is dedicated to fostering a supportive, ' +
   'connected community for doctoral students, faculty, and staff at Grand Canyon University. ' +
   'Our mission is to provide the tools, resources, and connections necessary for academic excellence ' +
   'and professional growth throughout your doctoral journey.';
 
-/**
- * Returns CSS class name for event scope badges
- * @param {string} scope - Event scope type
- * @returns {string} CSS class name
- */
 function getScopeClass(scope) {
   const scopeMap = {
     'Committee': 'scope-committee',
@@ -56,9 +49,6 @@ function getScopeClass(scope) {
   return scopeMap[scope] || '';
 }
 
-/**
- * AnnouncementItem component for rendering individual announcements
- */
 function AnnouncementItem({ announcement }) {
   return (
     <li className="announcement-item">
@@ -71,9 +61,6 @@ function AnnouncementItem({ announcement }) {
   );
 }
 
-/**
- * ActivityItem component for rendering recent activity items
- */
 function ActivityItem({ activity }) {
   return (
     <li className="activity-item">
@@ -91,9 +78,6 @@ function ActivityItem({ activity }) {
   );
 }
 
-/**
- * EventItem component for rendering calendar events
- */
 function EventItem({ event }) {
   const [month, day] = event.date.split(' ');
   
@@ -116,22 +100,12 @@ function EventItem({ event }) {
   );
 }
 
-/**
- * HomePage component - Main dashboard for authenticated users
- * Displays announcements, quick links, recent activity, and upcoming events
- * @param {Object} user - Current authenticated user object
- */
 export default function HomePage({ user }) {
-  // Memoize user display name for performance
-  const userDisplayName = useMemo(() => {
-    if (!user?.attributes?.name) return '';
-    const name = user.attributes.name.split('@')[0];
-    return name ? `, ${name}` : '';
-  }, [user?.attributes?.name]);
+  const name = user?.attributes?.name?.split('@')[0];
+  const userDisplayName = name ? `, ${name}` : '';
 
   return (
     <div className="home-page">
-      {/* Hero welcome section */}
       <section className="home-hero">
         <div className="hero-text">
           <h1>Welcome back{userDisplayName}</h1>
@@ -139,9 +113,7 @@ export default function HomePage({ user }) {
         </div>
       </section>
 
-      {/* Main dashboard grid */}
       <div className="home-grid">
-        {/* Left column - Announcements and Quick Links */}
         <aside className="home-col home-col-left">
           <div className="ic-card">
             <h2>📢 Announcements</h2>
@@ -173,7 +145,6 @@ export default function HomePage({ user }) {
           </div>
         </aside>
 
-        {/* Center column - Recent Activity */}
         <main className="home-col home-col-center">
           <div className="ic-card">
             <h2>🕐 Recent Activity</h2>
@@ -192,7 +163,6 @@ export default function HomePage({ user }) {
           </div>
         </main>
 
-        {/* Right column - Calendar and Good News */}
         <aside className="home-col home-col-right">
           <div className="ic-card">
             <h2>📅 Upcoming Events</h2>

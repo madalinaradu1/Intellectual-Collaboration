@@ -49,7 +49,6 @@ export default function HelpPage() {
         <p>Guides, policies, support contacts, and training resources</p>
       </div>
 
-      {/* Support contacts */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.85rem', marginBottom: '1.75rem' }}>
         {[
           { label: 'IT Support', detail: 'ic-support@gcu.edu', icon: '📧' },

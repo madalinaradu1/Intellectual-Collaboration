@@ -26,7 +26,6 @@ export default function MediaPage() {
         <p>Webinars, alumni stories, and recorded sessions</p>
       </div>
 
-      {/* Search + filter */}
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap', alignItems: 'center' }}>
         <input
           type="text"

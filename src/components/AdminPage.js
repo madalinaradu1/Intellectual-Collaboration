@@ -24,14 +24,15 @@ const auditLogs = [
   { actor: 'Dr. Chen', action: 'Role changed', entity: 'David R. → Inactive', time: 'Jan 25, 2025 – 11:05 AM' },
 ];
 
+const ROLE_BADGE = {
+  'Admin':       { background: '#552B9A', color: '#fff' },
+  'Group Admin': { background: '#e8d5f5', color: '#552B9A' },
+  'Officer':     { background: '#cce5ff', color: '#004085' },
+  'Member':      { background: '#eee',   color: '#555' },
+};
+
 function roleBadge(role) {
-  const styles = {
-    'Admin': { background: '#552B9A', color: '#fff' },
-    'Group Admin': { background: '#e8d5f5', color: '#552B9A' },
-    'Officer': { background: '#cce5ff', color: '#004085' },
-    'Member': { background: '#eee', color: '#555' },
-  };
-  return styles[role] || styles['Member'];
+  return ROLE_BADGE[role] ?? ROLE_BADGE['Member'];
 }
 
 export default function AdminPage() {
@@ -44,7 +45,6 @@ export default function AdminPage() {
         <p>User management, content moderation, reports, and audit logs</p>
       </div>
 
-      {/* Tabs */}
       <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.5rem', borderBottom: '2px solid #eee', paddingBottom: '0.5rem' }}>
         {[
           { key: 'users', label: 'Users' },
