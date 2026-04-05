@@ -1,4 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { generateClient } from 'aws-amplify/api';
+import { personalEventsByOwner, listGlobalEvents } from '../graphql/queries';
+import DissertationFoldersTab from './DissertationFoldersTab';
+import { useNavigate } from 'react-router-dom';
+import './LDPPage.css';
+
+const client = generateClient();
+
+const SYSTEM_EVENTS = [
+  { id: 's1', title: 'Committee Check-In',                  date: '2025-02-03', time: '2:00 PM',  scope: 'Committee' },
+  { id: 's2', title: 'Dissertation Webinar – Spring Series', date: '2025-02-05', time: '6:00 PM',  scope: 'System'    },
+  { id: 's3', title: 'EDD Community Meeting',               date: '2025-02-10', time: '10:00 AM', scope: 'Group'     },
+  { id: 's4', title: 'IRB Submission Deadline',             date: '2025-02-15', time: 'All Day',  scope: 'Deadline'  },
+  { id: 's5', title: 'Chapter 2 Feedback Due',              date: '2025-02-17', time: 'All Day',  scope: 'Deadline'  },
+  { id: 's6', title: 'Research Methods Study Group',        date: '2025-02-18', time: '4:00 PM',  scope: 'Group'     },
+  { id: 's7', title: 'AI Skills Lab Workshop',              date: '2025-02-20', time: '1:00 PM',  scope: 'System'    },
+  { id: 's8', title: 'Dissertation Defense Prep',           date: '2025-03-01', time: '11:00 AM', scope: 'Committee' },
+];
+
+const SCOPE_STYLE = {
+  Committee: { background: '#e8d5f5', color: '#552B9A' },
+  System:    { background: '#cce5ff', color: '#004085' },
+  Group:     { background: '#d4edda', color: '#155724' },
+  Deadline:  { background: '#f8d7da', color: '#721c24' },
+  Personal:  { background: '#fff3cd', color: '#856404' },
+  Global:    { background: '#fde8d8', color: '#7c3000' },
+};
+
+function daysFromNow(dateStr) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const d = new Date(dateStr + 'T00:00:00');
+  return Math.round((d - today) / 86400000);
+}
+
+function dayLabel(n) {
+  if (n === 0) return 'Today';
+  if (n === 1) return 'Tomorrow';
+  if (n <= 7)  return `In ${n} days`;
+  return new Date(Date.now() + n * 86400000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
 
 const committeeMembers = [
   { name: 'Dr. Sarah Martinez', role: 'Chair', email: 'smartinez@gcu.edu', avatar: 'SM' },
@@ -17,21 +57,10 @@ const importantLinks = [
   { label: 'Qual Companion Guide', url: '#' },
 ];
 
-const dissertationFolders = [
-  { name: 'Chapter 1 – Introduction', status: 'Approved', files: 3 },
-  { name: 'Chapter 2 – Literature Review', status: 'In Review', files: 2 },
-  { name: 'Chapter 3 – Methodology', status: 'Draft', files: 1 },
-  { name: 'Chapter 4 – Results', status: 'Draft', files: 0 },
-  { name: 'Chapter 5 – Discussion', status: 'Not Started', files: 0 },
-];
+const TABS = ['overview', 'committees', 'folders', 'calendar'];
+const TAB_LABELS = { folders: 'Dissertation Folders' };
 
-const STATUS_CLASS = {
-  'Approved': 'badge badge-approved',
-  'In Review': 'badge badge-review',
-};
-function statusClass(s) { return STATUS_CLASS[s] ?? 'badge badge-pending'; }
-
-export default function LDPPage() {
+export default function LDPPage({ user }) {
   const [tab, setTab] = useState('overview');
 
   return (
@@ -41,30 +70,20 @@ export default function LDPPage() {
         <p>Manage your dissertation journey, committee, and submissions</p>
       </div>
 
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '2px solid #eee', paddingBottom: '0.5rem' }}>
-        {['overview', 'committees', 'folders', 'calendar'].map((t) => (
+      <div className="ldp-tabs">
+        {TABS.map(t => (
           <button
             key={t}
+            className={`ldp-tab-btn${tab === t ? ' active' : ''}`}
             onClick={() => setTab(t)}
-            style={{
-              background: tab === t ? '#552B9A' : 'transparent',
-              color: tab === t ? '#fff' : '#555',
-              border: 'none',
-              padding: '0.5rem 1rem',
-              borderRadius: '5px',
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              textTransform: 'capitalize',
-            }}
           >
-            {t === 'folders' ? 'Dissertation Folders' : t}
+            {TAB_LABELS[t] || t}
           </button>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 220px', gap: '1.5rem', alignItems: 'start' }}>
-        {/* Main content area */}
+      <div className="ldp-layout">
+        {/* Main content */}
         <div>
           {tab === 'overview' && (
             <div className="ic-card">
@@ -74,19 +93,18 @@ export default function LDPPage() {
                 their dissertation journey — from proposal through defense. Your committee, resources,
                 and submission tools are all accessible here.
               </p>
-              <div style={{ marginTop: '1rem', display: 'flex', gap: '0.75rem' }}>
+              <div className="ldp-overview-actions">
                 <button className="btn-purple">View My Submissions</button>
                 <button className="btn-outline">Contact Committee</button>
               </div>
 
-              {/* Program of Study widget — read only */}
               <div style={{ marginTop: '1.5rem', background: '#f7f3fa', borderRadius: '8px', padding: '1rem 1.25rem', border: '1px solid #e0d4eb' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.4rem' }}>
                   <strong style={{ color: '#552B9A', fontSize: '0.9rem' }}>📋 Program of Study</strong>
                   <span style={{ fontSize: '0.72rem', color: '#888', background: '#eee', padding: '0.15rem 0.5rem', borderRadius: '10px' }}>Read Only</span>
                 </div>
                 <p style={{ fontSize: '0.82rem', color: '#555' }}>EDD – Doctor of Education in Organizational Leadership</p>
-                <p style={{ fontSize: '0.78rem', color: '#888', marginTop: '0.25rem' }}>Expected Completion: Spring 2026 &nbsp;|&nbsp; Milestone: Dissertation Phase</p>
+                <p style={{ fontSize: '0.78rem', color: '#888', marginTop: '0.25rem' }}>Expected Completion: Spring 2026 · Milestone: Dissertation Phase</p>
               </div>
             </div>
           )}
@@ -94,8 +112,8 @@ export default function LDPPage() {
           {tab === 'committees' && (
             <div className="ic-card">
               <h2>Your Committee</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                {committeeMembers.map((m) => (
+              <div className="ldp-committee-grid">
+                {committeeMembers.map(m => (
                   <div key={m.name} style={{ background: '#f7f3fa', borderRadius: '8px', padding: '0.85rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
                       <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#552B9A', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.78rem', fontWeight: 700, flexShrink: 0 }}>
@@ -116,58 +134,24 @@ export default function LDPPage() {
           {tab === 'folders' && (
             <div className="ic-card">
               <h2>Dissertation Folders</h2>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid #eee' }}>
-                    <th style={{ textAlign: 'left', padding: '0.5rem 0', color: '#552B9A' }}>Folder</th>
-                    <th style={{ textAlign: 'left', padding: '0.5rem 0', color: '#552B9A' }}>Status</th>
-                    <th style={{ textAlign: 'left', padding: '0.5rem 0', color: '#552B9A' }}>Files</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dissertationFolders.map((f) => (
-                    <tr key={f.name} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                      <td style={{ padding: '0.6rem 0', color: '#333' }}>{f.name}</td>
-                      <td style={{ padding: '0.6rem 0' }}><span className={statusClass(f.status)}>{f.status}</span></td>
-                      <td style={{ padding: '0.6rem 0', color: '#888' }}>{f.files}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <DissertationFoldersTab user={user} />
             </div>
           )}
 
           {tab === 'calendar' && (
-            <div className="ic-card">
-              <h2>Committee Calendar</h2>
-              <p style={{ fontSize: '0.88rem', color: '#666', marginTop: '0.25rem' }}>Upcoming deadlines and meetings for your dissertation committee.</p>
-              <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                {[
-                  { title: 'Chapter 2 Feedback Due', date: 'Feb 7, 2025', type: 'Deadline' },
-                  { title: 'Committee Check-In', date: 'Feb 12, 2025', type: 'Meeting' },
-                  { title: 'IRB Amendment Deadline', date: 'Feb 15, 2025', type: 'Deadline' },
-                  { title: 'Dissertation Defense Prep', date: 'Mar 1, 2025', type: 'Meeting' },
-                ].map((e, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#f7f3fa', borderRadius: '7px', padding: '0.6rem 0.85rem' }}>
-                    <span style={{ fontSize: '0.72rem', background: e.type === 'Deadline' ? '#f8d7da' : '#cce5ff', color: e.type === 'Deadline' ? '#721c24' : '#004085', padding: '0.2rem 0.5rem', borderRadius: '10px', fontWeight: 600, whiteSpace: 'nowrap' }}>{e.type}</span>
-                    <span style={{ fontSize: '0.85rem', color: '#222', flex: 1 }}>{e.title}</span>
-                    <span style={{ fontSize: '0.78rem', color: '#888' }}>{e.date}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <UpcomingEvents user={user} />
           )}
         </div>
 
         {/* Right rail – Important Links */}
-        <div className="ic-card" style={{ position: 'sticky', top: '1rem' }}>
+        <div className="ic-card ldp-links-card">
           <h2>📎 Important Links</h2>
           <ul style={{ listStyle: 'none', margin: 0 }}>
-            {importantLinks.map((link) => (
+            {importantLinks.map(link => (
               <li key={link.label} style={{ borderBottom: '1px solid #f0f0f0' }}>
                 <a href={link.url} style={{ display: 'block', padding: '0.5rem 0', fontSize: '0.83rem', color: '#333', textDecoration: 'none', transition: 'color 0.12s' }}
-                  onMouseEnter={(e) => (e.target.style.color = '#552B9A')}
-                  onMouseLeave={(e) => (e.target.style.color = '#333')}
+                  onMouseEnter={e => (e.target.style.color = '#552B9A')}
+                  onMouseLeave={e => (e.target.style.color = '#333')}
                 >
                   {link.label}
                 </a>
@@ -176,6 +160,88 @@ export default function LDPPage() {
           </ul>
         </div>
       </div>
+    </div>
+  );
+}
+
+function UpcomingEvents({ user }) {
+  const navigate = useNavigate();
+  const owner = user?.username ?? user?.userId ?? 'guest';
+  const [personalEvents, setPersonalEvents] = useState([]);
+  const [globalEvents,   setGlobalEvents]   = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [personal, global] = await Promise.all([
+        client.graphql({ query: personalEventsByOwner, variables: { owner } }),
+        client.graphql({ query: listGlobalEvents }),
+      ]);
+      setPersonalEvents(personal.data.personalEventsByOwner.items);
+      setGlobalEvents(global.data.listGlobalEvents.items);
+    } catch (err) {
+      console.error('Error fetching events:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [owner]);
+
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  const upcoming = [
+    ...SYSTEM_EVENTS.map(e => ({ ...e, scope: e.scope })),
+    ...globalEvents.map(e  => ({ ...e, scope: 'Global' })),
+    ...personalEvents.map(e => ({ ...e, scope: 'Personal' })),
+  ]
+    .map(e => ({ ...e, daysAway: daysFromNow(e.date) }))
+    .filter(e => e.daysAway >= 0)
+    .sort((a, b) => a.daysAway - b.daysAway)
+    .slice(0, 10);
+
+  return (
+    <div className="ic-card">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h2 style={{ margin: 0 }}>Upcoming Events</h2>
+        <button className="btn-outline" onClick={() => navigate('/calendar')}
+          style={{ fontSize: '0.78rem', padding: '0.3rem 0.75rem' }}>
+          Open Full Calendar
+        </button>
+      </div>
+
+      {loading ? (
+        <p style={{ fontSize: '0.85rem', color: '#888' }}>Loading events…</p>
+      ) : upcoming.length === 0 ? (
+        <p style={{ fontSize: '0.85rem', color: '#888' }}>No upcoming events.</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          {upcoming.map(ev => {
+            const badge = SCOPE_STYLE[ev.scope] ?? {};
+            const isToday    = ev.daysAway === 0;
+            const isTomorrow = ev.daysAway === 1;
+            const isSoon     = ev.daysAway <= 3;
+            return (
+              <div key={ev.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.85rem', background: isToday ? '#fdf9ff' : '#fafafa', borderRadius: '7px', border: `1px solid ${isToday ? '#d4c5f0' : '#f0f0f0'}`, flexWrap: 'wrap' }}>
+                <div style={{ minWidth: 72, textAlign: 'center', flexShrink: 0 }}>
+                  <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', color: isToday ? '#552B9A' : isTomorrow ? '#856404' : isSoon ? '#721c24' : '#aaa', letterSpacing: '0.3px' }}>
+                    {dayLabel(ev.daysAway)}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#bbb' }}>
+                    {new Date(ev.date + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </div>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 600, color: '#222', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.title}</div>
+                  {ev.time && <div style={{ fontSize: '0.75rem', color: '#888', marginTop: '0.1rem' }}>{ev.time}{ev.location ? ` · ${ev.location}` : ''}</div>}
+                </div>
+                <span style={{ fontSize: '0.7rem', fontWeight: 600, padding: '0.2rem 0.55rem', borderRadius: '10px', flexShrink: 0, ...badge }}>
+                  {ev.scope}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

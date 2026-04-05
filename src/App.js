@@ -88,7 +88,7 @@ function App() {
         <main className="main-content">
           <Routes>
             <Route path="/" element={<HomePage user={user} />} />
-            <Route path="/ldp" element={<LDPPage />} />
+            <Route path="/ldp" element={<LDPPage user={user} />} />
             <Route path="/review" element={<ReviewPortalPage user={user} />} />
             <Route path="/groups" element={<GroupsPage />} />
             <Route path="/content" element={<ContentPage />} />
