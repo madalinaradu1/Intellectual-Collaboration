@@ -130,6 +130,7 @@ export const createPost = /* GraphQL */ `
         updatedAt
         __typename
       }
+      parentPostID
       createdAt
       updatedAt
       __typename
@@ -157,6 +158,7 @@ export const updatePost = /* GraphQL */ `
         updatedAt
         __typename
       }
+      parentPostID
       createdAt
       updatedAt
       __typename
@@ -184,6 +186,7 @@ export const deletePost = /* GraphQL */ `
         updatedAt
         __typename
       }
+      parentPostID
       createdAt
       updatedAt
       __typename

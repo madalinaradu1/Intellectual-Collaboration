@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+// Selecting a forum navigates into ForumPostsPage (rendered in-place).
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { FiEdit2, FiTrash2, FiMessageSquare } from 'react-icons/fi';
 import { generateClient } from 'aws-amplify/api';
 import { listForums } from '../graphql/queries';
 import { createForum, updateForum, deleteForum } from '../graphql/mutations';
@@ -7,27 +10,42 @@ import ConfirmModal from './ConfirmModal';
 
 const client = generateClient();
 
+// Shared input style used in both create and edit forms.
+const inputStyle = {
+  width: '100%',
+  padding: '0.5rem',
+  border: '1px solid #ccc',
+  borderRadius: '4px',
+  marginBottom: '0.5rem',
+};
+
 export default function ForumsPage({ user }) {
-  const [showCreateForum, setShowCreateForum] = useState(false);
+  const [forums, setForums]           = useState([]);
+  const [loading, setLoading]         = useState(false);
   const [selectedForum, setSelectedForum] = useState(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [forumToDelete, setForumToDelete] = useState(null);
-  const [newForumTitle, setNewForumTitle] = useState('');
-  const [newForumGroup, setNewForumGroup] = useState('');
+
+  // Create-forum form state.
+  const [showCreateForum, setShowCreateForum]       = useState(false);
+  const [newForumTitle, setNewForumTitle]           = useState('');
+  const [newForumGroup, setNewForumGroup]           = useState('');
   const [newForumDescription, setNewForumDescription] = useState('');
-  const [editingForum, setEditingForum] = useState(null);
-  const [editTitle, setEditTitle] = useState('');
+  const [formErrors, setFormErrors]                 = useState({});
+  const [creating, setCreating]                     = useState(false);
+
+  // Inline-edit state.
+  const [editingForum, setEditingForum]   = useState(null); // forum id being edited
+  const [editTitle, setEditTitle]         = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const [formErrors, setFormErrors] = useState({});
-  const [forums, setForums] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [creating, setCreating] = useState(false);
 
-  useEffect(() => {
-    fetchForums();
-  }, []);
+  // Delete confirmation.
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [forumToDelete, setForumToDelete]         = useState(null);
 
-  const fetchForums = async () => {
+  // Derive the current user's display name once.
+  const currentUserId = user?.attributes?.name || user?.name || user?.username || user?.email || 'Anonymous';
+  const isAdmin       = user?.isAdmin || user?.attributes?.['custom:role'] === 'admin';
+
+  const fetchForums = useCallback(async () => {
     setLoading(true);
     try {
       const result = await client.graphql({ query: listForums });
@@ -37,17 +55,34 @@ export default function ForumsPage({ user }) {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => { fetchForums(); }, [fetchForums]);
+
+  // Returns true if the current user can edit or delete the given forum.
+  const canManageForum = (forum) =>
+    currentUserId === forum.createdBy || isAdmin;
+
+  // Formats a timestamp as a relative string (e.g. "3 hours ago").
+  const formatTime = (timestamp) => {
+    if (!timestamp) return 'Unknown';
+    const diff = Date.now() - new Date(timestamp);
+    const mins = Math.floor(diff / 60000);
+    const hrs  = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    if (mins < 1)  return 'Just now';
+    if (mins < 60) return `${mins} minute${mins > 1 ? 's' : ''} ago`;
+    if (hrs  < 24) return `${hrs} hour${hrs > 1 ? 's' : ''} ago`;
+    return `${days} day${days > 1 ? 's' : ''} ago`;
   };
+
+  // ── Create ──────────────────────────────────────────────────────────────────
 
   const validateForm = () => {
     const errors = {};
     if (!newForumTitle.trim()) errors.title = 'Forum title is required';
     if (!newForumGroup.trim()) errors.group = 'Group name is required';
     return errors;
-  };
-
-  const getCurrentUserId = () => {
-    return user?.attributes?.name || user?.name || user?.username || user?.email || 'Anonymous';
   };
 
   const resetForm = () => {
@@ -61,33 +96,32 @@ export default function ForumsPage({ user }) {
   const handleCreateForum = async () => {
     const errors = validateForm();
     setFormErrors(errors);
-    
     if (Object.keys(errors).length > 0) return;
-    
+
     setCreating(true);
     try {
       await client.graphql({
         query: createForum,
         variables: {
           input: {
-            title: newForumTitle.trim(),
-            groupName: newForumGroup.trim(),
+            title:       newForumTitle.trim(),
+            groupName:   newForumGroup.trim(),
             description: newForumDescription.trim() || null,
-            createdBy: getCurrentUserId()
-          }
-        }
+            createdBy:   currentUserId,
+          },
+        },
       });
-      
       resetForm();
       fetchForums();
-    } catch (error) {
-      console.error('Error creating forum:', error);
-      const errorMessage = error.errors?.[0]?.message || error.message || 'Unknown error';
-      alert(`Failed to create forum: ${errorMessage}`);
+    } catch (err) {
+      console.error('Error creating forum:', err);
+      alert(`Failed to create forum: ${err.errors?.[0]?.message || err.message || 'Unknown error'}`);
     } finally {
       setCreating(false);
     }
   };
+
+  // ── Update ──────────────────────────────────────────────────────────────────
 
   const handleEditForum = (forum) => {
     setEditingForum(forum.id);
@@ -96,98 +130,52 @@ export default function ForumsPage({ user }) {
   };
 
   const handleUpdateForum = async () => {
-    if (!editTitle.trim()) {
-      alert('Forum title cannot be empty');
-      return;
-    }
-    
+    if (!editTitle.trim()) { alert('Forum title cannot be empty'); return; }
     try {
       await client.graphql({
         query: updateForum,
         variables: {
           input: {
-            id: editingForum,
-            title: editTitle.trim(),
-            description: editDescription.trim() || null
-          }
-        }
+            id:          editingForum,
+            title:       editTitle.trim(),
+            description: editDescription.trim() || null,
+          },
+        },
       });
-      
       setEditingForum(null);
-      setEditTitle('');
-      setEditDescription('');
       fetchForums();
-    } catch (error) {
-      console.error('Error updating forum:', error);
+    } catch (err) {
+      console.error('Error updating forum:', err);
       alert('Failed to update forum');
     }
   };
 
-  const handleDeleteForum = (forum) => {
-    setForumToDelete(forum);
-    setShowDeleteConfirm(true);
-  };
+  // ── Delete ──────────────────────────────────────────────────────────────────
 
   const confirmDelete = async () => {
     try {
       await client.graphql({
         query: deleteForum,
-        variables: { input: { id: forumToDelete.id } }
+        variables: { input: { id: forumToDelete.id } },
       });
       fetchForums();
-    } catch (error) {
-      console.error('Error deleting forum:', error);
+    } catch (err) {
+      console.error('Error deleting forum:', err);
       alert('Failed to delete forum');
     }
-    
     setShowDeleteConfirm(false);
     setForumToDelete(null);
   };
 
-  const cancelDelete = () => {
-    setShowDeleteConfirm(false);
-    setForumToDelete(null);
-  };
+  // ── Render ──────────────────────────────────────────────────────────────────
 
-  const canManageForum = (forum) => {
-    if (!user) return false;
-    return getCurrentUserId() === forum.createdBy ||
-      user.isAdmin || user?.attributes?.['custom:role'] === 'admin';
-  };
-
-  const formatTime = (timestamp) => {
-    if (!timestamp) return 'Unknown';
-    const diff = Date.now() - new Date(timestamp);
-    const mins = Math.floor(diff / 60000);
-    const hrs = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins} minute${mins > 1 ? 's' : ''} ago`;
-    if (hrs < 24) return `${hrs} hour${hrs > 1 ? 's' : ''} ago`;
-    return `${days} day${days > 1 ? 's' : ''} ago`;
-  };
-
-  const inputStyle = {
-    width: '100%',
-    padding: '0.5rem',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    marginBottom: '0.5rem'
-  };
-
-  const cardStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem',
-    transition: 'box-shadow 0.15s'
-  };
-
+  // Drill into a forum's posts.
   if (selectedForum) {
     return (
-      <ForumPostsPage 
-        forum={selectedForum} 
-        user={user} 
-        onBack={() => setSelectedForum(null)} 
+      <ForumPostsPage
+        forum={selectedForum}
+        user={user}
+        onBack={() => setSelectedForum(null)}
       />
     );
   }
@@ -199,6 +187,7 @@ export default function ForumsPage({ user }) {
         <p>Discuss, collaborate, and connect with your communities</p>
       </div>
 
+      {/* Toolbar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <span style={{ fontSize: '0.85rem', color: '#666' }}>{forums.length} forums</span>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -207,81 +196,57 @@ export default function ForumsPage({ user }) {
         </div>
       </div>
 
-      {/* Create Forum Form */}
+      {/* Create forum form */}
       {showCreateForum && (
         <div className="ic-card" style={{ marginBottom: '1rem' }}>
           <h3 style={{ margin: '0 0 1rem 0' }}>Create New Forum</h3>
+
           <input
             type="text"
             placeholder="Forum title"
             value={newForumTitle}
-            onChange={(e) => {
+            onChange={e => {
               setNewForumTitle(e.target.value);
-              if (formErrors.title) {
-                setFormErrors(prev => ({ ...prev, title: '' }));
-              }
+              if (formErrors.title) setFormErrors(prev => ({ ...prev, title: '' }));
             }}
-            style={{
-              ...inputStyle,
-              borderColor: formErrors.title ? '#dc3545' : '#ccc'
-            }}
+            style={{ ...inputStyle, borderColor: formErrors.title ? '#dc3545' : '#ccc' }}
           />
           {formErrors.title && (
-            <div style={{ color: '#dc3545', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
-              {formErrors.title}
-            </div>
+            <div style={{ color: '#dc3545', fontSize: '0.75rem', marginBottom: '0.5rem' }}>{formErrors.title}</div>
           )}
+
           <input
             type="text"
             placeholder="Group name (e.g., EDD Community)"
             value={newForumGroup}
-            onChange={(e) => {
+            onChange={e => {
               setNewForumGroup(e.target.value);
-              if (formErrors.group) {
-                setFormErrors(prev => ({ ...prev, group: '' }));
-              }
+              if (formErrors.group) setFormErrors(prev => ({ ...prev, group: '' }));
             }}
-            style={{
-              ...inputStyle,
-              borderColor: formErrors.group ? '#dc3545' : '#ccc'
-            }}
+            style={{ ...inputStyle, borderColor: formErrors.group ? '#dc3545' : '#ccc' }}
           />
           {formErrors.group && (
-            <div style={{ color: '#dc3545', fontSize: '0.75rem', marginBottom: '0.5rem' }}>
-              {formErrors.group}
-            </div>
+            <div style={{ color: '#dc3545', fontSize: '0.75rem', marginBottom: '0.5rem' }}>{formErrors.group}</div>
           )}
+
           <textarea
             placeholder="Description (optional)"
             value={newForumDescription}
-            onChange={(e) => setNewForumDescription(e.target.value)}
+            onChange={e => setNewForumDescription(e.target.value)}
             rows={3}
-            style={{
-              ...inputStyle,
-              marginBottom: '1rem',
-              resize: 'vertical'
-            }}
+            style={{ ...inputStyle, marginBottom: '1rem', resize: 'vertical' }}
           />
+
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button 
-              className="btn-purple" 
-              onClick={handleCreateForum}
-              disabled={creating}
-            >
+            <button className="btn-purple" onClick={handleCreateForum} disabled={creating}>
               {creating ? 'Creating...' : 'Create'}
             </button>
-            <button 
-              className="btn-outline" 
-              onClick={resetForm}
-              disabled={creating}
-            >
-              Cancel
-            </button>
+            <button className="btn-outline" onClick={resetForm} disabled={creating}>Cancel</button>
           </div>
         </div>
       )}
 
-      {/* Forums List */}
+      {/* Forum list */}
       {loading ? (
         <div>Loading...</div>
       ) : (
@@ -291,89 +256,96 @@ export default function ForumsPage({ user }) {
               No forums yet. Create the first one!
             </div>
           ) : (
-            forums.map((forum) => (
-              <div key={forum.id} className="ic-card" style={cardStyle}>
-                <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#552B9A', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>
-                  💬
-                </div>
-                <div style={{ flex: 1 }}>
-                  {editingForum === forum.id ? (
-                    <div>
-                      <input
-                        type="text"
-                        value={editTitle}
-                        onChange={(e) => setEditTitle(e.target.value)}
-                        style={{ ...inputStyle, marginBottom: '0.5rem' }}
-                        placeholder="Forum title"
-                      />
-                      <textarea
-                        value={editDescription}
-                        onChange={(e) => setEditDescription(e.target.value)}
-                        style={{ ...inputStyle, marginBottom: '0.5rem', resize: 'vertical' }}
-                        placeholder="Description (optional)"
-                        rows={2}
-                      />
-                      <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button className="btn-purple" onClick={handleUpdateForum} style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>Save</button>
-                        <button className="btn-outline" onClick={() => setEditingForum(null)} style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>Cancel</button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <div style={{ fontWeight: 600, color: '#222', fontSize: '0.9rem' }}>{forum.title}</div>
-                      <div style={{ fontSize: '0.78rem', color: '#888', marginBottom: '0.25rem' }}>
-                        {forum.groupName} | Created: {formatTime(forum.createdAt)}
-                      </div>
-                      {forum.description && (
-                        <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '0.5rem' }}>
-                          {forum.description}
+            forums.map(forum => {
+              const canManage  = canManageForum(forum);
+              const isEditing  = editingForum === forum.id;
+
+              return (
+                <div
+                  key={forum.id}
+                  className="ic-card"
+                  style={{ display: 'flex', alignItems: 'center', gap: '1rem', transition: 'box-shadow 0.15s' }}
+                >
+                  {/* Forum icon */}
+                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#552B9A', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <FiMessageSquare size={20} />
+                  </div>
+
+                  {/* Forum body — edit form or read view */}
+                  <div style={{ flex: 1 }}>
+                    {isEditing ? (
+                      <div>
+                        <input
+                          type="text"
+                          value={editTitle}
+                          onChange={e => setEditTitle(e.target.value)}
+                          style={{ ...inputStyle, marginBottom: '0.5rem' }}
+                          placeholder="Forum title"
+                        />
+                        <textarea
+                          value={editDescription}
+                          onChange={e => setEditDescription(e.target.value)}
+                          style={{ ...inputStyle, marginBottom: '0.5rem', resize: 'vertical' }}
+                          placeholder="Description (optional)"
+                          rows={2}
+                        />
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button className="btn-purple" onClick={handleUpdateForum} style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>Save</button>
+                          <button className="btn-outline" onClick={() => setEditingForum(null)} style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>Cancel</button>
                         </div>
-                      )}
-                      <button 
-                        className="btn-outline" 
-                        onClick={() => setSelectedForum(forum)}
-                        style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                      </div>
+                    ) : (
+                      <div>
+                        <div style={{ fontWeight: 600, color: '#222', fontSize: '0.9rem' }}>{forum.title}</div>
+                        <div style={{ fontSize: '0.78rem', color: '#888', marginBottom: '0.25rem' }}>
+                          {forum.groupName} | Created: {formatTime(forum.createdAt)}
+                        </div>
+                        {forum.description && (
+                          <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '0.5rem' }}>{forum.description}</div>
+                        )}
+                        <button
+                          className="btn-outline"
+                          onClick={() => setSelectedForum(forum)}
+                          style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                        >
+                          View Posts
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Edit / delete actions */}
+                  {!isEditing && canManage && (
+                    <div style={{ display: 'flex', gap: '0.25rem' }}>
+                      <button
+                        onClick={() => handleEditForum(forum)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#552B9A', padding: '0.25rem' }}
+                        title="Edit forum"
                       >
-                        View Posts
+                        <FiEdit2 size={15} />
+                      </button>
+                      <button
+                        onClick={() => { setForumToDelete(forum); setShowDeleteConfirm(true); }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc3545', padding: '0.25rem' }}
+                        title="Delete forum"
+                      >
+                        <FiTrash2 size={15} />
                       </button>
                     </div>
                   )}
                 </div>
-                {editingForum !== forum.id && (
-                  <div style={{ display: 'flex', gap: '0.25rem' }}>
-                    {canManageForum(forum) && (
-                      <button 
-                        onClick={() => handleEditForum(forum)} 
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}
-                        title="Edit forum"
-                      >
-                        ✏️
-                      </button>
-                    )}
-                    {canManageForum(forum) && (
-                      <button 
-                        onClick={() => handleDeleteForum(forum)} 
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: '#dc3545' }}
-                        title="Delete forum"
-                      >
-                        🗑️
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}
 
-      {/* Confirm Delete Modal */}
       <ConfirmModal
         isOpen={showDeleteConfirm}
         title="Delete Forum"
         message={`Are you sure you want to delete "${forumToDelete?.title}"? This will also delete all posts in this forum. This action cannot be undone.`}
         onConfirm={confirmDelete}
-        onCancel={cancelDelete}
+        onCancel={() => { setShowDeleteConfirm(false); setForumToDelete(null); }}
       />
     </div>
   );

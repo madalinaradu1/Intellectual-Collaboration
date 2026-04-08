@@ -3,6 +3,7 @@ import { generateClient } from 'aws-amplify/api';
 import { personalEventsByOwner, listGlobalEvents } from '../graphql/queries';
 import DissertationFoldersTab from './DissertationFoldersTab';
 import { useNavigate } from 'react-router-dom';
+import { FiLink, FiClipboard } from 'react-icons/fi';
 import './LDPPage.css';
 
 const client = generateClient();
@@ -100,7 +101,7 @@ export default function LDPPage({ user }) {
 
               <div style={{ marginTop: '1.5rem', background: '#f7f3fa', borderRadius: '8px', padding: '1rem 1.25rem', border: '1px solid #e0d4eb' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.4rem' }}>
-                  <strong style={{ color: '#552B9A', fontSize: '0.9rem' }}>📋 Program of Study</strong>
+                  <strong style={{ color: '#552B9A', fontSize: '0.9rem' }}><FiClipboard size={14} style={{ marginRight: '0.35rem', verticalAlign: 'middle' }} />Program of Study</strong>
                   <span style={{ fontSize: '0.72rem', color: '#888', background: '#eee', padding: '0.15rem 0.5rem', borderRadius: '10px' }}>Read Only</span>
                 </div>
                 <p style={{ fontSize: '0.82rem', color: '#555' }}>EDD – Doctor of Education in Organizational Leadership</p>
@@ -143,9 +144,9 @@ export default function LDPPage({ user }) {
           )}
         </div>
 
-        {/* Right rail – Important Links */}
+        {/* Important Links */}
         <div className="ic-card ldp-links-card">
-          <h2>📎 Important Links</h2>
+          <h2><FiLink size={16} style={{ marginRight: '0.4rem', verticalAlign: 'middle' }} />Important Links</h2>
           <ul style={{ listStyle: 'none', margin: 0 }}>
             {importantLinks.map(link => (
               <li key={link.label} style={{ borderBottom: '1px solid #f0f0f0' }}>

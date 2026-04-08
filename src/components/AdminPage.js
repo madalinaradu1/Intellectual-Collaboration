@@ -1,47 +1,55 @@
+// Only the Calendar tab makes live GraphQL calls. The rest use static mock data
+// until the backend management APIs are implemented.
+
 import React, { useState, useEffect, useCallback } from 'react';
+import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { generateClient } from 'aws-amplify/api';
 import { listGlobalEvents } from '../graphql/queries';
 import { createGlobalEvent, updateGlobalEvent, deleteGlobalEvent } from '../graphql/mutations';
 
 const client = generateClient();
 
-const users = [
-  { id: 1, name: 'Sarah K.',    email: 'sarah.k@gcu.edu',    role: 'Member',     group: 'EDD Community', status: 'Active' },
-  { id: 2, name: 'Dr. Martinez',email: 'smartinez@gcu.edu',  role: 'Admin',      group: 'System',        status: 'Active' },
-  { id: 3, name: 'James L.',    email: 'james.l@gcu.edu',    role: 'Officer',    group: 'DBA Community', status: 'Active' },
-  { id: 4, name: 'Maria G.',    email: 'maria.g@gcu.edu',    role: 'Member',     group: 'PHD Community', status: 'Active' },
-  { id: 5, name: 'David R.',    email: 'david.r@gcu.edu',    role: 'Member',     group: 'DNP Community', status: 'Inactive' },
-  { id: 6, name: 'Emily T.',    email: 'emily.t@gcu.edu',    role: 'Group Admin',group: 'EDD Community', status: 'Active' },
+// ── Static mock data ──────────────────────────────────────────────────────────
+
+const USERS = [
+  { id: 1, name: 'Sarah K.',     email: 'sarah.k@gcu.edu',    role: 'Member',      group: 'EDD Community', status: 'Active'   },
+  { id: 2, name: 'Dr. Martinez', email: 'smartinez@gcu.edu',  role: 'Admin',       group: 'System',        status: 'Active'   },
+  { id: 3, name: 'James L.',     email: 'james.l@gcu.edu',    role: 'Officer',     group: 'DBA Community', status: 'Active'   },
+  { id: 4, name: 'Maria G.',     email: 'maria.g@gcu.edu',    role: 'Member',      group: 'PHD Community', status: 'Active'   },
+  { id: 5, name: 'David R.',     email: 'david.r@gcu.edu',    role: 'Member',      group: 'DNP Community', status: 'Inactive' },
+  { id: 6, name: 'Emily T.',     email: 'emily.t@gcu.edu',    role: 'Group Admin', group: 'EDD Community', status: 'Active'   },
 ];
 
-const metrics = [
-  { label: 'Total Users',       value: '50,214', change: '+312 this week' },
-  { label: 'Active Groups',     value: '47',     change: '+2 this month' },
-  { label: 'Forum Posts (30d)', value: '1,843',  change: '+18% vs last month' },
-  { label: 'Content Items',     value: '286',    change: '+12 this week' },
+const METRICS = [
+  { label: 'Total Users',       value: '50,214', change: '+312 this week'       },
+  { label: 'Active Groups',     value: '47',     change: '+2 this month'        },
+  { label: 'Forum Posts (30d)', value: '1,843',  change: '+18% vs last month'   },
+  { label: 'Content Items',     value: '286',    change: '+12 this week'        },
 ];
 
-const auditLogs = [
-  { actor: 'Dr. Martinez', action: 'Approved submission',      entity: 'Chapter 2 – Lit Review',       time: 'Jan 30, 2025 – 2:15 PM' },
-  { actor: 'Emily T.',     action: 'Added member',             entity: 'Sarah K. → EDD Community',     time: 'Jan 29, 2025 – 10:42 AM' },
-  { actor: 'System',       action: 'Email notification sent',  entity: 'IRB Deadline Reminder',         time: 'Jan 28, 2025 – 8:00 AM' },
-  { actor: 'James L.',     action: 'Uploaded content',         entity: 'Research Methods Guide v3',     time: 'Jan 27, 2025 – 3:30 PM' },
-  { actor: 'Dr. Chen',     action: 'Role changed',             entity: 'David R. → Inactive',           time: 'Jan 25, 2025 – 11:05 AM' },
+const AUDIT_LOGS = [
+  { actor: 'Dr. Martinez', action: 'Approved submission',     entity: 'Chapter 2 – Lit Review',     time: 'Jan 30, 2025 – 2:15 PM'  },
+  { actor: 'Emily T.',     action: 'Added member',            entity: 'Sarah K. → EDD Community',   time: 'Jan 29, 2025 – 10:42 AM' },
+  { actor: 'System',       action: 'Email notification sent', entity: 'IRB Deadline Reminder',       time: 'Jan 28, 2025 – 8:00 AM'  },
+  { actor: 'James L.',     action: 'Uploaded content',        entity: 'Research Methods Guide v3',   time: 'Jan 27, 2025 – 3:30 PM'  },
+  { actor: 'Dr. Chen',     action: 'Role changed',            entity: 'David R. → Inactive',         time: 'Jan 25, 2025 – 11:05 AM' },
 ];
+
+// ── Style helpers ─────────────────────────────────────────────────────────────
 
 const ROLE_BADGE = {
-  'Admin':       { background: '#552B9A', color: '#fff' },
-  'Group Admin': { background: '#e8d5f5', color: '#552B9A' },
-  'Officer':     { background: '#cce5ff', color: '#004085' },
-  'Member':      { background: '#eee',   color: '#555' },
+  'Admin':       { background: '#552B9A', color: '#fff'     },
+  'Group Admin': { background: '#e8d5f5', color: '#552B9A'  },
+  'Officer':     { background: '#cce5ff', color: '#004085'  },
+  'Member':      { background: '#eee',   color: '#555'      },
 };
-function roleBadge(role) { return ROLE_BADGE[role] ?? ROLE_BADGE['Member']; }
+const roleBadge = (role) => ROLE_BADGE[role] ?? ROLE_BADGE['Member'];
 
 const TABS = [
-  { key: 'users',    label: 'Users' },
-  { key: 'groups',   label: 'Groups' },
-  { key: 'calendar', label: 'Calendar' },
-  { key: 'reports',  label: 'Reports' },
+  { key: 'users',    label: 'Users'      },
+  { key: 'groups',   label: 'Groups'     },
+  { key: 'calendar', label: 'Calendar'   },
+  { key: 'reports',  label: 'Reports'    },
   { key: 'audit',    label: 'Audit Logs' },
 ];
 
@@ -53,10 +61,12 @@ const inputStyle = {
   fontSize: '0.87rem', boxSizing: 'border-box', marginBottom: '0.6rem',
 };
 
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export default function AdminPage({ user }) {
   const [tab, setTab] = useState('users');
 
-  // Global events state
+  // Global events (Calendar tab).
   const [globalEvents,  setGlobalEvents]  = useState([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [showModal,     setShowModal]     = useState(false);
@@ -65,14 +75,16 @@ export default function AdminPage({ user }) {
   const [editingId,     setEditingId]     = useState(null);
   const [saving,        setSaving]        = useState(false);
 
-  const owner = user?.username ?? user?.userId ?? 'admin';
+  const displayName = user?.attributes?.name || user?.name || user?.username || 'admin';
 
+  // Fetch global events sorted by date ascending.
   const fetchGlobalEvents = useCallback(async () => {
     setLoadingEvents(true);
     try {
       const result = await client.graphql({ query: listGlobalEvents });
-      // Sort ascending by date for the admin table view
-      const sorted = result.data.listGlobalEvents.items.sort((a, b) => a.date.localeCompare(b.date));
+      const sorted = [...result.data.listGlobalEvents.items].sort((a, b) =>
+        a.date.localeCompare(b.date)
+      );
       setGlobalEvents(sorted);
     } catch (err) {
       console.error('Error fetching global events:', err);
@@ -81,7 +93,7 @@ export default function AdminPage({ user }) {
     }
   }, []);
 
-  // Only fetch when the calendar tab is first opened
+  // Only load events when the Calendar tab is first opened.
   useEffect(() => {
     if (tab === 'calendar') fetchGlobalEvents();
   }, [tab, fetchGlobalEvents]);
@@ -94,7 +106,13 @@ export default function AdminPage({ user }) {
   };
 
   const openEditModal = (ev) => {
-    setForm({ title: ev.title, date: ev.date, time: ev.time ?? '', location: ev.location ?? '', notes: ev.notes ?? '' });
+    setForm({
+      title:    ev.title,
+      date:     ev.date,
+      time:     ev.time     ?? '',
+      location: ev.location ?? '',
+      notes:    ev.notes    ?? '',
+    });
     setEditingId(ev.id);
     setFormError('');
     setShowModal(true);
@@ -102,13 +120,19 @@ export default function AdminPage({ user }) {
 
   const handleSave = async () => {
     if (!form.title.trim()) { setFormError('Title is required.'); return; }
-    if (!form.date)         { setFormError('Date is required.'); return; }
+    if (!form.date)         { setFormError('Date is required.');  return; }
     setSaving(true);
     try {
       if (editingId) {
-        await client.graphql({ query: updateGlobalEvent, variables: { input: { id: editingId, ...form } } });
+        await client.graphql({
+          query: updateGlobalEvent,
+          variables: { input: { id: editingId, ...form } },
+        });
       } else {
-        await client.graphql({ query: createGlobalEvent, variables: { input: { ...form, createdBy: owner } } });
+        await client.graphql({
+          query: createGlobalEvent,
+          variables: { input: { ...form, createdBy: displayName } },
+        });
       }
       setShowModal(false);
       fetchGlobalEvents();
@@ -136,20 +160,25 @@ export default function AdminPage({ user }) {
         <p>User management, content moderation, reports, and audit logs</p>
       </div>
 
+      {/* Tab bar */}
       <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.5rem', borderBottom: '2px solid #eee', paddingBottom: '0.5rem' }}>
-        {TABS.map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)} style={{
-            background: tab === t.key ? '#552B9A' : 'transparent',
-            color: tab === t.key ? '#fff' : '#555',
-            border: 'none', padding: '0.5rem 1rem', borderRadius: '5px',
-            cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
-          }}>
+        {TABS.map(t => (
+          <button
+            key={t.key}
+            onClick={() => setTab(t.key)}
+            style={{
+              background: tab === t.key ? '#552B9A' : 'transparent',
+              color:      tab === t.key ? '#fff'    : '#555',
+              border: 'none', padding: '0.5rem 1rem', borderRadius: '5px',
+              cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
+            }}
+          >
             {t.label}
           </button>
         ))}
       </div>
 
-      {/* USERS tab */}
+      {/* ── Users tab ── */}
       {tab === 'users' && (
         <div className="ic-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -159,22 +188,26 @@ export default function AdminPage({ user }) {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #eee' }}>
-                {['Name', 'Email', 'Role', 'Group', 'Status'].map((h) => (
+                {['Name', 'Email', 'Role', 'Group', 'Status'].map(h => (
                   <th key={h} style={{ textAlign: 'left', padding: '0.5rem 0.6rem', color: '#552B9A', fontWeight: 600 }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
+              {USERS.map(u => (
                 <tr key={u.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
                   <td style={{ padding: '0.6rem', color: '#222', fontWeight: 500 }}>{u.name}</td>
                   <td style={{ padding: '0.6rem', color: '#666' }}>{u.email}</td>
                   <td style={{ padding: '0.6rem' }}>
-                    <span style={{ ...roleBadge(u.role), padding: '0.18rem 0.5rem', borderRadius: '10px', fontSize: '0.72rem', fontWeight: 600 }}>{u.role}</span>
+                    <span style={{ ...roleBadge(u.role), padding: '0.18rem 0.5rem', borderRadius: '10px', fontSize: '0.72rem', fontWeight: 600 }}>
+                      {u.role}
+                    </span>
                   </td>
                   <td style={{ padding: '0.6rem', color: '#555' }}>{u.group}</td>
                   <td style={{ padding: '0.6rem' }}>
-                    <span className={`badge ${u.status === 'Active' ? 'badge-active' : 'badge-pending'}`}>{u.status}</span>
+                    <span className={`badge ${u.status === 'Active' ? 'badge-active' : 'badge-pending'}`}>
+                      {u.status}
+                    </span>
                   </td>
                 </tr>
               ))}
@@ -183,16 +216,18 @@ export default function AdminPage({ user }) {
         </div>
       )}
 
-      {/* GROUPS tab */}
+      {/* ── Groups tab ── */}
       {tab === 'groups' && (
         <div className="ic-card">
           <h2>Group Management</h2>
-          <p style={{ fontSize: '0.88rem', color: '#666' }}>Manage group settings, membership, and moderation from here. (Full implementation pending backend.)</p>
+          <p style={{ fontSize: '0.88rem', color: '#666' }}>
+            Manage group settings, membership, and moderation from here. (Full implementation pending backend.)
+          </p>
           <button className="btn-purple" style={{ marginTop: '0.75rem' }}>+ Create Group</button>
         </div>
       )}
 
-      {/* CALENDAR tab — global event management */}
+      {/* ── Calendar tab — global event management ── */}
       {tab === 'calendar' && (
         <div className="ic-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -217,7 +252,7 @@ export default function AdminPage({ user }) {
                 </tr>
               </thead>
               <tbody>
-                {globalEvents.map((ev) => (
+                {globalEvents.map(ev => (
                   <tr key={ev.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
                     <td style={{ padding: '0.6rem', color: '#222', fontWeight: 500 }}>{ev.title}</td>
                     <td style={{ padding: '0.6rem', color: '#555' }}>{ev.date}</td>
@@ -226,8 +261,8 @@ export default function AdminPage({ user }) {
                     <td style={{ padding: '0.6rem', color: '#888', fontSize: '0.78rem' }}>{ev.createdBy}</td>
                     <td style={{ padding: '0.6rem' }}>
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
-                        <button onClick={() => openEditModal(ev)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#552B9A', fontSize: '0.8rem' }} title="Edit">✏️</button>
-                        <button onClick={() => handleDelete(ev.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc3545', fontSize: '0.8rem' }} title="Delete">🗑️</button>
+                        <button onClick={() => openEditModal(ev)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#552B9A' }} title="Edit"><FiEdit2 size={15} /></button>
+                        <button onClick={() => handleDelete(ev.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc3545' }} title="Delete"><FiTrash2 size={15} /></button>
                       </div>
                     </td>
                   </tr>
@@ -238,11 +273,11 @@ export default function AdminPage({ user }) {
         </div>
       )}
 
-      {/* REPORTS tab */}
+      {/* ── Reports tab ── */}
       {tab === 'reports' && (
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-            {metrics.map((m) => (
+            {METRICS.map(m => (
               <div key={m.label} className="ic-card" style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '0.78rem', color: '#888', marginBottom: '0.25rem' }}>{m.label}</div>
                 <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#552B9A' }}>{m.value}</div>
@@ -252,25 +287,27 @@ export default function AdminPage({ user }) {
           </div>
           <div className="ic-card">
             <h2>Engagement Overview</h2>
-            <p style={{ fontSize: '0.88rem', color: '#666' }}>Detailed charts and dashboards will be powered by QuickSight once the backend reporting pipeline is live.</p>
+            <p style={{ fontSize: '0.88rem', color: '#666' }}>
+              Detailed charts and dashboards will be powered by QuickSight once the backend reporting pipeline is live.
+            </p>
           </div>
         </div>
       )}
 
-      {/* AUDIT tab */}
+      {/* ── Audit Logs tab ── */}
       {tab === 'audit' && (
         <div className="ic-card">
           <h2>Audit Logs</h2>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.83rem' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #eee' }}>
-                {['Actor', 'Action', 'Entity', 'Time'].map((h) => (
+                {['Actor', 'Action', 'Entity', 'Time'].map(h => (
                   <th key={h} style={{ textAlign: 'left', padding: '0.5rem 0.6rem', color: '#552B9A', fontWeight: 600 }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {auditLogs.map((log, i) => (
+              {AUDIT_LOGS.map((log, i) => (
                 <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
                   <td style={{ padding: '0.55rem 0.6rem', color: '#222', fontWeight: 500 }}>{log.actor}</td>
                   <td style={{ padding: '0.55rem 0.6rem', color: '#555' }}>{log.action}</td>
@@ -283,27 +320,25 @@ export default function AdminPage({ user }) {
         </div>
       )}
 
-      {/* Add / Edit global event modal */}
+      {/* ── Add / Edit global event modal ── */}
       {showModal && (
-        <div onClick={() => setShowModal(false)} style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 500, padding: '1rem',
-        }}>
-          <div onClick={e => e.stopPropagation()} style={{
-            background: '#fff', borderRadius: '10px', padding: '1.75rem',
-            width: '100%', maxWidth: '440px',
-            boxShadow: '0 8px 30px rgba(0,0,0,0.18)',
-          }}>
+        <div
+          onClick={() => setShowModal(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 500, padding: '1rem' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: '10px', padding: '1.75rem', width: '100%', maxWidth: '440px', boxShadow: '0 8px 30px rgba(0,0,0,0.18)' }}
+          >
             <h2 style={{ color: '#552B9A', marginBottom: '1.25rem', fontSize: '1.1rem' }}>
               {editingId ? 'Edit Global Event' : 'Add Global Event'}
             </h2>
 
             {[
-              { label: 'Title *',  key: 'title',    type: 'text', placeholder: 'Event title' },
-              { label: 'Date *',   key: 'date',     type: 'date' },
+              { label: 'Title *',  key: 'title',    type: 'text', placeholder: 'Event title'            },
+              { label: 'Date *',   key: 'date',     type: 'date'                                        },
               { label: 'Time',     key: 'time',     type: 'text', placeholder: 'e.g. 2:00 PM or All Day' },
-              { label: 'Location', key: 'location', type: 'text', placeholder: 'e.g. Zoom, Teams' },
+              { label: 'Location', key: 'location', type: 'text', placeholder: 'e.g. Zoom, Teams'       },
             ].map(({ label, key, type, placeholder }) => (
               <div key={key}>
                 <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: '#333', marginBottom: '0.25rem' }}>{label}</label>

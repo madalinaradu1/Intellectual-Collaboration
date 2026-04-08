@@ -1,4 +1,6 @@
+// Data is static until a Groups API is implemented.
 import React, { useState } from 'react';
+import { FiUsers, FiActivity } from 'react-icons/fi';
 
 const groups = [
   { id: 1, name: 'EDD Community', members: 142, description: 'Doctor of Education in Organizational Leadership', visibility: 'Public', activity: 'High' },
@@ -102,8 +104,8 @@ export default function GroupsPage() {
             </div>
             <p style={{ fontSize: '0.82rem', color: '#555', marginBottom: '0.6rem' }}>{g.description}</p>
             <div style={{ display: 'flex', gap: '1rem', fontSize: '0.76rem', color: '#888' }}>
-              <span>👥 {g.members} members</span>
-              <span>📊 {g.activity} activity</span>
+              <span><FiUsers size={13} style={{ verticalAlign: 'middle', marginRight: '0.25rem' }} />{g.members} members</span>
+              <span><FiActivity size={13} style={{ verticalAlign: 'middle', marginRight: '0.25rem' }} />{g.activity} activity</span>
             </div>
           </div>
         ))}

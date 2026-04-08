@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { FiMail, FiPhone, FiClock, FiZap, FiFileText, FiMessageSquare, FiTool } from 'react-icons/fi';
 
 const sections = [
   {
     title: 'Getting Started',
-    icon: '🚀',
+    icon: <FiZap size={18} />,
     items: [
       { q: 'How do I log in for the first time?', a: 'Use your @gcu.edu email address. You will receive a verification code via email on first sign-in. After verifying, you can set your password.' },
       { q: 'How do I join a doctoral community?', a: 'Navigate to Groups → browse the directory → click Join Group. Public groups are open; restricted groups require approval from the group admin.' },
@@ -12,7 +13,7 @@ const sections = [
   },
   {
     title: 'Dissertation & Review',
-    icon: '📝',
+    icon: <FiFileText size={18} />,
     items: [
       { q: 'How do I submit a chapter for review?', a: 'Go to Review Portal → click "+ New Submission" → select the chapter stage → upload your file → submit. Your committee will be notified automatically.' },
       { q: 'What do the submission statuses mean?', a: 'Pending = awaiting committee action. In Review = a committee member is actively reviewing. Approved = the submission has been cleared.' },
@@ -21,7 +22,7 @@ const sections = [
   },
   {
     title: 'Forums & Communication',
-    icon: '💬',
+    icon: <FiMessageSquare size={18} />,
     items: [
       { q: 'How do I start a new thread?', a: 'Go to Forums → select a forum → click "+ New Thread." Give your thread a clear title and add context in the first post.' },
       { q: 'How do mentions work?', a: 'Type @ followed by a username in any post or reply to notify that person. They will receive an email and/or push notification depending on their preferences.' },
@@ -30,7 +31,7 @@ const sections = [
   },
   {
     title: 'Technical Support',
-    icon: '🛠',
+    icon: <FiTool size={18} />,
     items: [
       { q: 'Who do I contact if the platform is down?', a: 'Email ic-support@gcu.edu or contact Campus Technology IT. Response time is typically within 2 business hours during weekdays.' },
       { q: 'My file upload failed — what should I do?', a: 'Supported formats are PDF, DOCX, and XLSX. Max file size is 50 MB. If the upload still fails, try refreshing the page and uploading again.' },
@@ -51,12 +52,12 @@ export default function HelpPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.85rem', marginBottom: '1.75rem' }}>
         {[
-          { label: 'IT Support', detail: 'ic-support@gcu.edu', icon: '📧' },
-          { label: 'Campus Technology', detail: '(480) 555-0192', icon: '📞' },
-          { label: 'Help Desk Hours', detail: 'Mon–Fri 8AM–6PM MST', icon: '🕐' },
+          { label: 'IT Support', detail: 'ic-support@gcu.edu', icon: <FiMail size={22} color="#552B9A" /> },
+          { label: 'Campus Technology', detail: '(480) 555-0192', icon: <FiPhone size={22} color="#552B9A" /> },
+          { label: 'Help Desk Hours', detail: 'Mon–Fri 8AM–6PM MST', icon: <FiClock size={22} color="#552B9A" /> },
         ].map((c) => (
           <div key={c.label} className="ic-card" style={{ textAlign: 'center', padding: '1rem' }}>
-            <div style={{ fontSize: '1.5rem', marginBottom: '0.3rem' }}>{c.icon}</div>
+            <div style={{ marginBottom: '0.3rem' }}>{c.icon}</div>
             <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#222' }}>{c.label}</div>
             <div style={{ fontSize: '0.78rem', color: '#552B9A' }}>{c.detail}</div>
           </div>

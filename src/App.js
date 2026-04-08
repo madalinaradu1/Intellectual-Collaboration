@@ -22,18 +22,23 @@ import './App.css';
 
 Amplify.configure(awsExports);
 
-function App() {
-  const [user, setUser] = useState(null);
+export default function App() {
+  const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError]     = useState(null);
 
+  // Fetch the current Cognito user and their attributes in parallel.
   const checkAuthState = useCallback(async () => {
     try {
       setError(null);
-      const [currentUser, attributes] = await Promise.all([getCurrentUser(), fetchUserAttributes()]);
+      const [currentUser, attributes] = await Promise.all([
+        getCurrentUser(),
+        fetchUserAttributes(),
+      ]);
       setUser({ ...currentUser, attributes });
     } catch (err) {
       setUser(null);
+      // UserUnAuthenticatedException is the normal "not logged in"
       if (err.name !== 'UserUnAuthenticatedException') {
         console.warn('Auth check failed:', err);
         setError('Authentication check failed. Please try refreshing the page.');
@@ -59,7 +64,7 @@ function App() {
   if (loading) {
     return (
       <div className="loading-container">
-        <div className="loading-spinner"></div>
+        <div className="loading-spinner" />
         <p>Loading Intellectual Collaboration...</p>
       </div>
     );
@@ -77,9 +82,7 @@ function App() {
     );
   }
 
-  if (!user) {
-    return <LoginPage onSignIn={checkAuthState} />;
-  }
+  if (!user) return <LoginPage onSignIn={checkAuthState} />;
 
   return (
     <Router>
@@ -87,17 +90,17 @@ function App() {
         <Navbar user={user} signOut={signOut} />
         <main className="main-content">
           <Routes>
-            <Route path="/" element={<HomePage user={user} />} />
-            <Route path="/ldp" element={<LDPPage user={user} />} />
-            <Route path="/review" element={<ReviewPortalPage user={user} />} />
-            <Route path="/groups" element={<GroupsPage />} />
+            <Route path="/"        element={<HomePage user={user} />} />
+            <Route path="/ldp"     element={<LDPPage user={user} />} />
+            <Route path="/review"  element={<ReviewPortalPage user={user} />} />
+            <Route path="/groups"  element={<GroupsPage />} />
             <Route path="/content" element={<ContentPage />} />
-            <Route path="/forums" element={<ForumsPage user={user} />} />
-            <Route path="/media" element={<MediaPage />} />
+            <Route path="/forums"  element={<ForumsPage user={user} />} />
+            <Route path="/media"   element={<MediaPage />} />
             <Route path="/calendar" element={<CalendarPage user={user} />} />
-            <Route path="/admin" element={<AdminPage user={user} />} />
+            <Route path="/admin"   element={<AdminPage user={user} />} />
             <Route path="/profile" element={<ProfilePage user={user} />} />
-            <Route path="/help" element={<HelpPage />} />
+            <Route path="/help"    element={<HelpPage />} />
           </Routes>
         </main>
         <Footer />
@@ -105,5 +108,3 @@ function App() {
     </Router>
   );
 }
-
-export default App;

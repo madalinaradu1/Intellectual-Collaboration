@@ -1,5 +1,7 @@
+// All data is static until a notifications/activity-feed API is wired up.
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { FiBell, FiZap, FiClock, FiCalendar, FiStar, FiCpu, FiBook, FiAward, FiClipboard, FiMessageSquare } from 'react-icons/fi';
 import './HomePage.css';
 
 const announcements = [
@@ -10,12 +12,12 @@ const announcements = [
 ];
 
 const quickLinks = [
-  { label: 'AI Skills Lab', path: '/content', icon: '🤖' },
-  { label: 'GCU Library', path: '/content', icon: '📚' },
-  { label: 'Commencement', path: '/content', icon: '🎓' },
-  { label: 'MPM Portal', path: '/content', icon: '📝' },
-  { label: 'Forums', path: '/forums', icon: '💬' },
-  { label: 'Calendar', path: '/calendar', icon: '📅' },
+  { label: 'AI Skills Lab', path: '/content', icon: <FiCpu size={22} /> },
+  { label: 'GCU Library', path: '/content', icon: <FiBook size={22} /> },
+  { label: 'Commencement', path: '/content', icon: <FiAward size={22} /> },
+  { label: 'MPM Portal', path: '/content', icon: <FiClipboard size={22} /> },
+  { label: 'Forums', path: '/forums', icon: <FiMessageSquare size={22} /> },
+  { label: 'Calendar', path: '/calendar', icon: <FiCalendar size={22} /> },
 ];
 
 const recentActivity = [
@@ -116,7 +118,7 @@ export default function HomePage({ user }) {
       <div className="home-grid">
         <aside className="home-col home-col-left">
           <div className="ic-card">
-            <h2>📢 Announcements</h2>
+            <h2><FiBell size={18} style={{ marginRight: '0.4rem', verticalAlign: 'middle' }} />Announcements</h2>
             <ul className="announcement-list">
               {announcements.map((announcement) => (
                 <AnnouncementItem 
@@ -128,7 +130,7 @@ export default function HomePage({ user }) {
           </div>
 
           <div className="ic-card">
-            <h2>⚡ Quick Links</h2>
+            <h2><FiZap size={18} style={{ marginRight: '0.4rem', verticalAlign: 'middle' }} />Quick Links</h2>
             <div className="quick-links-grid" role="list">
               {quickLinks.map((link) => (
                 <Link 
@@ -147,7 +149,7 @@ export default function HomePage({ user }) {
 
         <main className="home-col home-col-center">
           <div className="ic-card">
-            <h2>🕐 Recent Activity</h2>
+            <h2><FiClock size={18} style={{ marginRight: '0.4rem', verticalAlign: 'middle' }} />Recent Activity</h2>
             <ul className="activity-list">
               {recentActivity.map((activity) => (
                 <ActivityItem key={activity.id} activity={activity} />
@@ -165,7 +167,7 @@ export default function HomePage({ user }) {
 
         <aside className="home-col home-col-right">
           <div className="ic-card">
-            <h2>📅 Upcoming Events</h2>
+            <h2><FiCalendar size={18} style={{ marginRight: '0.4rem', verticalAlign: 'middle' }} />Upcoming Events</h2>
             <ul className="event-list">
               {calendarEvents.map((event) => (
                 <EventItem key={event.id} event={event} />
@@ -181,7 +183,7 @@ export default function HomePage({ user }) {
           </div>
 
           <div className="ic-card">
-            <h2>🎉 Good News</h2>
+            <h2><FiStar size={18} style={{ marginRight: '0.4rem', verticalAlign: 'middle' }} />Good News</h2>
             <p className="good-news-text">
               Congratulations to the EDD Class of 2024 on achieving a 94% dissertation completion rate —
               the highest in department history!

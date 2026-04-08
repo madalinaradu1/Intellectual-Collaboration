@@ -26,6 +26,7 @@ type Post @model {
   createdBy: String
   forumID: ID! @index(name: "byForum")
   forum: Forum @belongsTo(fields: ["forumID"])
+  parentPostID: ID
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
 }

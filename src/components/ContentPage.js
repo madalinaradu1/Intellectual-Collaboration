@@ -1,4 +1,6 @@
+// Data is static until a Content API is implemented.
 import React, { useState } from 'react';
+import { FiUpload, FiDownload, FiFileText } from 'react-icons/fi';
 
 const contentItems = [
   { id: 1, title: 'Dissertation & Thesis Template', type: 'Template', group: 'Dissertation Resources', tags: ['template', 'dissertation'], updated: 'Jan 20, 2025', version: 3 },
@@ -56,7 +58,7 @@ export default function ContentPage() {
             </button>
           ))}
         </div>
-        <button className="btn-purple" style={{ marginLeft: 'auto' }}>⬆ Upload</button>
+        <button className="btn-purple" style={{ marginLeft: 'auto' }}><FiUpload size={13} style={{ marginRight: '0.3rem', verticalAlign: 'middle' }} />Upload</button>
       </div>
 
       {/* Content list */}
@@ -66,7 +68,7 @@ export default function ContentPage() {
             onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(107,45,139,0.18)')}
             onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)')}
           >
-            <div style={{ width: 44, height: 44, borderRadius: '8px', background: '#f0e6f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', flexShrink: 0 }}>📄</div>
+            <div style={{ width: 44, height: 44, borderRadius: '8px', background: '#f0e6f6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><FiFileText size={22} color="#552B9A" /></div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#222' }}>{item.title}</div>
               <div style={{ fontSize: '0.78rem', color: '#888', marginTop: '0.2rem' }}>
@@ -80,7 +82,7 @@ export default function ContentPage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem' }}>
               <span style={{ fontSize: '0.7rem', background: '#fff3cd', color: '#856404', padding: '0.15rem 0.5rem', borderRadius: '10px', fontWeight: 600 }}>{item.type}</span>
-              <button className="btn-outline" style={{ fontSize: '0.72rem', padding: '0.25rem 0.6rem' }}>⬇ Download</button>
+              <button className="btn-outline" style={{ fontSize: '0.72rem', padding: '0.25rem 0.6rem' }}><FiDownload size={12} style={{ marginRight: '0.25rem', verticalAlign: 'middle' }} />Download</button>
             </div>
           </div>
         ))}

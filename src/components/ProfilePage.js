@@ -1,3 +1,4 @@
+// Edit profile and Teams linking are stubbed pending backend implementation.
 import React, { useState } from 'react';
 import './ProfilePage.css';
 

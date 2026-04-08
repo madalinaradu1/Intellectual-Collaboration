@@ -91,6 +91,7 @@ export const getPost = /* GraphQL */ `
         updatedAt
         __typename
       }
+      parentPostID
       createdAt
       updatedAt
       __typename
@@ -110,6 +111,7 @@ export const listPosts = /* GraphQL */ `
         author
         createdBy
         forumID
+        parentPostID
         createdAt
         updatedAt
         __typename
@@ -220,6 +222,7 @@ export const postsByForumID = /* GraphQL */ `
         author
         createdBy
         forumID
+        parentPostID
         createdAt
         updatedAt
         __typename

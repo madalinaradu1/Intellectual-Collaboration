@@ -109,6 +109,7 @@ export const onCreatePost = /* GraphQL */ `
         updatedAt
         __typename
       }
+      parentPostID
       createdAt
       updatedAt
       __typename
@@ -133,6 +134,7 @@ export const onUpdatePost = /* GraphQL */ `
         updatedAt
         __typename
       }
+      parentPostID
       createdAt
       updatedAt
       __typename
@@ -157,6 +159,7 @@ export const onDeletePost = /* GraphQL */ `
         updatedAt
         __typename
       }
+      parentPostID
       createdAt
       updatedAt
       __typename

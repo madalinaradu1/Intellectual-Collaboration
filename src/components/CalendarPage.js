@@ -6,6 +6,7 @@ import {
   createGlobalEvent,   updateGlobalEvent,   deleteGlobalEvent,
 } from '../graphql/mutations';
 import './CalendarPage.css';
+import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 
 const client = generateClient();
 
@@ -48,7 +49,8 @@ const FORM_FIELDS = [
 ];
 
 export default function CalendarPage({ user }) {
-  const owner   = user?.username ?? user?.userId ?? 'guest';
+  const owner       = user?.username ?? user?.userId ?? 'guest';
+  const displayName = user?.attributes?.name || user?.name || owner;
   const isAdmin = user?.isAdmin || user?.attributes?.['custom:role'] === 'admin';
 
   const today = new Date();
@@ -191,7 +193,7 @@ export default function CalendarPage({ user }) {
       if (editingGlobalId) {
         await client.graphql({ query: updateGlobalEvent, variables: { input: { id: editingGlobalId, ...globalForm } } });
       } else {
-        await client.graphql({ query: createGlobalEvent, variables: { input: { ...globalForm, createdBy: owner } } });
+        await client.graphql({ query: createGlobalEvent, variables: { input: { ...globalForm, createdBy: displayName } } });
       }
       setShowGlobalModal(false);
       fetchGlobalEvents();
@@ -315,14 +317,14 @@ export default function CalendarPage({ user }) {
                     </div>
                     {isPersonal && (
                       <div className="cal-event-actions">
-                        <button className="cal-action-btn" onClick={() => openEditPersonalModal(ev)} aria-label="Edit event">✏️</button>
-                        <button className="cal-action-btn" onClick={() => handleDeletePersonal(ev.id)} aria-label="Delete event">🗑️</button>
+                        <button className="cal-action-btn" onClick={() => openEditPersonalModal(ev)} aria-label="Edit event"><FiEdit2 size={14} /></button>
+                        <button className="cal-action-btn" onClick={() => handleDeletePersonal(ev.id)} aria-label="Delete event"><FiTrash2 size={14} /></button>
                       </div>
                     )}
                     {isGlobal && isAdmin && (
                       <div className="cal-event-actions">
-                        <button className="cal-action-btn" onClick={() => openEditGlobalModal(ev)} aria-label="Edit event">✏️</button>
-                        <button className="cal-action-btn" onClick={() => handleDeleteGlobal(ev.id)} aria-label="Delete event">🗑️</button>
+                        <button className="cal-action-btn" onClick={() => openEditGlobalModal(ev)} aria-label="Edit event"><FiEdit2 size={14} /></button>
+                        <button className="cal-action-btn" onClick={() => handleDeleteGlobal(ev.id)} aria-label="Delete event"><FiTrash2 size={14} /></button>
                       </div>
                     )}
                   </div>

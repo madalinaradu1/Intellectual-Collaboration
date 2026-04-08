@@ -1,3 +1,4 @@
+// Data is static pending backend integration.
 import React from 'react';
 
 const submissions = [

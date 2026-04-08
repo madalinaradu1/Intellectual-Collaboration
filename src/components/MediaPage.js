@@ -1,3 +1,4 @@
+// Data is static until a Media API is implemented.
 import React, { useState } from 'react';
 
 const mediaItems = [
